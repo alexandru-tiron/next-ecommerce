@@ -1,0 +1,144 @@
+import Image from "next/image";
+import Link from "next/link";
+import { getSlides } from "@/queries";
+import Script from "next/script";
+import { getTranslations } from "next-intl/server";
+const Slider = async () => {
+   const t = await getTranslations("HomePage");
+   const slides = await getSlides();
+   return (
+      <>
+         <div id="slider" className="h-[60vh] overflow-hidden relative">
+            <div id="slides-container" className="w-max h-full flex transition-all ease-in-out duration-1000" style={{ transform: "translateX(0)" }}>
+               {slides.map((slide) => {
+                  let background;
+                  if (slide.background) {
+                     const isGradient = slide.background.includes("gradient");
+                     if (isGradient) {
+                        const direction = slide.background.match(/gradient-to-(r|l|t|b|tr|tl|br|bl)/)?.[1] || "r";
+                        const colors = slide.background.match(/\[([^\]]+)\]/g)?.map((color) => color.slice(1, -1)) || [];
+                        background = {
+                           type: "gradient",
+                           direction: `to-${direction}`,
+                           colors: colors.map((color, index) => ({
+                              color,
+                              position: index === 0 ? 0 : index === colors.length - 1 ? 100 : 50,
+                           })),
+                        };
+                     } else {
+                        const color = slide.background.match(/\[([^\]]+)\]/)?.[1] || "#000000";
+                        background = {
+                           type: "solid",
+                           direction: "to-r",
+                           colors: [{ color, position: 0 }],
+                        };
+                     }
+                  }
+                  return (
+                     <div
+                        className={`${!slide.background ? "bg-linear-to-r from-yellow-50 to-pink-50" : ""} w-screen h-full flex flex-col gap-6 xl:flex-row`}
+                        key={slide.order}
+                        style={
+                           background
+                              ? {
+                                   background:
+                                      background.type === "solid"
+                                         ? background.colors[0].color
+                                         : `linear-gradient(${
+                                              background.direction === "to-r"
+                                                 ? "to right"
+                                                 : background.direction === "to-l"
+                                                 ? "to left"
+                                                 : background.direction === "to-t"
+                                                 ? "to top"
+                                                 : background.direction === "to-b"
+                                                 ? "to bottom"
+                                                 : background.direction === "to-tr"
+                                                 ? "to top right"
+                                                 : background.direction === "to-tl"
+                                                 ? "to top left"
+                                                 : background.direction === "to-br"
+                                                 ? "to bottom right"
+                                                 : "to bottom left"
+                                           }, ${background.colors
+                                              .sort((a, b) => a.position - b.position)
+                                              .map((stop) => `${stop.color} ${stop.position}%`)
+                                              .join(", ")})`,
+                                }
+                              : {}
+                        }
+                     >
+                        {/* TEXT CONTAINER */}
+                        <div className="h-1/2 xl:w-1/2 xl:h-full flex flex-col items-center justify-center gap-5 2xl:gap-12 text-center">
+                           <h2 className=" text-lg lg:text-2xl 2xl:text-4xl">{slide.description}</h2>
+                           <h1 className="text-2xl lg:text-4xl 2xl:text-6xl font-semibold">{slide.title}</h1>
+                           {slide.url && (
+                              <Link href={slide.url}>
+                                 <span className="rounded-md bg-black text-white py-3 px-4 ">{t("buyNow")}</span>
+                              </Link>
+                           )}
+                        </div>
+                        {/* IMAGE CONTAINER */}
+                        <div className="h-1/2 xl:w-1/2 xl:h-full relative">
+                           <Image src={slide.image} alt="" fill sizes="100%" className="object-cover " />
+                        </div>
+                     </div>
+                  );
+               })}
+            </div>
+            <div id="slider-dots" className="absolute m-auto left-1/2 bottom-8 flex gap-4 -translate-x-1/2">
+               {slides.map((slide, index) => (
+                  <div className={`slider-dot w-3 h-3 rounded-full ring-1 ring-gray-600 cursor-pointer flex items-center justify-center`} key={slide.order} data-index={index}>
+                     <div className="dot-inner w-[6px] h-[6px] bg-gray-600 rounded-full opacity-0"></div>
+                  </div>
+               ))}
+            </div>
+         </div>
+
+         <Script id="slider-script">{`
+            (function() {
+               let current = 0;
+               const slidesLength = ${slides.length};
+               const slidesContainer = document.getElementById('slides-container');
+               const dots = document.querySelectorAll('.slider-dot');
+               
+               function updateSlider() {
+                  slidesContainer.style.transform = \`translateX(-\${current * 100}vw)\`;
+                  
+                  dots.forEach((dot, index) => {
+                     const inner = dot.querySelector('.dot-inner');
+                     if (index === current) {
+                        dot.classList.add('scale-150');
+                        inner.classList.remove('opacity-0');
+                     } else {
+                        dot.classList.remove('scale-150');
+                        inner.classList.add('opacity-0');
+                     }
+                  });
+               }
+               
+               function setDot(index) {
+                  current = index;
+                  updateSlider();
+               }
+               
+               // Add click handlers to dots
+               dots.forEach((dot, index) => {
+                  dot.addEventListener('click', () => setDot(index));
+               });
+               
+               // Set initial state
+               updateSlider();
+               
+               // Start autoplay
+               setInterval(() => {
+                  current = (current === slidesLength - 1) ? 0 : current + 1;
+                  updateSlider();
+               }, 6000);
+            })();
+         `}</Script>
+      </>
+   );
+};
+
+export default Slider;
