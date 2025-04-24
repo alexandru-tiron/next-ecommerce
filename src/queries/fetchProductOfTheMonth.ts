@@ -28,9 +28,23 @@ async function fetchProductOfTheMonth(): Promise<{ product: Product | null; pric
 
 async function fetchProduct(): Promise<{ product: Product | null; price: { price: number[]; discount: number[] } }> {
    try {
-      const productSnap = await getDocsFromCache(query(collection(db, "Products"), where("product_of_month", "==", true))).catch(() => getDocsFromServer(query(collection(db, "Products"), where("product_of_month", "==", true))));
+      const productSnap = await getDocsFromCache(query(collection(db, "Products"), where("product_of_month", "==", true)))
+         .then((snap) => {
+            if (snap.docs.length === 0) {
+               return getDocsFromServer(query(collection(db, "Products"), where("product_of_month", "==", true)));
+            }
+            return snap;
+         })
+         .catch(() => getDocsFromServer(query(collection(db, "Products"), where("product_of_month", "==", true))));
       if (productSnap.docs.length >= 1) {
-         const skuVariantsSnap = await getDocsFromCache(query(collection(db, "Products", productSnap.docs[0].id, "SkuVariants"))).catch(() => getDocsFromServer(query(collection(db, "Products", productSnap.docs[0].id, "SkuVariants"))));
+         const skuVariantsSnap = await getDocsFromCache(query(collection(db, "Products", productSnap.docs[0].id, "SkuVariants")))
+            .then((snap) => {
+               if (snap.docs.length === 0) {
+                  return getDocsFromServer(query(collection(db, "Products", productSnap.docs[0].id, "SkuVariants")));
+               }
+               return snap;
+            })
+            .catch(() => getDocsFromServer(query(collection(db, "Products", productSnap.docs[0].id, "SkuVariants"))));
          const product = { id: productSnap.docs[0].id, ...productSnap.docs[0].data(), sku_variants: skuVariantsSnap.docs.map((doc) => doc.data() as SkuVariant) } as Product;
          const productPrice =
             skuVariantsSnap.docs && skuVariantsSnap.docs.length > 0

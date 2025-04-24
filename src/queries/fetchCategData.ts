@@ -26,11 +26,25 @@ async function fetchCategData(): Promise<Category[]> {
 async function fetchCategories(): Promise<Category[]> {
    try {
       // Try to get from Firestore cache first
-      const querySnapshot = await getDocsFromCache(collection(db, "Categories")).catch(() => getDocsFromServer(collection(db, "Categories")));
+      const querySnapshot = await getDocsFromCache(collection(db, "Categories")).then(
+         (snap) => {
+            if (snap.docs.length === 0) {
+               return getDocsFromServer(collection(db, "Categories"));
+            }
+            return snap;
+         }
+      ).catch(() => getDocsFromServer(collection(db, "Categories")));
 
       const fetchPromises = querySnapshot.docs.map(async (item) => {
          // Try to get subcategories from cache first
-         const querySub = await getDocsFromCache(collection(db, "Categories", item.id, "Subcategories")).catch(() => getDocsFromServer(collection(db, "Categories", item.id, "Subcategories")));
+         const querySub = await getDocsFromCache(collection(db, "Categories", item.id, "Subcategories")).then(
+            (snap) => {
+               if (snap.docs.length === 0) {
+                  return getDocsFromServer(collection(db, "Categories", item.id, "Subcategories"));
+               }
+               return snap;
+            }
+         ).catch(() => getDocsFromServer(collection(db, "Categories", item.id, "Subcategories")));
 
          const fetchPromisesSub = querySub.docs.map((item) => {
             return {

@@ -30,7 +30,14 @@ async function fetchBrandData(): Promise<Brand[]> {
 async function fetchBrands(): Promise<Brand[]> {
    try {
       // Try to get from Firestore cache first
-      const querySnapshot = await getDocsFromCache(collection(db, "Brands")).catch(() => getDocsFromServer(collection(db, "Brands")));
+      const querySnapshot = await getDocsFromCache(collection(db, "Brands")).then(
+         (snap) => {
+            if (snap.docs.length === 0) {
+               return getDocsFromServer(collection(db, "Brands"));
+            }
+            return snap;
+         }
+      ).catch(() => getDocsFromServer(collection(db, "Brands")));
 
       const fetchPromises = querySnapshot.docs.map(async (item) => {
          return {
