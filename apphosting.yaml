@@ -83,6 +83,9 @@ env:
 
    - variable: NEXT_PUBLIC_APIKEY
      secret: NEXT_PUBLIC_APIKEY
+     availability:
+        - BUILD
+        - RUNTIME
 
    - variable: NEXT_PUBLIC_AUTHDOMAIN
      value: alext-next-commerce.firebaseapp.com
@@ -135,6 +138,9 @@ env:
 
    - variable: NEXT_PUBLIC_ALGOLIA_SEARCH_KEY
      secret: NEXT_PUBLIC_ALGOLIA_SEARCH_KEY
+     availability:
+        - BUILD
+        - RUNTIME
 # Environment variables and secrets.
 # env:
 # Configure environment variables.
