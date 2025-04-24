@@ -110,35 +110,38 @@ The app should now be running at [http://localhost:3000](http://localhost:3000)
 
 ## Deployment
 
-The easiest way to deploy your Next.js e-commerce app is using [Firebase App Hosting](https://firebase.google.com/docs/app-hosting), which has built-in support for Next.js applications:
+The easiest way to deploy your Next.js e-commerce app is using [Vercel](https://vercel.com/), which provides optimal compatibility with Next.js features including internationalization (i18n) in server-side rendering:
 
-1. Create a Firebase project with the Blaze pricing plan enabled
+1. Push your code to GitHub (or GitLab/BitBucket)
 
-2. Set up Firebase App Hosting using the Firebase console:
+2. Connect your repository to Vercel:
 
-   -  Go to the Firebase console
-   -  Select your project
-   -  Navigate to "App Hosting" in the Build section
-   -  Click "Get started" and follow the prompts
+   -  Sign up or log in to [Vercel](https://vercel.com/)
+   -  Click "Add New" > "Project"
+   -  Select your repository and click "Import"
 
-3. Connect your GitHub repository:
+3. Configure your project:
 
-   -  Authorize and install the Firebase GitHub app on your repository
-   -  Select the repository containing your Next.js e-commerce project
-   -  Choose the branch for continuous deployment (e.g., main or production)
-
-4. Configure your deployment settings:
-   -  Set environment variables (similar to your .env.local file)
+   -  Keep the default framework preset (Next.js)
+   -  Set your environment variables in the Vercel dashboard
    -  Configure build settings if needed
 
-Once set up, Firebase App Hosting will automatically:
+4. Deploy your application:
+   -  Click "Deploy"
+   -  Vercel will automatically build and deploy your application
 
--  Start a new rollout every time you push to your live branch
--  Build your Next.js application using Cloud Build
--  Deploy to Cloud Run with Cloud CDN for fast global delivery
--  Make your app available on a free subdomain (yourproject.web.app)
+Once deployed, Vercel provides:
 
-You can monitor your deployments and view logs directly in the Firebase console.
+-  Automatic HTTPS
+-  Global CDN for fast content delivery
+-  Preview deployments for pull requests
+-  Analytics and monitoring
+-  Seamless handling of API routes and server-side rendering
+-  Built-in support for Next.js i18n
+
+You can manage your deployments, domains, and environment variables directly through the Vercel dashboard.
+
+> **Note:** While Firebase App Hosting does support Next.js applications, I encountered compatibility issues specifically with the internationalization (i18n) features when using server-side rendering (SSR). If your project relies heavily on i18n with SSR like this one does, Vercel currently provides better out-of-the-box support for these features.
 
 ## TODO List
 
@@ -230,5 +233,4 @@ This project uses Firestore as its primary database, storing:
 -  Application settings and configurations
 -  Analytics and operational metadata
 
-**Note:** The Firestore database structure, security rules, and indexing configurations are not included in this repository. The database design represents considerable intellectual property with optimized data relationships, efficient querying patterns, and robust security rules developed through extensive iteration and testing. 
-
+**Note:** The Firestore database structure, security rules, and indexing configurations are not included in this repository. The database design represents considerable intellectual property with optimized data relationships, efficient querying patterns, and robust security rules developed through extensive iteration and testing.

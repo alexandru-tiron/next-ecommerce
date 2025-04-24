@@ -6,7 +6,6 @@ import NavIcons from "./NavIcons";
 import Menu from "./Menu";
 import { twMerge } from "tailwind-merge";
 import { useEffect, useState } from "react";
-import Logo from "@/assets/logo.svg";
 import { getInfoData } from "@/queries";
 import { Info } from "@/types/user";
 import { usePathname } from "next/navigation";
@@ -40,7 +39,7 @@ const Navbar = () => {
             <div className=" flex items-center  justify-between gap-4">
                <Menu />
                <Link href="/" className="flex items-center gap-3 min-h-7 min-w-7">
-                  <Image src={Logo} alt="Logo" className="w-7 h-7" />
+                  <Image src="/images/logo.svg" alt="Logo" className="w-7 h-7" width={28} height={28} />
                   <div className="text-base font-semibold lg:text-xl tracking-wide hidden sm:block">{info?.store_name}</div>
                </Link>
             </div>
