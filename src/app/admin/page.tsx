@@ -44,7 +44,9 @@ interface OrderProduct {
 }
 
 // Card component for metrics - update for responsiveness
-const MetricCard = ({ title, value, icon, description, change }: { title: string; value: string | number; icon: React.ReactNode; description?: string; change?: { value: number; positive: boolean } }) => (
+const MetricCard = ({ title, value, icon, description, change }: { title: string; value: string | number; icon: React.ReactNode; description?: string; change?: { value: number; positive: boolean } }) => {
+   const t = useTranslations();
+   return (
    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 h-full">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
          <h3 className="text-gray-500 text-xs sm:text-sm font-medium">{title}</h3>
@@ -59,12 +61,13 @@ const MetricCard = ({ title, value, icon, description, change }: { title: string
                   <TrendingUp className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${!change.positive && "transform rotate-180"}`} />
                   <span className="text-xs sm:text-sm font-medium">{change.value}%</span>
                </div>
-               <span className="text-gray-500 text-xs ml-0 sm:ml-2 mt-1 sm:mt-0">vs luna trecută</span>
+               <span className="text-gray-500 text-xs ml-0 sm:ml-2 mt-1 sm:mt-0">{t("Admin.vsLastMonth")}</span>
             </div>
          )}
       </div>
-   </div>
-);
+      </div>
+   );
+};
 
 // Add the timestamp helper function
 const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanoseconds: number }) => {
@@ -448,10 +451,10 @@ export default function AdminDashboard() {
 
          {/* Metrics */}
          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <MetricCard title="Total Comenzi" value={dashboardData.totalOrders} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />} change={{ value: dashboardData.totalOrdersChange, positive: Math.sign(dashboardData.totalOrdersChange) === 1 }} />
-            <MetricCard title="Venit Total" value={`${dashboardData.totalRevenue} Lei`} icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />} change={{ value: dashboardData.totalRevenueChange, positive: Math.sign(dashboardData.totalRevenueChange) === 1 }} />
-            <MetricCard title="Produse" value={dashboardData.totalProducts} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />} description={`${dashboardData.pendingOrders} comenzi în așteptare`} />
-            <MetricCard title="Clienți noi" value={dashboardData.totalCustomers} icon={<Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />} change={{ value: dashboardData.totalCustomersChange, positive: Math.sign(dashboardData.totalCustomersChange) === 1 }} />
+            <MetricCard title={t("Admin.totalOrders")} value={dashboardData.totalOrders} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />} change={{ value: dashboardData.totalOrdersChange, positive: Math.sign(dashboardData.totalOrdersChange) === 1 }} />
+            <MetricCard title={t("Admin.totalRevenue")} value={`${dashboardData.totalRevenue} Lei`} icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />} change={{ value: dashboardData.totalRevenueChange, positive: Math.sign(dashboardData.totalRevenueChange) === 1 }} />
+            <MetricCard title={t("Admin.products")} value={dashboardData.totalProducts} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />} description={`${dashboardData.pendingOrders} ${t("Admin.ordersWaiting")}`} />
+            <MetricCard title={t("Admin.newClients")} value={dashboardData.totalCustomers} icon={<Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />} change={{ value: dashboardData.totalCustomersChange, positive: Math.sign(dashboardData.totalCustomersChange) === 1 }} />
          </div>
 
          {/* Orders Alert */}

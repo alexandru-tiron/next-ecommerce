@@ -4,10 +4,10 @@ import ProductList from "@/components/product-list/ProductList";
 import Skeleton from "@/components/product-list/Skeleton";
 import SortProducts from "@/components/product-list/SortProducts";
 import { Suspense } from "react";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 export default async function ListPage({ searchParams }: { searchParams: SearchParams }) {
    const params = await searchParams;
-   const t = useTranslations("ProductList");
+   const t = await getTranslations("ProductList");
    return (
       <div className="mb-24 pt-8 px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64">
          <div className="relative flex gap-6">

@@ -130,7 +130,7 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
                                                 className="absolute bottom-[102%] left-1/2 transform -translate-x-1/2 mb-2 text-white bg-black p-2 rounded-full opacity-0 invisible w-auto
                           group-hover:opacity-100 group-hover:visible transition-opacity text-xs whitespace-nowrap truncate"
                                              >
-                                                {option.code + " " + option.name}
+                                                {option.code ? option.code + " " + option.name : option.name}
                                              </span>
                                           </p>
                                        </li>
@@ -152,7 +152,7 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
                                                 className="absolute bottom-[102%] left-1/2 transform -translate-x-1/2 mb-2 text-white bg-black p-2 rounded-full opacity-0 invisible w-auto
                     group-hover:opacity-100 group-hover:visible transition-opacity text-xs whitespace-nowrap truncate"
                                              >
-                                                {option.code + " " + option.name}
+                                                {option.code ? option.code + " " + option.name : option.name}
                                              </span>
                                           </p>
                                        </li>

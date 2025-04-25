@@ -1,7 +1,7 @@
 import { Product, Review, SkuVariant, VARIANT_TYPE, Variant } from "@/types/product";
 import ProductContent from "@/components/product/ProductContent";
 import { db } from "@/lib/firebaseInit";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, Timestamp } from "firebase/firestore";
 import { notFound } from "next/navigation";
 import React from "react";
 
@@ -17,7 +17,7 @@ export default async function SinglePage({ searchParams }: { params: { name: str
    const productDoc = await getDoc(doc(db, "Products", id));
    if (!productDoc.exists) notFound();
 
-   const product = { id: productDoc.id, ...productDoc.data(), created_at: productDoc.data()?.created_at.toDate() };
+   const product = { id: productDoc.id, ...productDoc.data(), created_at: productDoc.data()?.created_at.toDate() as Timestamp };
 
    // Fetch variants
    const variantsSnap = await getDocs(collection(db, "Products", product.id, "Variants"));

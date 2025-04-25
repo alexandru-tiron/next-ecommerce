@@ -36,7 +36,7 @@ export default async function Home() {
                   </Link>
                </div>
                <Suspense fallback={<Skeleton />}>
-                  <ProductList searchParams={{ sort: "desc sold", limit: 10 }} />
+                  <ProductList searchParams={{ sort: "desc sold", limit: 5 }} />
                </Suspense>
             </div>
          </section>
@@ -57,7 +57,7 @@ export default async function Home() {
                   </Link>
                </div>
                <Suspense fallback={<Skeleton />}>
-                  <ProductList searchParams={{ sort: "desc created_at", limit: 10 }} />
+                  <ProductList searchParams={{ sort: "desc created_at", limit: 5 }} />
                </Suspense>
             </div>
          </section>

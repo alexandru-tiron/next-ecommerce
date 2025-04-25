@@ -546,9 +546,9 @@ export default function AddProductPage() {
          </form>
 
          {/* Modals */}
-         <CategoryModal isOpen={showCategoryModal} onClose={() => setShowCategoryModal(false)} />
+         {showCategoryModal && <CategoryModal isOpen={showCategoryModal} onClose={() => setShowCategoryModal(false)} />}
 
-         <SubcategoryModal isOpen={showSubcategoryModal} onClose={() => setShowSubcategoryModal(false)} categoryId={productData.category_id} categoryName={productData.category_name} />
+         {showSubcategoryModal && <SubcategoryModal isOpen={showSubcategoryModal} onClose={() => setShowSubcategoryModal(false)} categoryId={productData.category_id} categoryName={productData.category_name} />}
 
          <BrandModal isOpen={showBrandModal} onClose={() => setShowBrandModal(false)} />
       </div>

@@ -67,7 +67,7 @@ const Add = ({
                   <div className="text-xs">{t("outOfStock")}</div>
                ) : (
                   <div className="text-xs">
-                     {t("only")} <span className="text-orange-500">{stoc} {t("piecesLeft")}</span> {t("onStock")}
+                     {t("only")} <span className="text-orange-500">{stoc} {t("piecesLeft")}</span>
                      <br /> {t("dontMiss")}
                   </div>
                )}

@@ -37,7 +37,7 @@
       "dontMiss": "Don't miss the opportunity!",
       "outOfStock": "Product is out of stock",
       "brand": "Brand",
-      "from": "from",
+      "from": "from ",
       "chooseOption": "Choose an option",
       "howTo": "How to use"
    },
@@ -67,7 +67,7 @@
       "seeAllProducts": "See all products",
       "noProductsFound": "No products match the search &ldquo;{searchParams.name}&rdquo;",
       "noProductsFound2": "No products match the selected filters",
-      "from": "from",
+      "from": "from ",
       "addToCart": "Add to Cart"
    },
    "CartModal": {
@@ -657,7 +657,11 @@
       "orderStatistics": "Order Statistics",
       "totalOrders": "Total Orders",
       "totalSpent": "Total Spent",
+      "totalRevenue": "Total Revenue",
+      "newClients": "New Clients",
       "order": "Order",
+      "vsLastMonth": "vs. last month",
+      "ordersWaiting": "Orders waiting",
       "noOrders": "No orders found",
       "savedAddresses": "Saved Addresses",
       "noAddresses": "No addresses found",

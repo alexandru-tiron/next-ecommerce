@@ -16,9 +16,8 @@ interface ProductBasicInfoProps {
 
 const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ productData, errors, handleInputChange, handleCategoryChange, handleSubcategoryChange, onOpenCategoryModal, onOpenSubcategoryModal, onOpenBrandModal }) => {
    const t = useTranslations();
-   const[categories, setCategories] = useState<Category[]>([]);
-   const[brands, setBrands] = useState<Brand[]>([]);
-   const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+   const [categories, setCategories] = useState<Category[]>([]);
+   const [brands, setBrands] = useState<Brand[]>([]);
    // Filter subcategories based on selected category
    // const filteredSubcategories = categories.find((cat) => cat.id === productData.category_id)?.subcategories || [];
 
@@ -37,7 +36,7 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ productData, errors
    // Handle subcategory selection with both ID and name
    const onSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const subcategoryId = e.target.value;
-      const subcategory = filteredSubcategories.find((sub) => sub.id === subcategoryId);
+      const subcategory = categories?.find((cat) => cat.id === productData.category_id)?.subcategories?.find((sub) => sub.id === subcategoryId);
 
       if (handleSubcategoryChange) {
          handleSubcategoryChange(e);
@@ -155,11 +154,14 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ productData, errors
                   className={`block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${!productData.category_id ? "bg-gray-100" : ""}`}
                >
                   <option value="">{t("Admin.subcategoryPlaceholder")}</option>
-                  {filteredSubcategories.map((subcategory) => (
-                     <option key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                     </option>
-                  ))}
+                  {productData.category_id &&
+                     categories
+                        ?.find((cat) => cat.id === productData.category_id)
+                        ?.subcategories?.map((subcategory) => (
+                           <option key={subcategory.id} value={subcategory.id}>
+                              {subcategory.name}
+                           </option>
+                        ))}
                </select>
             </div>
          </div>
@@ -215,7 +217,7 @@ const ProductBasicInfo: React.FC<ProductBasicInfoProps> = ({ productData, errors
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Weight */}
             <div className="flex items-center h-5 mb-2">
-               <input id="product_of_month" name="product_of_month" type="checkbox" checked={productData.product_of_month} onChange={handleInputChange} className={`h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 `} />
+               <input id="product_of_month" name="product_of_month" type="checkbox" checked={Boolean(productData.product_of_month)} onChange={handleInputChange} className={`h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 `} />
                <label htmlFor="product_of_month" className={`ml-2 block text-sm text-gray-700 `}>
                   {t("Admin.productOfMonth")}
                </label>

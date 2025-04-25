@@ -37,7 +37,7 @@
       "dontMiss": "Nu rata ocazia!",
       "outOfStock": "Produsul nu mai este in stoc",
       "brand": "Brand",
-      "from": "de la",
+      "from ": "de la",
       "chooseOption": "Alege o optiune",
       "howTo": "Cum se foloseste"
    },
@@ -67,7 +67,7 @@
       "seeAllProducts": "Vezi toate produsele",
       "noProductsFound": "Nu există produse care să corespundă căutării &ldquo;{searchParams.name}&rdquo;",
       "noProductsFound2": "Nu există produse care să corespundă filtrelor selectate",
-      "from": "de la",
+      "from": "de la ",
       "addToCart": "Adaugă în coș"
    },
    "CartModal": {
@@ -657,7 +657,11 @@
       "orderStatistics": "Statistici Comenzi",
       "totalOrders": "Total Comenzi",
       "totalSpent": "Total Cheltuit",
+      "totalRevenue": "Venit Total",
+      "newClients": "Clienți noi",
       "order": "Comandă",
+      "vsLastMonth": "vs. luna trecută",
+      "ordersWaiting": "Comenzi în așteptare",
       "noOrders": "Nu s-au găsit comenzi",
       "savedAddresses": "Adrese Salvate",
       "noAddresses": "Nu s-au găsit adrese",

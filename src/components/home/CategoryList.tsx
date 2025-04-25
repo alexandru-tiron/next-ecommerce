@@ -20,6 +20,7 @@ const CategoryList = () => {
       const fetchCateg = async () => {
          const categ = await getCategData();
          setCateg(categ);
+         console.log(categ);
       };
       fetchCateg();
    }, []);
@@ -27,7 +28,7 @@ const CategoryList = () => {
       <div className="relative md:overflow-auto md:scrollbar-horizontal-styled">
          <div className="flex flex-col gap-4 md:flex-row md:gap-6 md:pb-2 ">
             {categ
-               .filter((item) => item.image !== null)
+               .filter((cat) => cat.image !== null)
                .map((item) => {
                   const isExpanded = expandedCategories[item.id] || false;
                   const hasSubcategories = item.subcategories && item.subcategories.length > 0;

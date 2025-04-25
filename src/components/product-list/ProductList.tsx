@@ -125,7 +125,7 @@ const ProductList = ({ category, searchParams = {} }: { category?: string; searc
    }
 
    return (
-      <div className="mt-4 flex gap-x-8 gap-y-16 justify-left flex-wrap" key={category ? category : products.length}>
+      <div className="mt-4 flex gap-x-6 gap-y-8 justify-left flex-wrap" key={category ? category : products.length}>
          {products.map((item: Product) => {
             const price =
                item.sku_variants && item.sku_variants.length > 0
@@ -165,7 +165,7 @@ const ProductList = ({ category, searchParams = {} }: { category?: string; searc
                            <h3
                               className="text-[0.85rem] text-gray-700 absolute bottom-6 "
                               style={{
-                                 left: price.discount ? "4.5rem" : " ",
+                                 left: price.discount ? "3.5rem" : " ",
                               }}
                            >
                               {price.price[0]}
@@ -176,14 +176,16 @@ const ProductList = ({ category, searchParams = {} }: { category?: string; searc
                            <h2 className="font-medium text-2xl text-pink-700 ">
                               {item.sku_variants && item.sku_variants.length > 0 && <span className=" text-base font-normal text-gray-700">{t("from")}</span>}
                               {price.discount[0]}
-                              <sup className=" text-xs leading-none -top-2">{price.discount[1]}</sup> <span className=" text-base">Lei</span>
+                              <sup className=" text-xs leading-none -top-2">{price.discount[1]}</sup>
+                              <span className=" text-base">Lei</span>
                            </h2>
                         </div>
                      ) : (
                         <h2 className="font-medium text-2xl text-pink-700 self-end mr-2">
                            {item.sku_variants && item.sku_variants.length > 0 && <span className=" text-sm font-normal text-gray-700">{t("from")}</span>}
                            {price && price.price[0]}
-                           <sup className=" text-xs leading-none -top-2">{price && price.price[1]}</sup> <span className=" text-base">Lei</span>
+                           <sup className=" text-xs leading-none -top-2">{price && price.price[1]}</sup>
+                           <span className=" text-base">Lei</span>
                         </h2>
                      )}
                      <button className="rounded-2xl bg-black text-white w-max py-2 px-4 text-xs hover:bg-lama hover:text-white ml-auto  ">{t("addToCart")}</button>
