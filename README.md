@@ -1,7 +1,7 @@
 # Next E-commerce
 
 <div align="center">
-  <img src="/public/images/logo.svg" alt="Logo" width="200"/>
+  <img src="/public/images/logo.svg" alt="Logo" width="100"/>
   <h3>Modern E-commerce Platform Built with Next.js</h3>
   <p>A comprehensive e-commerce solution with a simple UI, product management, cart functionality, checkout process, and user profiles.</p>
   <p><a href="https://next-ecommerce-alexandru-tirons-projects.vercel.app/">Live Demo</a></p>
