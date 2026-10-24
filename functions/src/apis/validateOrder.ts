@@ -10,6 +10,8 @@ import {
 } from "../utils/validateOrderDetails";
 import { sendCustomerEmail, sendAdminEmail } from "../utils/sendNewOrderEmails";
 import { reserveStock } from "../utils/stock";
+import { isValidQuantity, MAX_ORDER_LINES } from "../utils/orderLimits";
+import { emailPassword, enforceAppCheck } from "../utils/params";
 import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "../utils/voucher";
 import { getVatRate, vatIncluded } from "../utils/vat";
 import { isMethodEnabled, PAYMENT_METHODS, PaymentMethod, paymentSettingsFrom } from "../utils/payments";
@@ -28,7 +30,8 @@ export const validateAndCreateOrder = onCall(
       concurrency: 50, // Increased to handle legitimate traffic
       timeoutSeconds: 60, // Set timeout
       maxInstances: 200, // Increased to handle spikes
-      enforceAppCheck: false, // Require App Check token
+      enforceAppCheck,
+      secrets: [emailPassword],
       cors: true, // Enable CORS
    },
    async (request: CallableRequest<OrderData>) => {
@@ -121,7 +124,9 @@ export const validateAndCreateOrder = onCall(
             !orderData ||
             !orderData.products ||
             !Array.isArray(orderData.products) ||
-            orderData.products?.length === 0
+            orderData.products?.length === 0 ||
+            orderData.products.length > MAX_ORDER_LINES ||
+            !orderData.products.every((product: { quantity?: unknown }) => isValidQuantity(product?.quantity))
          ) {
             logger.warn(`[Order] Invalid order data from user ${userId}`);
             throw new functions.https.HttpsError(

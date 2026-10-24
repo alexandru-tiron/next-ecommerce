@@ -21,7 +21,7 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, 
 import { auth, db } from "@/lib/firebaseInit";
 import { useRouter } from "next/navigation";
 import { usePopupContext } from "./PopupContext";
-import { doc, getDoc, setDoc, collection,  updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, updateDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { UserData, User, Address } from "@/types/user";
 
 // ===== TYPES =====
@@ -192,7 +192,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
                            addresses: userData.addresses || [],
                         },
                      } as User;
-                     console.log(userInfo);
                      // Persist mi nimal user data
                      persistUserSession(currentUser);
                      setUser(userInfo);
@@ -202,7 +201,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
                      if (currentUser.email) {
                         await setDoc(userRef, {
                            email: currentUser.email,
-                           created_at: new Date(),
+                           created_at: serverTimestamp(),
                         });
                         // The listener will fire again once the document is created
                         return;
@@ -260,7 +259,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
                if (currentUser) {
                   // Check admin status
                   const token = await currentUser.getIdTokenResult();
-                  console.log(token);
                   if (token.claims.isAdmin) {
                      setAdmin(true);
                   }

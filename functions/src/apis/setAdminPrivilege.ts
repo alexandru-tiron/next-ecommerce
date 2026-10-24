@@ -1,10 +1,11 @@
 import { logger } from "firebase-functions/v2";
-import admin from "firebase-admin";
+import { getAuth } from "firebase-admin/auth";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { enforceAppCheck } from "../utils/params";
 
 export const setAdminPrivilege = onCall(
    {
-      enforceAppCheck: false, // Set to true in production
+      enforceAppCheck,
       timeoutSeconds: 30,
       cors: false,
    },
@@ -33,14 +34,14 @@ export const setAdminPrivilege = onCall(
 
          // Verify the target user exists
          try {
-            await admin.auth().getUser(uid);
+            await getAuth().getUser(uid);
          } catch (error: any) {
             logger.error(`[Firebase] User with UID ${uid} not found`);
             throw new Error(`User with UID ${uid} not found`);
          }
 
          // Set the custom claim
-         await admin.auth().setCustomUserClaims(uid, { isAdmin: true });
+         await getAuth().setCustomUserClaims(uid, { isAdmin: true });
 
          logger.info(`[Firebase] Admin privileges set for user ${uid} by ${callerUid}`);
 

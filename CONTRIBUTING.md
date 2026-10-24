@@ -43,6 +43,7 @@ npm run lint
 npm run typecheck
 npm test                    # storefront unit tests (Vitest)
 npm --prefix functions test # Cloud Functions build and unit tests
+npm run test:rules          # security rules tests (Firestore and Storage emulators; needs Java)
 npm run build
 ```
 
@@ -52,7 +53,7 @@ Also:
 - **Translate new text.** Add every user-facing string to both `messages/en.json` and `messages/ro.json`. Don't hard-code text in components.
 - **Don't hard-code store details.** No store names, currencies, colours or URLs in code: they come from settings (see the roadmap's white-label phase).
 - **Keep security in mind:**
-  - Changes to `firestore.rules` or `storage.rules` must keep deny-by-default access.
+  - Changes to `firestore.rules` or `storage.rules` must keep deny-by-default access and come with tests in `tests/rules/`.
   - Anything that changes prices, stock, payments or permissions belongs in a Cloud Function, not in the browser.
   - Never log tokens, passwords or customers' personal data.
 - **No secrets in the repo.** Keys go in `.env.local`, `functions/.env` (both gitignored) or Secret Manager.

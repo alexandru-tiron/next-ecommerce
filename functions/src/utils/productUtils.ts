@@ -1,10 +1,10 @@
 import { logger } from "firebase-functions/v2";
-import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import { Variant, SkuVariant } from "../types/product";
 
 export const getVariants = async (productId: string): Promise<Variant[]> => {
    logger.info(`[Firebase] Fetching variants for product ${productId}`);
-   const variantsSnap = await admin.firestore().collection(`Products/${productId}/Variants`).get();
+   const variantsSnap = await getFirestore().collection(`Products/${productId}/Variants`).get();
    const variants = variantsSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -15,7 +15,7 @@ export const getVariants = async (productId: string): Promise<Variant[]> => {
 
 export const getSkuVariants = async (productId: string): Promise<SkuVariant[]> => {
    logger.info(`[Firebase] Fetching SKU variants for product ${productId}`);
-   const skuVariantsSnap = await admin.firestore().collection(`Products/${productId}/SkuVariants`).get();
+   const skuVariantsSnap = await getFirestore().collection(`Products/${productId}/SkuVariants`).get();
    const skuVariants = skuVariantsSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),

@@ -10,7 +10,6 @@ import VatNote from "@/components/common/VatNote";
 export default function CartPage() {
    const t = useTranslations();
    const { cart, subTotal, isLoading, removeItem } = useCartContext();
-   console.log(cart);
    if (cart.length === 0) {
       return (
          <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 min-h-[60vh] flex flex-col items-center justify-center gap-4">

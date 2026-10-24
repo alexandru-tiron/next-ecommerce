@@ -21,8 +21,7 @@ const Contact = () => {
    const t = useTranslations("ConsentModificationRequest");
    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-   const onSubmit = async (data: FormData) => {
-      console.log("Form Data:", data); // Log the submitted form data
+   const onSubmit = async () => {
 
       try {
          // Simulate an API call (replace with real API endpoint)

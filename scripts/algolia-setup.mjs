@@ -1,6 +1,6 @@
 // Configures the Algolia index the store searches, and the sorted replicas it queries.
 // Usage: npm run algolia:setup [-- --dry-run]
-// Reads ALGOLIA_APP_ID, ALGOLIA_API_WRITE_KEY and ALGOLIA_INDEX_NAME from functions/.env. Safe to run again.
+// Reads ALGOLIA_APP_ID and ALGOLIA_INDEX_NAME from functions/.env, and the write key from ALGOLIA_API_WRITE_KEY in the environment or functions/.secret.local. Safe to run again.
 import { algoliaConfig, algoliaRequest, parseArgs, waitForAlgoliaTask } from "./lib/firebase.mjs";
 
 const args = parseArgs();

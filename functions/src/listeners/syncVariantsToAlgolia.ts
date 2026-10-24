@@ -2,8 +2,9 @@ import { logger } from "firebase-functions/v2";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { OPERATION_TYPE, updateProductToAlgolia } from "../utils/updateProductToAlgolia";
 import { getVariants } from "../utils/productUtils";
+import { algoliaWriteKey } from "../utils/params";
 
-export const syncVariantsToAlgolia = onDocumentWritten("Products/{productId}/Variants/{variantId}", async (event) => {
+export const syncVariantsToAlgolia = onDocumentWritten({ document: "Products/{productId}/Variants/{variantId}", secrets: [algoliaWriteKey] }, async (event) => {
    const productId = event.params.productId;
    const variantId = event.params.variantId;
    logger.info(`[Firebase] Variant sync triggered for product ${productId}, variant ${variantId}`);

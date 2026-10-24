@@ -7,7 +7,6 @@ export default async function LayoutWrapper({ children }: { children: React.Reac
    // const pathname = usePathname();
    const headersList = await headers();
    const pathname = headersList.get("x-current-path");
-   console.log("pathname:", pathname);
    const isAdminRoute = pathname?.startsWith("/admin");
 
    return (

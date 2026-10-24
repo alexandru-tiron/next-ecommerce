@@ -70,11 +70,18 @@ export function downloadUrl(bucket, objectPath, token, emulator) {
    return `${host}/v0/b/${bucket}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`;
 }
 
-// Algolia credentials for the server-side scripts (the write key never goes to the storefront)
+// Algolia credentials for the server-side scripts (the write key never goes to the storefront).
+// The write key is a Secret Manager secret, so it comes from the environment or functions/.secret.local (gitignored).
 export function algoliaConfig() {
-   const env = readEnvFile("functions/.env");
-   const config = { appId: env.ALGOLIA_APP_ID, writeKey: env.ALGOLIA_API_WRITE_KEY, indexName: env.ALGOLIA_INDEX_NAME || "products" };
-   if (!config.appId || !config.writeKey) throw new Error("ALGOLIA_APP_ID and ALGOLIA_API_WRITE_KEY must be set in functions/.env");
+   const env = { ...readEnvFile("functions/.env"), ...readEnvFile("functions/.secret.local") };
+   const config = { appId: env.ALGOLIA_APP_ID, writeKey: process.env.ALGOLIA_API_WRITE_KEY || env.ALGOLIA_API_WRITE_KEY, indexName: env.ALGOLIA_INDEX_NAME || "products" };
+   if (!config.appId) throw new Error("ALGOLIA_APP_ID must be set in functions/.env");
+   if (!config.writeKey) {
+      throw new Error(
+         "The Algolia write key is missing. Set ALGOLIA_API_WRITE_KEY in the environment or in functions/.secret.local, " +
+            "for example with the value from: firebase functions:secrets:access ALGOLIA_API_WRITE_KEY"
+      );
+   }
    return config;
 }
 

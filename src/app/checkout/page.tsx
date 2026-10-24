@@ -332,7 +332,6 @@ export default function CheckoutPage() {
          // Use Firebase Functions SDK to call the Cloud Function
          const functions = getFunctions(app, "europe-west3");
          const validateAndCreateOrderFn = httpsCallable(functions, "validateAndCreateOrder");
-         console.log("orderData", orderData);
          const result = await validateAndCreateOrderFn(orderData);
          const responseData = result.data as ResponseData;
 

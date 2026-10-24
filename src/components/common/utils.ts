@@ -23,8 +23,6 @@ export const extractStoragePath = (url: string) => {
 };
 export const deleteFolderContents = async (folderRef: StorageReference) => {
    const listResults = await listAll(folderRef);
-   console.log(listResults);
-   console.log(listResults.prefixes);
    // Delete files in the current folder
    const fileDeletions = listResults.items.map((itemRef) => {
       return deleteObject(itemRef);

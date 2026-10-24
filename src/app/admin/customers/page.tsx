@@ -279,7 +279,6 @@ export default function CustomersPage() {
       const fetchCustomers = async () => {
          try {
             setIsLoading(true);
-            console.log("Fetching customers data from Firestore...");
 
             // Create base query for users
             const usersRef = collection(db, "Users");

@@ -292,7 +292,6 @@ export default function AdminDashboard() {
       const fetchDashboardData = async () => {
          try {
             setIsLoading(true);
-            console.log("Fetching real data from Firestore...");
             const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
             const twoMonthsAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
             // Firestore collections references

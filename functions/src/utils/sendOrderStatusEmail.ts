@@ -1,11 +1,10 @@
 import { logger } from "firebase-functions/v2";
-import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import { defineString } from "firebase-functions/params";
-import { siteUrl } from "./params";
+import { emailPassword, siteUrl } from "./params";
 const nodemailer = require("nodemailer");
 
 const emailUser = defineString("EMAIL_USER");
-const emailPassword = defineString("EMAIL_PASSWORD");
 
 export type NotifiedStatus = "accepted" | "rejected" | "shipped" | "delivered";
 
@@ -36,7 +35,7 @@ const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": 
 
 export async function sendOrderStatusEmail(userEmail: string, orderId: string, order: { status: NotifiedStatus; first_name?: string; tracking_number?: string }) {
    const message = messages[order.status];
-   const info = (await admin.firestore().collection("Settings").doc("Info").get()).data();
+   const info = (await getFirestore().collection("Settings").doc("Info").get()).data();
    const storeName = escapeHtml(info?.store_name ?? "");
    const orderUrl = `${siteUrl.value().replace(/\/$/, "")}/profile/orders/${encodeURIComponent(orderId)}`;
    const user = emailUser.value();

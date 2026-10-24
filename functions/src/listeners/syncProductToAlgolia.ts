@@ -3,8 +3,9 @@ import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { OPERATION_TYPE, updateProductToAlgolia } from "../utils/updateProductToAlgolia";
 import { Product } from "../types/product";
 import { getVariants, getSkuVariants } from "../utils/productUtils";
+import { algoliaWriteKey } from "../utils/params";
 
-export const syncProductToAlgolia = onDocumentWritten("Products/{productId}", async (event) => {
+export const syncProductToAlgolia = onDocumentWritten({ document: "Products/{productId}", secrets: [algoliaWriteKey] }, async (event) => {
    const productId = event.params.productId;
    logger.info(`[Firebase] Product sync triggered for ${productId}`);
 
@@ -18,10 +19,8 @@ export const syncProductToAlgolia = onDocumentWritten("Products/{productId}", as
 
       // Get the change type
       const beforeData = event.data.before?.data();
-      logger.info(`[Firebase] Product before data for ${productId}:`, JSON.stringify(beforeData));
 
       const afterData = event.data.after.data();
-      logger.info(`[Firebase] Product after data for ${productId}:`, JSON.stringify(afterData));
 
       if (!afterData) {
          logger.error(`[Firebase] No product data found for ${productId}`);
@@ -48,7 +47,7 @@ export const syncProductToAlgolia = onDocumentWritten("Products/{productId}", as
       // For updates, check what changed in the product document
       const changedFields = Object.keys(afterData).filter((key) => JSON.stringify(beforeData?.[key]) !== JSON.stringify(afterData[key]));
 
-      logger.info(`[Firebase] Changed fields in product document for ${productId}:`, JSON.stringify(changedFields));
+      logger.info(`[Firebase] Changed fields in product ${productId}: ${changedFields.join(", ") || "none"}`);
 
       // If there are changes to the product document, update only those fields
       if (changedFields?.length > 0) {
@@ -58,8 +57,6 @@ export const syncProductToAlgolia = onDocumentWritten("Products/{productId}", as
                return acc;
             }, {} as Partial<Product>),
          };
-
-         logger.info(`[Firebase] Updating changed product fields for ${productId} : ${JSON.stringify(changedData)}`);
          await updateProductToAlgolia(productId, OPERATION_TYPE.UPDATE, changedData as Partial<Product>);
          return;
       }

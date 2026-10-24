@@ -65,6 +65,19 @@ Fix what's exposed now, before adding features. (The full security plan is in th
 
 **Done when:** CI blocks known-vulnerable dependencies and rule regressions, App Check is enforced, and a header scan (for example securityheaders.com) gives an A.
 
+**Status:** the code is done; the store owner finishes the rollout with [docs/SECURITY-SETUP.md](SECURITY-SETUP.md).
+
+- Done:
+  - Dependencies upgraded (Next.js 15.5, Firebase 12, firebase-admin 14, firebase-functions 7) with 0 known production vulnerabilities, and an audit gate in CI.
+  - Security headers, plus a per-request nonce CSP in `src/middleware.ts`.
+  - Field allowlists and immutable fields in the rules, Storage size limits, and 33 rules tests on the emulators in CI.
+  - Secrets moved to Secret Manager params.
+  - Opt-in App Check: a site key for the browser, `ENFORCE_APP_CHECK` for the callable functions.
+  - No token or personal-data logging.
+  - The order function now rejects zero, negative, fractional and oversized quantities. A negative line used to cancel out another line's price.
+- Left for the owner: set the two secrets, register App Check and turn on enforcement for the callable functions.
+- Moved to Phase 2: enforcing App Check on Firestore and Storage, which needs the server-rendered reads on the Admin SDK first. Sanitising uploaded SVGs: only admins can upload, and the image optimizer serves SVGs sandboxed.
+
 ## Phase 2: Architecture cleanup
 
 Give contributors one clear structure.
@@ -76,9 +89,10 @@ Give contributors one clear structure.
    - `packages/emails`
    - `scripts/`
 2. Finish the state-management migration: merge the Redux branch after it passes the signed-in checks, or keep contexts, but don't ship both. Remove dead code (`LayoutWrapper`, the contexts the migration replaces).
-3. Upgrade to the current `firebase-functions` and `firebase-admin`. Fix the remaining lint warnings.
+3. Fix the remaining lint warnings. (`firebase-functions` and `firebase-admin` were upgraded in Phase 1.)
 4. Validate every callable function's input with a schema library (zod) and use consistent error codes.
-5. Cache server-side Firestore reads with Next's data cache, invalidated when the admin saves changes (`revalidateTag`).
+5. Move server-side Firestore reads to the Admin SDK and cache them with Next's data cache, invalidated when the admin saves changes (`revalidateTag`). Then enforce App Check on Firestore and Storage.
+6. Make the contact and data-request forms actually send their messages (today they only show a success notice).
 
 **Done when:** no business rule exists in two places, and `npm run build`, lint, typecheck and all tests run from the repository root.
 

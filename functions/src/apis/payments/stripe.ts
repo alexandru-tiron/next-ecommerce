@@ -3,6 +3,7 @@ import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import Stripe from "stripe";
 import { stripeEventPaymentStatus, toMinorUnits } from "../../utils/payments";
+import { enforceAppCheck } from "../../utils/params";
 import { applyPaymentStatus, db, payableOrder } from "./shared";
 
 // Loaded only when ENABLE_STRIPE=true in functions/.env (see index.ts); set both secrets first:
@@ -10,7 +11,7 @@ import { applyPaymentStatus, db, payableOrder } from "./shared";
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
-export const createStripeSession = onCall({ secrets: [stripeSecretKey] }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
+export const createStripeSession = onCall({ secrets: [stripeSecretKey], enforceAppCheck }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
    const { ref, order, orderId, origin } = await payableOrder(request, "stripe");
    const stripe = new Stripe(stripeSecretKey.value());
    try {

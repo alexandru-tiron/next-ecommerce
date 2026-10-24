@@ -47,7 +47,6 @@ export default function OrdersPage() {
       const fetchOrders = async () => {
          try {
             setIsLoading(true);
-            console.log("Fetching orders data from Firestore...");
 
             // Create base query for orders
             const ordersRef = collection(db, "Orders");

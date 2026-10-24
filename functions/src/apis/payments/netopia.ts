@@ -4,6 +4,7 @@ import { logger } from "firebase-functions/v2";
 import axios from "axios";
 import { DEFAULT_VAT_RATE } from "../../utils/vat";
 import { netopiaPaymentStatus, verifyNetopiaToken } from "../../utils/payments";
+import { enforceAppCheck } from "../../utils/params";
 import { applyPaymentStatus, loadPaymentSettings, payableOrder } from "./shared";
 
 // Loaded only when ENABLE_NETOPIA=true in functions/.env (see index.ts); set both secrets first:
@@ -16,7 +17,7 @@ const NETOPIA_API = { live: "https://secure.netopia-payments.com/api", sandbox: 
 const ROMANIA_ISO_CODE = 642;
 
 // Starts a payment on NETOPIA's hosted payment page (v2 API) and returns its URL
-export const createNetopiaPayment = onCall({ secrets: [netopiaApiKey] }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
+export const createNetopiaPayment = onCall({ secrets: [netopiaApiKey], enforceAppCheck }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
    const { ref, order, orderId, settings, origin } = await payableOrder(request, "netopia");
    // NETOPIA needs a new order reference for every attempt; the part before the last "_" is our order id
    const reference = `${orderId}_${Date.now().toString(36)}`;

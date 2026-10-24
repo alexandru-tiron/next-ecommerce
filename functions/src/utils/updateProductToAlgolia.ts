@@ -2,14 +2,14 @@ import { Product, SkuVariant, Variant } from "../types/product";
 import { logger } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import algoliasearch from "algoliasearch";
+import { algoliaWriteKey } from "./params";
 const algoliaAppId = defineString("ALGOLIA_APP_ID");
-const algoliaApiKey = defineString("ALGOLIA_API_WRITE_KEY");
 const algoliaIndexName = defineString("ALGOLIA_INDEX_NAME", { default: "products" });
 
 const getIndex = () => {
    try {
       const appId = algoliaAppId.value();
-      const apiKey = algoliaApiKey.value();
+      const apiKey = algoliaWriteKey.value();
       const indexName = algoliaIndexName.value();
 
       if (!appId || !apiKey) {

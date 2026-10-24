@@ -3,11 +3,12 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { OPERATION_TYPE, updateProductToAlgolia } from "../utils/updateProductToAlgolia";
 import { Product } from "../types/product";
 import { getVariants, getSkuVariants } from "../utils/productUtils";
+import { algoliaWriteKey, enforceAppCheck } from "../utils/params";
 import { getFirestore } from "firebase-admin/firestore";
 const db = getFirestore();
 
 // Full reindex of every product into Algolia. Admin-only, called from Admin → Settings.
-export const syncAllProductsToAlgolia = onCall({ timeoutSeconds: 540 }, async (request) => {
+export const syncAllProductsToAlgolia = onCall({ timeoutSeconds: 540, enforceAppCheck, secrets: [algoliaWriteKey] }, async (request) => {
    if (!request.auth) {
       throw new HttpsError("unauthenticated", "Unauthorized access");
    }

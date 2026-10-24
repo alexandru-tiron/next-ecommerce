@@ -1,11 +1,12 @@
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "../utils/voucher";
+import { enforceAppCheck } from "../utils/params";
 const db = getFirestore();
 
 // Previews a voucher at checkout. Vouchers aren't readable by customers, so the check runs here.
 // The order function validates and applies the voucher again, so this result is only informative.
-export const checkVoucher = onCall(async (request) => {
+export const checkVoucher = onCall({ enforceAppCheck }, async (request) => {
    if (!request.auth) {
       throw new HttpsError("unauthenticated", "Utilizatorul nu este autentificat.");
    }

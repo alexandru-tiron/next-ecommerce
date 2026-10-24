@@ -116,7 +116,7 @@ The app should now be running at [http://localhost:3000](http://localhost:3000)
 
 The store queries an Algolia index named `products` plus sorted replicas: `products_price_asc`, `products_price_desc`, `products_created_at_desc` (`desc(created_at._seconds)`), `products_sold_desc`, `products_sold_asc`, `products_name_asc` and `products_name_desc`. Filtering uses `category_name`, `subcategory_name`, `brand`, `sku_variants.name` and `product_code` (set as filter-only facets) and the numeric `price`.
 
-The Cloud Functions keep the index in sync when products change; they read `ALGOLIA_APP_ID`, `ALGOLIA_API_WRITE_KEY` and `ALGOLIA_INDEX_NAME` from `functions/.env`. Admins can rebuild the whole index from **Admin → Settings → Reindex search**.
+The Cloud Functions keep the index in sync when products change; they read `ALGOLIA_APP_ID` and `ALGOLIA_INDEX_NAME` from `functions/.env`, and the write key from Secret Manager (`firebase functions:secrets:set ALGOLIA_API_WRITE_KEY`). Admins can rebuild the whole index from **Admin → Settings → Reindex search**.
 
 ### Card payments (Stripe and NETOPIA Payments)
 
@@ -144,9 +144,10 @@ npm run lint       # ESLint
 npm run typecheck  # TypeScript
 npm test           # Vitest unit tests (src/**/*.test.ts)
 npm --prefix functions test   # Cloud Functions unit tests (functions/test)
+npm run test:rules # Firestore and Storage rules tests on the emulators (needs Java and the Firebase CLI)
 ```
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs these checks and a production build on every push to `main` and on every pull request. The build needs the `NEXT_PUBLIC_*` values from `.example.env`, so add them as repository variables (Settings → Secrets and variables → Actions → Variables).
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs these checks, a dependency audit and a production build on every push to `main` and on every pull request. The build needs the `NEXT_PUBLIC_*` values from `.example.env`, so add them as repository variables (Settings → Secrets and variables → Actions → Variables).
 
 ## Deployment
 
@@ -258,4 +259,4 @@ Everything the store needs is in this repository:
 -  `firestore.indexes.json`: the Firestore indexes the queries need.
 -  `scripts/`: demo data, search index setup and reindexing, and the script that creates the first admin (see [scripts/README.md](scripts/README.md)).
 
-Copy `.firebaserc.example` to `.firebaserc` and `functions/.example.env` to `functions/.env` with your own values before deploying.
+Copy `.firebaserc.example` to `.firebaserc` and `functions/.example.env` to `functions/.env` with your own values before deploying. Then follow [docs/SECURITY-SETUP.md](docs/SECURITY-SETUP.md) to deploy the rules, store the secrets and turn on App Check.

@@ -36,8 +36,7 @@ const Contact = () => {
       fetchInfo();
    }, []);
 
-   const onSubmit = async (data: FormData) => {
-      console.log("Form Data:", data); // Log the submitted form data
+   const onSubmit = async () => {
 
       try {
          // Simulate an API call (replace with real API endpoint)

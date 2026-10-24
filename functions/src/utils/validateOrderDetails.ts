@@ -1,9 +1,9 @@
 import { logger } from "firebase-functions/v1";
 import { Address, CartProduct } from "../types/order";
-import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import { Timestamp } from "firebase-admin/firestore";
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Function to validate products against database
 export async function validateProducts(
@@ -18,8 +18,6 @@ export async function validateProducts(
 
    for (const product of products) {
       try {
-         logger.info("Order Product:", JSON.stringify(product));
-
          // Get product from Firestore
          const productSnap = await db.collection("Products").doc(product.product_id).get();
 
@@ -33,7 +31,6 @@ export async function validateProducts(
          }
 
          const productData = productSnap.data();
-         logger.info("Order Product Firestore:", JSON.stringify(productData));
 
          // Validate basic product info
          if (productData?.name !== product.product_name || productData?.product_code !== product.product_code) {
@@ -52,8 +49,6 @@ export async function validateProducts(
 
             if (!variantSnap.exists || variantSnap.data()?.name !== product.variant_name) {
                variantValid = false;
-            } else {
-               logger.info("Order Product Variant Firestore:", JSON.stringify(variantSnap.data()));
             }
          }
 
@@ -75,7 +70,6 @@ export async function validateProducts(
 
          if (product.sku_variant_id) {
             const skuVariantSnap = await db.doc(`Products/${product.product_id}/SkuVariants/${product.sku_variant_id}`).get();
-            logger.info("Order Product skuVariant Firestore:", JSON.stringify(skuVariantSnap.data()));
             let skuVariantData = skuVariantSnap.data();
             if (!skuVariantSnap.exists || skuVariantSnap.data()?.name !== product.sku_variant_name) {
                skuVariantValid = false;

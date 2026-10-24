@@ -12,6 +12,21 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    // An optional field: missing, or a string of at most max characters
+    function optionalString(data, field, max) {
+      return !(field in data) || (data[field] is string && data[field].size() <= max);
+    }
+    // An optional short field that forms may save as text or as a number (street number, floor, postal code)
+    function optionalShortValue(data, field, max) {
+      return optionalString(data, field, max) || data[field] is number;
+    }
+    // Fields a create may set, or an update may change
+    function createsOnly(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    function changesOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
 
     // Default rule - deny all access unless explicitly allowed.
     // Cloud Functions use the Admin SDK and are not affected by these rules.
@@ -62,24 +77,99 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // User profiles - only the user and admins can read them
+    // User profiles - only the user and admins can read them.
+    // The onUserCreate function creates the profile; the app may create it first while signing up.
     match /Users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create, update: if isOwner(userId);
-
-      match /Addresses/{addressId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow write: if isOwner(userId);
+      function profileFields() {
+        return ['email', 'first_name', 'last_name', 'phone_no', 'shipping_address_id', 'billing_address_id', 'created_at'];
+      }
+      function validProfile(data) {
+        return optionalString(data, 'email', 254)
+          && optionalString(data, 'first_name', 100)
+          && optionalString(data, 'last_name', 100)
+          && optionalString(data, 'phone_no', 30)
+          && optionalString(data, 'shipping_address_id', 128)
+          && optionalString(data, 'billing_address_id', 128);
       }
 
+      allow read: if isOwner(userId) || isAdmin();
+      // The e-mail must be the account's sign-in e-mail, and created_at the server's time
+      allow create: if isOwner(userId)
+        && createsOnly(profileFields())
+        && validProfile(request.resource.data)
+        && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.email)
+        && (!('created_at' in request.resource.data) || request.resource.data.created_at == request.time);
+      // created_at never changes, and the e-mail only changes to follow the account's sign-in e-mail
+      allow update: if isOwner(userId)
+        && changesOnly(['email', 'first_name', 'last_name', 'phone_no', 'shipping_address_id', 'billing_address_id'])
+        && validProfile(request.resource.data)
+        && (!('email' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.email == request.auth.token.email);
+
+      match /Addresses/{addressId} {
+        function addressFields() {
+          return ['city', 'county', 'postal_code', 'street', 'street_no', 'apartment', 'building', 'building_no', 'floor', 'intercom', 'details', 'business', 'business_details'];
+        }
+        function validBusinessDetails(details) {
+          return details is map
+            && details.keys().hasOnly(['name', 'cui', 'reg_no', 'bank', 'iban'])
+            && optionalString(details, 'name', 200)
+            && optionalShortValue(details, 'cui', 20)
+            && optionalShortValue(details, 'reg_no', 40)
+            && optionalString(details, 'bank', 100)
+            && optionalString(details, 'iban', 34);
+        }
+        function validAddress(data) {
+          return data.city is string && data.city.size() <= 100
+            && data.county is string && data.county.size() <= 100
+            && data.street is string && data.street.size() <= 200
+            && optionalShortValue(data, 'postal_code', 20)
+            && optionalShortValue(data, 'street_no', 20)
+            && optionalShortValue(data, 'apartment', 20)
+            && optionalShortValue(data, 'building', 50)
+            && optionalShortValue(data, 'building_no', 20)
+            && optionalShortValue(data, 'floor', 20)
+            && optionalShortValue(data, 'intercom', 20)
+            && optionalString(data, 'details', 500)
+            && (!('business' in data) || data.business is bool)
+            && (!('business_details' in data) || validBusinessDetails(data.business_details));
+        }
+
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && createsOnly(addressFields()) && validAddress(request.resource.data);
+        allow update: if isOwner(userId) && changesOnly(addressFields()) && validAddress(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      // Prices saved in the cart are only for display: the order function reads every price from the catalogue
       match /Cart/{itemId} {
-        allow read, write: if isOwner(userId);
+        function cartFields() {
+          return ['product_id', 'product_name', 'product_code', 'product_image', 'variant_id', 'variant_name', 'sku_variant_id', 'sku_variant_name', 'product_price', 'discount', 'discount_price', 'quantity'];
+        }
+        // The quantity limit matches MAX_LINE_QUANTITY in functions/src/utils/orderLimits.ts
+        function validCartItem(data) {
+          return data.product_id is string && data.product_id.size() <= 128
+            && data.quantity is int && data.quantity >= 1 && data.quantity <= 999
+            && optionalString(data, 'product_name', 300)
+            && optionalString(data, 'product_code', 100)
+            && optionalString(data, 'product_image', 2048)
+            && optionalString(data, 'variant_id', 128)
+            && optionalString(data, 'variant_name', 200)
+            && optionalString(data, 'sku_variant_id', 128)
+            && optionalString(data, 'sku_variant_name', 200)
+            && (!('product_price' in data) || data.product_price is number)
+            && (!('discount_price' in data) || data.discount_price is number)
+            && (!('discount' in data) || data.discount is bool);
+        }
+
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && createsOnly(cartFields()) && validCartItem(request.resource.data);
+        allow update: if isOwner(userId) && changesOnly(cartFields()) && validCartItem(request.resource.data);
       }
 
       // Saved products; the document id is the product id
       match /Wishlist/{productId} {
         allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && request.resource.data.keys().hasOnly(["added_at"]);
+        allow create, update: if isOwner(userId) && request.resource.data.keys().hasOnly(["added_at"]) && request.resource.data.added_at == request.time;
       }
     }
 

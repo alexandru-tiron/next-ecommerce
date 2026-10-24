@@ -1,19 +1,19 @@
 import { logger } from "firebase-functions/v1";
-import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 const nodemailer = require("nodemailer");
 import { defineString } from "firebase-functions/params";
+import { emailPassword } from "./params";
 // Define parameters 
 const emailUser = defineString("EMAIL_USER");
-const emailPassword = defineString("EMAIL_PASSWORD");
 
 // Function to send email confirmation to customer
 export async function sendCustomerEmail(userEmail: string, orderId: string, orderData: any, updateOrder: boolean) {
     try {
-       logger.info(`[Order] Sending confirmation email to ${userEmail} for order ${orderId}`);
+       logger.info(`[Order] Sending confirmation email for order ${orderId}`);
  
        // Get company settings
        // Store details (name, support e-mail, phone) are kept in Settings/Info
-       const settingsSnapshot = await admin.firestore().collection("Settings").doc("Info").get();
+       const settingsSnapshot = await getFirestore().collection("Settings").doc("Info").get();
        const settingsData = settingsSnapshot.data();
  
        // Get email credentials at runtime
@@ -113,7 +113,7 @@ export async function sendCustomerEmail(userEmail: string, orderId: string, orde
        };
  
        await transporter.sendMail(mailOptions);
-       logger.info(`[Email] Confirmation email sent to ${userEmail} for order ${orderId}`);
+       logger.info(`[Email] Confirmation email sent for order ${orderId}`);
     } catch (error) {
        logger.error(`[Email] Error sending customer email:`, error);
     }

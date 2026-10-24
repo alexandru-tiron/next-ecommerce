@@ -4,48 +4,55 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Helper functions
     function isAdmin() {
-      return request.auth.token.isAdmin == true;
+      return request.auth != null && request.auth.token.get('isAdmin', false) == true;
     }
-    function validContentType() {
-      return request.resource.contentType.matches('image/.*');
+    // Photos up to 5 MB, SVG icons and logos up to 200 KB
+    function validImage() {
+      return (request.resource.contentType.matches('image/(png|jpeg|webp|avif|gif)') && request.resource.size <= 5 * 1024 * 1024)
+        || validSvg();
     }
-    function validSvgContentType() {
-      return request.resource.contentType == 'image/svg+xml';
+    function validSvg() {
+      return request.resource.contentType == 'image/svg+xml' && request.resource.size <= 200 * 1024;
     }
     // Default rule - deny all access unless explicitly allowed
     match /{allPaths=**} {
       allow read, write: if false;
     }
-    
-    // Product images - managed by admins
+
+    // Everyone can open a file by its link; only admins can list folders, upload, replace and delete
+
+    // Product images
     match /Products/{productId}/{allImages=**} {
-      // Anyone can view product images
-      allow read: if true;
-      // Only admins can upload or modify product images
-      allow write: if isAdmin() && validContentType();
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin() && validImage();
     }
-    
+
     // Category images and icons
     match /Categories/Icons/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin() && validSvgContentType();
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin() && validSvg();
     }
-    
+
     match /Categories/Images/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin() && validContentType();
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin() && validImage();
     }
-    
+
     // Brand logos
     match /Brands/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin() && validContentType();
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin() && validImage();
     }
-    
+
     // Slides
     match /Slides/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin() && validContentType();
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin() && validImage();
     }
-	}
-} 
+  }
+}

@@ -1,26 +1,27 @@
 import * as functions from "firebase-functions";
 import { logger } from "firebase-functions/v2";
-import admin from "firebase-admin";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { onCall } from "firebase-functions/https";
 import axios from "axios";
 import { OrderData } from "../types/order";
 import { defineString, defineSecret } from "firebase-functions/params";
 import { getVatRate, vatIncluded } from "../utils/vat";
-const db = admin.firestore();
+import { enforceAppCheck } from "../utils/params";
+const db = getFirestore();
 // Define parameters for Facturis API credentials
 const facturisApiKey = defineSecret("FACTURIS_API_KEY");
 const facturisUsername = defineString("FACTURIS_USERNAME");
-const facturisPassword = defineString("FACTURIS_PASSWORD");
+const facturisPassword = defineSecret("FACTURIS_PASSWORD");
 const facturisCUI = defineString("FACTURIS_CUI");
 
 export const createInvoice = onCall(
    {
-      enforceAppCheck: false, // Set to true in production
+      enforceAppCheck,
       timeoutSeconds: 60,
       cors: false,
       concurrency: 5, // Increased to handle legitimate traffic
       maxInstances: 20, // Increased to handle spikes
-      secrets: [facturisApiKey],
+      secrets: [facturisApiKey, facturisPassword],
    },
    async (request) => {
       try {
@@ -193,7 +194,7 @@ export const createInvoice = onCall(
          };
 
          // Call the Facturis API to create the invoice
-         logger.info("[Facturis] Sending invoice request:", JSON.stringify(facturisPayload));
+         logger.info(`[Facturis] Sending invoice request for order ${orderId} (${dataProd.length} lines)`);
 
          const facturisResponse = await axios.post("https://api.facturis-online.ro/api/", `json=${JSON.stringify(facturisPayload)}`, {
             headers: {
@@ -204,10 +205,8 @@ export const createInvoice = onCall(
          // Process the response
          const responseData = facturisResponse.data;
 
-         logger.info("[Facturis] API response:", JSON.stringify(responseData));
-
          if (responseData.success !== 2000) {
-            logger.error("[Facturis] Error creating invoice:", responseData);
+            logger.error(`[Facturis] Error creating invoice for order ${orderId}:`, { success: responseData.success, result: responseData.result });
             throw new functions.https.HttpsError("internal", "Eroare la crearea facturii: " + (responseData.result || "Eroare necunoscută"));
          }
 
@@ -221,8 +220,8 @@ export const createInvoice = onCall(
             invoice_id: invoiceId,
             invoice_number: invoiceNumber,
             invoice_url: invoiceUrl,
-            invoice_date: admin.firestore.FieldValue.serverTimestamp(),
-            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            invoice_date: FieldValue.serverTimestamp(),
+            updated_at: FieldValue.serverTimestamp(),
          });
 
          logger.info(`[Facturis] Successfully created invoice ${invoiceNumber} for order ${orderId}`);
