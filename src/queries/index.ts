@@ -3,5 +3,8 @@ export { getCategData, refreshCategData } from "./fetchCategData";
 export { getInfoData } from "./fetchInfoData";
 export { getNotfData } from "./fetchNotfData";
 export { getShippData } from "./fetchShippData";
+export { getTaxData } from "./fetchTaxData";
 export { getProductOfTheMonth } from "./fetchProductOfTheMonth";
 export { getSlides } from "./fetchSlides";
+export { getProductDoc, getRelatedProducts, getProductCards } from "./fetchProductCards";
+export type { ProductCardData } from "./fetchProductCards";

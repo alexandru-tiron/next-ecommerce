@@ -12,14 +12,20 @@ import { db } from "@/lib/firebaseInit";
 import { Timestamp } from "firebase/firestore";
 import { CartProduct } from "@/types/product";
 import { useTranslations } from "next-intl";
+import OrderStatusTimeline from "@/components/profile/OrderStatusTimeline";
+import VatNote from "@/components/common/VatNote";
+import PaymentPanel from "@/components/payments/PaymentPanel";
+import { useSearchParams } from "next/navigation";
 interface OrderDetailsProps {
-   params: Promise<{ id: string }> | { id: string };
+   params: Promise<{ id: string }>;
 }
 
 export default function OrderDetailsPage({ params }: OrderDetailsProps) {
    const { user } = useAuthContext();
    const t = useTranslations("Orders");
-   const paramValues = use(params as unknown as Promise<{ id: string }>) as { id: string };
+   // ?payment=cancelled|failed when coming back from a payment page
+   const paymentNotice = useSearchParams().get("payment");
+   const paramValues = use(params);
    const id = paramValues.id;
    const router = useRouter();
    const [order, setOrder] = useState<Order | null>(null);
@@ -159,7 +165,9 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
       return sum + price * product.quantity;
    }, 0);
 
-   const total = subtotal + order.shipping_price;
+   // The total stored on the order is what the customer paid (after any voucher)
+   const voucherDiscount = order.voucher_discount ?? 0;
+   const total = order.total ?? subtotal + order.shipping_price - voucherDiscount;
 
    // Format date
    const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanoseconds: number }) => {
@@ -190,6 +198,14 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
          </div>
 
          <h1 className="text-xl sm:text-2xl font-medium mb-6 sm:mb-8">{t("orderDetails")} #{order.id}</h1>
+
+         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6">
+            <h2 className="text-lg font-medium mb-4">{t("orderProgress")}</h2>
+            <OrderStatusTimeline status={order.status} trackingNumber={order.tracking_number} />
+            <div className="mt-6 pt-4 border-t border-gray-100">
+               <PaymentPanel orderId={order.id} order={order} notice={paymentNotice} />
+            </div>
+         </div>
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
@@ -292,8 +308,8 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                      <div className="divide-y divide-gray-50">
                         {group.variants.map((item) => {
                            const price = {
-                              price: item.product_price?.toFixed(2).split(".").map(Number) || [0, 0],
-                              discount: item.discount_price?.toFixed(2)?.split(".")?.map(Number),
+                              price: item.product_price?.toFixed(2).split(".") || ["0", "00"],
+                              discount: item.discount_price?.toFixed(2)?.split("."),
                            };
 
                            return (
@@ -345,13 +361,14 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                {order.voucher && (
                   <div className="flex justify-between mb-2 text-green-600">
                      <p>{t("discount")} {t("voucher")}:</p>
-                     <p>-0.00 Lei</p>
+                     <p>-{voucherDiscount.toFixed(2)} Lei</p>
                   </div>
                )}
                <div className="flex justify-between font-medium text-lg mt-4 pt-4 border-t border-gray-100">
                   <p>{t("total")}:</p>
                   <p>{total.toFixed(2)} Lei</p>
                </div>
+               {order.vat_rate !== undefined && <VatNote gross={total} rate={order.vat_rate} className="mt-1" />}
             </div>
          </div>
       </div>

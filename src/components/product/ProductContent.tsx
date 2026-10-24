@@ -6,6 +6,8 @@ import ProductImages from "./ProductImages";
 import { twMerge } from "tailwind-merge";
 import Add from "./Add";
 import { Reviews } from "./Reviews";
+import ShareButtons from "./ShareButtons";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 async function trowError(e: HTMLUListElement) {
@@ -19,33 +21,31 @@ async function trowError(e: HTMLUListElement) {
 const ProductContent = ({ product, variants, skuVariants, reviews }: { product: Product; variants: Variant[]; skuVariants: SkuVariant[]; reviews: Review[] }) => {
    // Client-side state for user selections
    const t = useTranslations("ProductPage");
-   const [price, setPrice] = useState<{ price: number[]; discount?: number[] } | null>(null);
+   const [price, setPrice] = useState<{ price: string[]; discount?: string[] } | null>(null);
    const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
    const [selectedSkuVariant, setSelectedSkuVariant] = useState<SkuVariant | null>(null);
 
    useEffect(() => {
       if (selectedSkuVariant) {
          setPrice({
-            price: selectedSkuVariant.price.toFixed(2).split(".").map(Number),
-            discount: selectedSkuVariant.discount_price?.toFixed(2).split(".").map(Number),
+            price: selectedSkuVariant.price.toFixed(2).split("."),
+            discount: selectedSkuVariant.discount_price?.toFixed(2).split("."),
          });
       } else if (skuVariants.length > 0) {
          setPrice({
             price: skuVariants
                .sort((a, b) => a.price - b.price)[0]
                .price.toFixed(2)
-               .split(".")
-               .map(Number),
+               .split("."),
             discount: skuVariants
                .sort((a, b) => a.price - b.price)[0]
                .discount_price?.toFixed(2)
-               .split(".")
-               .map(Number),
+               .split("."),
          });
       } else {
          setPrice({
-            price: product.price.toFixed(2).split(".").map(Number),
-            discount: product.discount_price?.toFixed(2).split(".").map(Number),
+            price: product.price.toFixed(2).split("."),
+            discount: product.discount_price?.toFixed(2).split("."),
          });
       }
    }, [product.discount_price, product.price, selectedSkuVariant, skuVariants]);
@@ -68,11 +68,15 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
             </div>
             {/* TEXTS */}
             <div className="w-full lg:w-1/2 flex flex-col gap-4">
-               <h1 className="text-4xl font-medium">{product.name}</h1>
+               <div className="flex items-start justify-between gap-4">
+                  <h1 className="text-4xl font-medium">{product.name}</h1>
+                  <WishlistButton productId={product.id} size={24} className="shrink-0 border border-gray-200" />
+               </div>
                <Link href={`/list?brand=${product.brand}`} className=" text-sm font-semibold">
                   {t("brand")}: {product.brand}
                </Link>
                <p className="text-gray-500">{product.short_description}</p>
+               <ShareButtons title={product.name} image={product.product_images[0]} />
                <div className="h-[2px] bg-gray-100" />
                {price && price.discount ? (
                   <div className="flex flex-col relative ">
@@ -225,13 +229,9 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
                   </>
                )}
                {/* REVIEWS */}
-               {reviews.length > 0 && (
-                  <>
-                     <div className="h-[2px] bg-gray-100" />
-                     <h1 className="text-2xl">{t("reviews")}</h1>
-                     <Reviews reviews={reviews} />
-                  </>
-               )}
+               <div className="h-[2px] bg-gray-100" />
+               <h1 className="text-2xl">{t("reviews")}</h1>
+               <Reviews productId={product.id} reviews={reviews} />
             </div>
          </div>
       </div>

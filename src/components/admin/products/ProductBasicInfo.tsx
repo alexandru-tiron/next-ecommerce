@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { PlusCircle } from "lucide-react";
-import { Brand, Category, Product, Subcategory } from "@/types/product";
+import { Brand, Category, Product } from "@/types/product";
 import { useTranslations } from "next-intl";
 import { getBrandData, getCategData } from "@/queries";
 interface ProductBasicInfoProps {

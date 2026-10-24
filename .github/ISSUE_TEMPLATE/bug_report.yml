@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in the store or admin panel doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Security problems don't belong here:** report them privately as described in SECURITY.md.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Storefront (browsing, search, product pages)
+        - Cart or checkout
+        - Customer account
+        - Admin panel
+        - Cloud Functions (orders, e-mails, payments, search sync)
+        - Setup, deployment or scripts
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The release or commit you're running (git rev-parse --short HEAD).
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and device, Node version, and whether you run locally, on the emulators or deployed.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors or logs
+      description: Browser console errors, function logs or screenshots. Remove personal data and keys first.
+      render: shell

@@ -1,0 +1,225 @@
+{
+   "indexes": [
+      {
+         "collectionGroup": "Orders",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "status",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "date",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Orders",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "user_id",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "date",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Orders",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "user_id",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "date",
+               "order": "DESCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION_GROUP",
+         "fields": [
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "created_at",
+               "order": "DESCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "price",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "price",
+               "order": "DESCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "sold",
+               "order": "DESCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "price",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "subcategory_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "brand",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "category_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "subcategory_name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "price",
+               "order": "ASCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "Products",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "name",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "name",
+               "order": "DESCENDING"
+            }
+         ]
+      },
+      {
+         "collectionGroup": "RateLimits",
+         "queryScope": "COLLECTION",
+         "fields": [
+            {
+               "fieldPath": "ip_address",
+               "order": "ASCENDING"
+            },
+            {
+               "fieldPath": "date",
+               "order": "ASCENDING"
+            }
+         ]
+      }
+   ],
+   "fieldOverrides": []
+}

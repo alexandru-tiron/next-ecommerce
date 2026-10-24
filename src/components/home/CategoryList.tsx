@@ -7,8 +7,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const CategoryList = () => {
-   const [categ, setCateg] = useState<Category[]>([]);
+// initialCategories come from the server so the categories are in the first HTML (and visible to search engines)
+const CategoryList = ({ initialCategories = [] }: { initialCategories?: Category[] }) => {
+   const [categ, setCateg] = useState<Category[]>(initialCategories);
    const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
    const toggleCategory = (categoryId: string) => {
       setExpandedCategories((prev) => ({
@@ -17,13 +18,13 @@ const CategoryList = () => {
       }));
    };
    useEffect(() => {
+      if (initialCategories.length > 0) return;
       const fetchCateg = async () => {
          const categ = await getCategData();
          setCateg(categ);
-         console.log(categ);
       };
       fetchCateg();
-   }, []);
+   }, [initialCategories.length]);
    return (
       <div className="relative md:overflow-auto md:scrollbar-horizontal-styled">
          <div className="flex flex-col gap-4 md:flex-row md:gap-6 md:pb-2 ">

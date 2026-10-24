@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.css";
-import { v4 } from "uuid";
 
 const ProductImages = ({ items, selected }: { items: string[]; selected?: string }) => {
    return (
@@ -15,31 +14,25 @@ const ProductImages = ({ items, selected }: { items: string[]; selected?: string
          className=" h-full relative mt-4"
          selectedItem={selected ? items.indexOf(selected) : 0}
          renderThumbs={() =>
-            items.map((img) => (
-               <div key={v4()} className="w-full h-20 relative">
-                  <Image
-                     src={img}
-                     layout="fill"
-                     objectFit="contain"
-                     alt="logo"
-                     className="max-h-[500px] "
-                  ></Image>
+            items.map((img, idx) => (
+               <div key={`${idx}-${img}`} className="w-full h-20 relative">
+                  <Image src={img} fill sizes="80px" alt={`thumbnail ${idx}`} className="max-h-[500px] object-contain" />
                </div>
             ))
          }
       >
          {items.map((img, idx) => (
             <Image
-               key={v4()}
+               key={`${idx}-${img}`}
                src={img}
                alt={` preview ${idx}`}
-               // layout="responsive"
                width={650}
                height={650}
-               objectFit="contain"
+               // The gallery takes half the page from lg up, the full width below
+               sizes="(min-width: 1024px) 50vw, 100vw"
                priority={idx === 0}
                className="max-h-[500px] object-contain "
-            ></Image>
+            />
          ))}
       </Carousel>
    );

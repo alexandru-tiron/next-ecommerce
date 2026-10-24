@@ -3,9 +3,22 @@ import Filter from "@/components/product-list/Filter";
 import ProductList from "@/components/product-list/ProductList";
 import Skeleton from "@/components/product-list/Skeleton";
 import SortProducts from "@/components/product-list/SortProducts";
+import ActiveFilters from "@/components/product-list/ActiveFilters";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-export default async function ListPage({ searchParams }: { searchParams: SearchParams }) {
+import { Metadata } from "next";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
+   const params = await searchParams;
+   const t = await getTranslations("ProductList");
+   if (params.name) {
+      // Search result pages shouldn't be indexed
+      return { title: `${t("resultsFor")}: ${params.name}`, robots: { index: false, follow: true } };
+   }
+   return { title: params.subcat || params.cat || params.brand || t("allProducts") };
+}
+
+export default async function ListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
    const params = await searchParams;
    const t = await getTranslations("ProductList");
    return (
@@ -25,6 +38,7 @@ export default async function ListPage({ searchParams }: { searchParams: SearchP
                      <SortProducts currentSort={params.sort} />
                   </div>
                </div>
+               <ActiveFilters params={params} />
                <Suspense fallback={<Skeleton />}>
                   <ProductList category={params.cat} searchParams={params} />
                </Suspense>

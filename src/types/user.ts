@@ -63,6 +63,11 @@ export type Order = {
    is_business: boolean;
    voucher: boolean;
    voucher_id?: string;
+   voucher_discount?: number;
+   vat_rate?: number;
+   vat_amount?: number;
+   payment_method?: "cod" | "stripe" | "netopia";
+   payment_status?: "on_delivery" | "pending" | "paid" | "failed" | "expired" | "refunded";
    products: CartProduct[];
    status?: "pending" | "accepted" | "rejected" | "shipped" | "delivered";
    tracking_number?: string;
@@ -90,6 +95,11 @@ export type Notifications = {
    send_new_order_mails: boolean;
    send_order_status_update_mails: boolean;
    send_confirmation_mails: boolean;
+};
+
+// VAT percentage included in store prices (Settings/Tax)
+export type Tax = {
+   vat_rate: number;
 };
 
 export type Shipping = {

@@ -1,7 +1,6 @@
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
-import LayoutWrapper from "../components/navigation/LayoutWrapper";
-
+//import LayoutWrapper from "../components/navigation/LayoutWrapper";
 import { PopUpProvider } from "../context/PopupContext";
 import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
@@ -9,16 +8,40 @@ import { getLocale } from "next-intl/server";
 // import { getMessages } from 'next-intl/server';
 import { Inter, Calistoga } from "next/font/google";
 import { twMerge } from "tailwind-merge";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
+import { siteUrl, storeName } from "@/lib/siteUrl";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/components/footer/Footer";
+import StoreProvider from "@/state/StoreProvider";
+import App from "@/components/App";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const calistoga = Calistoga({ subsets: ["latin"], variable: "--font-serif", weight: ["400"] });
 
 export const metadata: Metadata = {
-   title: process.env.NEXT_PUBLIC_STORE_NAME || "Shop",
+   metadataBase: new URL(siteUrl),
+   title: {
+      default: storeName,
+      template: `%s | ${storeName}`,
+   },
    description: "E-commerce store",
+   openGraph: {
+      type: "website",
+      siteName: storeName,
+   },
+   appleWebApp: {
+      capable: true,
+      title: storeName,
+      statusBarStyle: "default",
+   },
+   icons: {
+      apple: "/icons/apple-touch-icon.png",
+   },
+};
+
+export const viewport: Viewport = {
+   themeColor: "#ffffff",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,18 +52,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
          <body className={twMerge(inter.variable, calistoga.variable, "antialiased")}>
             <NextIntlClientProvider locale={locale}>
                {/* messages={messages}> */}
-               <PopUpProvider>
-                  <AuthProvider>
-                     <CartProvider>
-                        <div className="flex flex-col min-h-screen">
-                           <Navbar />
-                           <main className="flex-grow ">{children}</main>
-                           <Footer />
-                        </div>
-                     </CartProvider>
-                  </AuthProvider>
-               </PopUpProvider>
+               <StoreProvider>
+                  <PopUpProvider>
+                     <AuthProvider>
+                        <CartProvider>
+                           <App>
+                              <div className="flex flex-col min-h-screen">
+                                 <Navbar />
+                                 <main className="flex-grow ">{children}</main>
+                                 <Footer />
+                              </div>
+                           </App>
+                        </CartProvider>
+                     </AuthProvider>
+                  </PopUpProvider>
+               </StoreProvider>
             </NextIntlClientProvider>
+            <ServiceWorkerRegister />
          </body>
       </html>
    );

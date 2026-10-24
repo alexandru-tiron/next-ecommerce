@@ -2,18 +2,31 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
+const storageBucket = process.env.NEXT_PUBLIC_STORAGEBUCKET;
+const svgrOptions = {
+   svgoConfig: {
+      plugins: [
+         {
+            name: "preset-default",
+            params: {
+               overrides: {
+                  removeViewBox: false,
+               },
+            },
+         },
+      ],
+   },
+};
 const nextConfig: NextConfig = {
    /* config options here */
-   typescript: {
-      // !! WARN !!
-      // Temporary workaround for type error during build
-      // Remove after fixing the actual type issue
-      ignoreBuildErrors: true,
-   },
-   eslint: {
-      // Temporary workaround for type error during build
-      // Remove after fixing the actual type issue
-      ignoreDuringBuilds: true,
+   // `next dev --turbopack` ignores the webpack() config below, so it needs its own rule to import *.svg as React components
+   turbopack: {
+      rules: {
+         "*.svg": {
+            loaders: [{ loader: "@svgr/webpack", options: svgrOptions }],
+            as: "*.js",
+         },
+      },
    },
    webpack(config) {
       // Grab the existing rule that handles SVG imports
@@ -36,20 +49,7 @@ const nextConfig: NextConfig = {
             resourceQuery: { not: [...(fileLoaderRule.resourceQuery?.not || []), /url/] }, // exclude if *.svg?url
             use: {
                loader: "@svgr/webpack",
-               options: {
-                  svgoConfig: {
-                     plugins: [
-                        {
-                           name: "preset-default",
-                           params: {
-                              overrides: {
-                                 removeViewBox: false,
-                              },
-                           },
-                        },
-                     ],
-                  },
-               },
+               options: svgrOptions,
             },
          }
       );
@@ -60,18 +60,38 @@ const nextConfig: NextConfig = {
       return config;
    },
    images: {
+      // Category icons are SVGs in Firebase Storage. Serve them as sandboxed attachments so an SVG can't run scripts.
       dangerouslyAllowSVG: true,
+      contentDispositionType: "attachment",
+      contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
       unoptimized: false, // Enables Next.js image optimization
+      formats: ["image/avif", "image/webp"],
+      // Uploads get a new file name, so an optimized image can be cached for a long time
+      minimumCacheTTL: 60 * 60 * 24 * 30,
       remotePatterns: [
          {
+            // Only images from this project's Storage bucket, so the optimizer can't be used as an open proxy
             protocol: "https",
-            hostname: "**", // Allows optimization for all external images
+            hostname: "firebasestorage.googleapis.com",
+            pathname: storageBucket ? `/v0/b/${storageBucket}/o/**` : "/v0/b/**",
          },
       ],
       disableStaticImages: false,
    },
    transpilePackages: ["react-responsive-carousel", "tailwindcss"],
-
+   async headers() {
+      return [
+         {
+            // The service worker must always be re-fetched so updates reach visitors
+            source: "/sw.js",
+            headers: [
+               { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+               { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+               { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+            ],
+         },
+      ];
+   },
 };
 
 export default withNextIntl(nextConfig);

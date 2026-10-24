@@ -5,17 +5,19 @@ import { getSlides } from "@/queries";
 import { useEffect, useState } from "react";
 import { Slide } from "@/types/user";
 import { useTranslations } from "next-intl";
-const Slider = () => {
+// initialSlides come from the server so the first slide (the largest image on the page) renders without waiting for JavaScript
+const Slider = ({ initialSlides = [] }: { initialSlides?: Slide[] }) => {
    const t = useTranslations("HomePage");
    const [current, setCurrent] = useState(0);
-   const [slides, setSlides] = useState<Slide[]>([]);
+   const [slides, setSlides] = useState<Slide[]>(() => [...initialSlides].sort((a, b) => a.order - b.order));
    useEffect(() => {
+      if (initialSlides.length > 0) return;
       const fetchSlides = async () => {
          const newSlides = await getSlides();
          setSlides(newSlides.sort((a, b) => a.order - b.order));
       };
       fetchSlides();
-   }, []);
+   }, [initialSlides.length]);
 
    useEffect(() => {
       const interval = setInterval(() => {
@@ -28,7 +30,7 @@ const Slider = () => {
    return (
       <div className="h-[60vh] overflow-hidden relative">
          <div className="w-max h-full flex transition-all ease-in-out duration-1000" style={{ transform: `translateX(-${current * 100}vw)` }}>
-            {slides.map((slide) => {
+            {slides.map((slide, index) => {
                let background;
                if (slide.background) {
                   const isGradient = slide.background.includes("gradient");
@@ -98,7 +100,7 @@ const Slider = () => {
                      </div>
                      {/* IMAGE CONTAINER */}
                      <div className="h-1/2 xl:w-1/2 xl:h-full relative">
-                        <Image src={slide.image} alt="" fill sizes="100%" className="object-cover " />
+                        <Image src={slide.image} alt="" fill sizes="(min-width: 1280px) 50vw, 100vw" priority={index === 0} className="object-cover " />
                      </div>
                   </div>
                );

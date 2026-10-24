@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # The Firebase/Algolia config is public (it ships in the browser bundle), so it's read from repository variables
+    env:
+      NEXT_PUBLIC_STORE_NAME: ${{ vars.NEXT_PUBLIC_STORE_NAME }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      NEXT_PUBLIC_APIKEY: ${{ vars.NEXT_PUBLIC_APIKEY }}
+      NEXT_PUBLIC_AUTHDOMAIN: ${{ vars.NEXT_PUBLIC_AUTHDOMAIN }}
+      NEXT_PUBLIC_PROJECTID: ${{ vars.NEXT_PUBLIC_PROJECTID }}
+      NEXT_PUBLIC_STORAGEBUCKET: ${{ vars.NEXT_PUBLIC_STORAGEBUCKET }}
+      NEXT_PUBLIC_MESSAGINGSENDERID: ${{ vars.NEXT_PUBLIC_MESSAGINGSENDERID }}
+      NEXT_PUBLIC_APPID: ${{ vars.NEXT_PUBLIC_APPID }}
+      NEXT_PUBLIC_MEASUREMENTID: ${{ vars.NEXT_PUBLIC_MEASUREMENTID }}
+      NEXT_PUBLIC_ALGOLIA_APP_ID: ${{ vars.NEXT_PUBLIC_ALGOLIA_APP_ID }}
+      NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: ${{ vars.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      # Builds the TypeScript and runs the unit tests
+      - run: npm test
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Scans the full git history for committed keys and passwords
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

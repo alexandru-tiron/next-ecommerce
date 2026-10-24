@@ -1,6 +1,12 @@
 import { Instagram, Facebook, Twitter } from "lucide-react";
 import { getInfoData, getShippData } from "@/queries";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+   const t = await getTranslations("AboutUs");
+   return { title: t("aboutUs") };
+}
 
 export default async function AboutUs() {
    const info = await getInfoData();

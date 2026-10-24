@@ -57,8 +57,8 @@ const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) =
                         <div className="divide-y divide-gray-50">
                            {group.variants.map((item) => {
                               const price = {
-                                 price: item.product_price?.toFixed(2).split(".").map(Number) || [0, 0],
-                                 discount: item.discount_price?.toFixed(2)?.split(".")?.map(Number),
+                                 price: item.product_price?.toFixed(2).split(".") || ["0", "00"],
+                                 discount: item.discount_price?.toFixed(2)?.split("."),
                               };
 
                               return (

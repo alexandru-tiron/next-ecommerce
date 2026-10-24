@@ -97,7 +97,6 @@ export default function ProductsPage() {
       const fetchProducts = async () => {
          try {
             setIsLoading(true);
-            console.log("Fetching products data from Algolia...");
 
             // Build filter conditions
             const filterConditions = [];
@@ -153,9 +152,7 @@ export default function ProductsPage() {
                ],
             };
 
-            console.log("Search request:", searchRequest);
             const { results } = await client.search(searchRequest);
-            console.log("Search response:", results[0]);
 
             const searchResult = results[0] as SearchResponse<Product>;
             const mappedHits = searchResult.hits.map((hit) => ({

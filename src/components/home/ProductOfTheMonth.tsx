@@ -16,7 +16,7 @@ export const ProductOfTheMonth = async () => {
             <div className="flex flex-col md:flex-row items-center gap-8">
                {/* Product Image */}
                <div className="w-full md:w-1/2 relative h-[400px]">
-                  <Image src={productOfTheMonth.product_images[0]} alt={productOfTheMonth.name} fill className="object-contain" priority />
+                  <Image src={productOfTheMonth.product_images[0]} alt={productOfTheMonth.name} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-contain" />
                </div>
 
                {/* Product Info */}

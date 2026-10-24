@@ -3,9 +3,10 @@ import { CheckCircle, Truck, ShoppingBag } from "lucide-react";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import PaymentResult from "@/components/payments/PaymentResult";
 
 // Create a client component that uses useSearchParams
-const SuccessContent = async ({ id }: { id: string }) => {
+const SuccessContent = async ({ id, paidByCard }: { id: string; paidByCard: boolean }) => {
    const t = await getTranslations("Checkout");
    return (
       <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 pb-16">
@@ -17,6 +18,9 @@ const SuccessContent = async ({ id }: { id: string }) => {
                <h1 className="text-2xl font-semibold mb-2">{t("orderSuccess")}</h1>
                <p className="text-gray-600">{t("orderSuccessDescription")}</p>
             </div>
+
+            {/* After a card payment, the result arrives through the provider's webhook */}
+            {paidByCard && <PaymentResult orderId={id} />}
 
             <div className="border-t border-b border-gray-100 py-6 mb-6">
                <div className="flex justify-between mb-4">
@@ -57,8 +61,8 @@ const SuccessContent = async ({ id }: { id: string }) => {
 };
 
 // Main component with Suspense boundary
-const SuccessPage = async ({ searchParams }: { searchParams: { order: string } }) => {
-   const { order } = await searchParams;
+const SuccessPage = async ({ searchParams }: { searchParams: Promise<{ order?: string; payment?: string }> }) => {
+   const { order, payment } = await searchParams;
    if (!order) {
       notFound();
    }
@@ -72,7 +76,7 @@ const SuccessPage = async ({ searchParams }: { searchParams: { order: string } }
             </div>
          }
       >
-         <SuccessContent id={order} />
+         <SuccessContent id={order} paidByCard={payment === "stripe" || payment === "netopia"} />
       </Suspense>
    );
 };

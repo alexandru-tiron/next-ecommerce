@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import WishlistLink from "@/components/wishlist/WishlistLink";
 import SearchBar from "./SearchBar";
 import NavIcons from "./NavIcons";
 import Menu from "./Menu";
@@ -49,7 +50,8 @@ const Navbar = () => {
                   <SearchBar setIsSearchOpen={setIsSearchOpen} className=" md:flex" />
                </div>
             )}
-            <div className="flex items-center justify-between gap-8">
+            <div className="flex items-center justify-between gap-6">
+               <WishlistLink />
                <NavIcons isSearchOpen={isSearchOpen} setIsSearchOpen={setIsSearchOpen} />
             </div>
          </div>

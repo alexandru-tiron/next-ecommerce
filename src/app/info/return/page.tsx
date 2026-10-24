@@ -1,5 +1,11 @@
 import { getInfoData } from "@/queries";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+   const t = await getTranslations("Return");
+   return { title: t("returnTitle") };
+}
 
 export default async function Return() {
    const info = await getInfoData();

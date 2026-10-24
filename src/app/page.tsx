@@ -6,22 +6,26 @@ import CategoryList from "../components/home/CategoryList";
 import { FeaturedBrands } from "../components/home/FeaturedBrands";
 import { WhyChooseUs } from "../components/home/WhyChooseUs";
 import { ProductOfTheMonth } from "../components/home/ProductOfTheMonth";
+import RecentlyViewed from "../components/product/RecentlyViewed";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { getCategData, getSlides } from "@/queries";
 
 export default async function Home() {
-   const t = await getTranslations("HomePage");
+   const [t, slides, categories] = await Promise.all([getTranslations("HomePage"), getSlides(), getCategData()]);
+   // Plain objects only: these are passed to client components
+   const initialSlides = slides.map(({ order, title, description, image, url, background }) => ({ order, title, description, image, url, background }));
    return (
       <main className="min-h-screen bg-gray-50">
          {/* Hero Section */}
-         <Slider />
+         <Slider initialSlides={initialSlides} />
 
          {/* Categories Section */}
          <section className="py-16">
             <div className="relative lg:container mx-auto px-2 md:px-4 lg:px-8 xl:px-16 2xl:px-32">
                <h1 className="text-3xl font-light mb-12 text-center">{t("categories")}</h1>
                <Suspense fallback={<Skeleton />}>
-                  <CategoryList />
+                  <CategoryList initialCategories={categories} />
                </Suspense>
             </div>
          </section>
@@ -61,6 +65,9 @@ export default async function Home() {
                </Suspense>
             </div>
          </section>
+
+         {/* Recently Viewed Section (only rendered when the visitor has viewed products) */}
+         <RecentlyViewed className="container mx-auto px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64 py-16" />
 
          {/* Featured Brands Section */}
          <FeaturedBrands />

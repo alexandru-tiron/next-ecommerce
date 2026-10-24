@@ -13,7 +13,7 @@ import { CartProduct } from "@/types/product";
 
 // Updated interface to fix Next.js 15 type error
 interface OrderDetailPageProps {
-   params: Promise<{ id: string }> | { id: string };
+   params: Promise<{ id: string }>;
 }
 
 // Add the timestamp helper function
@@ -21,9 +21,13 @@ const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanosec
    return "seconds" in timestamp ? timestamp.seconds : timestamp._seconds;
 };
 
+// Payment labels (this page uses Romanian labels throughout)
+const PAYMENT_METHOD_LABELS = { cod: "Ramburs", stripe: "Card (Stripe)", netopia: "Card (NETOPIA)" } as const;
+const PAYMENT_STATUS_LABELS = { on_delivery: "la livrare", pending: "în așteptare", paid: "plătită", failed: "eșuată", expired: "expirată", refunded: "rambursată" } as const;
+
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
    const router = useRouter();
-   const paramValues = use(params as unknown as Promise<{ id: string }>) as { id: string };
+   const paramValues = use(params);
    const id = paramValues.id;
    const [order, setOrder] = useState<Order | null>(null);
    const [loading, setLoading] = useState(true);
@@ -252,6 +256,12 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         {formatStatus(order.status)}
                      </span>
                   </div>
+                  <div className="flex justify-between">
+                     <span className="text-gray-500">Plată:</span>
+                     <span className={`font-medium ${order.payment_status === "paid" ? "text-green-600" : order.payment_status === "failed" || order.payment_status === "expired" ? "text-red-600" : order.payment_status === "pending" ? "text-yellow-600" : "text-gray-600"}`}>
+                        {PAYMENT_METHOD_LABELS[order.payment_method ?? "cod"]} · {PAYMENT_STATUS_LABELS[order.payment_status ?? "on_delivery"]}
+                     </span>
+                  </div>
                   {order.tracking_number && (
                      <div className="flex justify-between">
                         <span className="text-gray-500">AWB#:</span>
@@ -260,16 +270,28 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   )}
                   <div className="flex justify-between">
                      <span className="text-gray-500">Subtotal:</span>
-                     <span className="font-medium">{order.total - order.shipping_price} Lei</span>
+                     <span className="font-medium">{(order.total - order.shipping_price + (order.voucher_discount ?? 0)).toFixed(2)} Lei</span>
                   </div>
                   <div className="flex justify-between">
                      <span className="text-gray-500">Transport:</span>
-                     <span className="font-medium">{order.shipping_price} Lei</span>
+                     <span className="font-medium">{order.shipping_price.toFixed(2)} Lei</span>
                   </div>
+                  {order.voucher && order.voucher_id && (
+                     <div className="flex justify-between text-green-700">
+                        <span>Voucher {order.voucher_id}:</span>
+                        <span className="font-medium">-{(order.voucher_discount ?? 0).toFixed(2)} Lei</span>
+                     </div>
+                  )}
                   <div className="flex justify-between">
                      <span className="text-gray-500">Total:</span>
-                     <span className="font-medium">{order.total} Lei</span>
+                     <span className="font-medium">{order.total.toFixed(2)} Lei</span>
                   </div>
+                  {order.vat_rate !== undefined && order.vat_amount !== undefined && (
+                     <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">TVA inclus ({order.vat_rate}%):</span>
+                        <span>{order.vat_amount.toFixed(2)} Lei</span>
+                     </div>
+                  )}
                </div>
             </div>
 
@@ -393,8 +415,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                      <div className="divide-y divide-gray-50">
                         {group.variants.map((item) => {
                            const price = {
-                              price: item.product_price?.toFixed(2).split(".").map(Number) || [0, 0],
-                              discount: item.discount_price?.toFixed(2)?.split(".")?.map(Number),
+                              price: item.product_price?.toFixed(2).split(".") || ["0", "00"],
+                              discount: item.discount_price?.toFixed(2)?.split("."),
                            };
 
                            return (

@@ -75,8 +75,7 @@ const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanosec
 };
 
 // Status display helper
-const getStatusDisplay = (status: string) => {
-   const t = useTranslations();
+const getStatusDisplay = (status: string, t: ReturnType<typeof useTranslations>) => {
    switch (status) {
       case "pending":
          return { text: t("Orders.pending"), class: "bg-yellow-100 text-yellow-800" };
@@ -106,7 +105,7 @@ const RecentOrdersTable = ({ orders }: { orders: ExtendedOrder[] }) => {
       <div className="block sm:hidden divide-y divide-gray-200">
          {orders.length > 0 ? (
             orders.map((order) => {
-               const statusDisplay = getStatusDisplay(order.status || "pending");
+               const statusDisplay = getStatusDisplay(order.status || "pending", t);
                return (
                   <div key={order.id} className="p-4">
                      <div className="flex justify-between items-start mb-2">
@@ -156,7 +155,7 @@ const RecentOrdersTable = ({ orders }: { orders: ExtendedOrder[] }) => {
             <tbody className="bg-white divide-y divide-gray-200">
                {orders.length > 0 ? (
                   orders.map((order) => {
-                     const statusDisplay = getStatusDisplay(order.status || "pending");
+                     const statusDisplay = getStatusDisplay(order.status || "pending", t);
                      return (
                         <tr key={order.id} className="hover:bg-gray-50">
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">

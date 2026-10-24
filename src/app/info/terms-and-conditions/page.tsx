@@ -1,5 +1,11 @@
 import { getInfoData, getShippData } from "@/queries";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+   const t = await getTranslations("TermsAndConditions");
+   return { title: t("termsAndConditionsTitle") };
+}
 
 export default async function TermsAndConditions() {
    const info = await getInfoData();

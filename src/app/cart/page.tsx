@@ -5,8 +5,9 @@ import Link from "next/link";
 import { CartProduct } from "@/types/product";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import VatNote from "@/components/common/VatNote";
 
-export default async function CartPage() {
+export default function CartPage() {
    const t = useTranslations();
    const { cart, subTotal, isLoading, removeItem } = useCartContext();
    console.log(cart);
@@ -53,8 +54,8 @@ export default async function CartPage() {
                   <div className="divide-y divide-gray-50">
                      {group.variants.map((item) => {
                         const price = {
-                           price: item.product_price?.toFixed(2).split(".").map(Number) || [0, 0],
-                           discount: item.discount_price?.toFixed(2)?.split(".")?.map(Number),
+                           price: item.product_price?.toFixed(2).split(".") || ["0", "00"],
+                           discount: item.discount_price?.toFixed(2)?.split("."),
                         };
 
                         return (
@@ -111,6 +112,7 @@ export default async function CartPage() {
                      <span className="font-medium">{t("Orders.total")}</span>
                      <span className="font-semibold">{subTotal} Lei</span>
                   </div>
+                  <VatNote gross={subTotal} className="-mt-3" />
                   <Link href="/checkout" className="w-full bg-pink-700 text-white py-3 rounded-md font-medium hover:bg-pink-800 transition-colors text-center">
                      {t("Checkout.finalizeOrder")}
                   </Link>

@@ -8,7 +8,9 @@ import { usePopupContext } from "@/context/PopupContext";
 import Image from "next/image";
 import Link from "next/link";
 import { Address, Order, Shipping } from "@/types/user";
-import { CheckCircle, ChevronDown, ChevronUp, MapPin, Truck, AlertCircle, Loader2, Mail, User } from "lucide-react";
+import { CheckCircle, Circle, ChevronDown, ChevronUp, MapPin, Truck, AlertCircle, Loader2, Mail, User } from "lucide-react";
+import { availablePaymentMethods, PaymentMethod, startCardPayment } from "@/lib/payments";
+import { getPaymentSettings } from "@/queries/fetchPaymentSettings";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { FirebaseError } from "firebase/app";
 import { CartProduct } from "@/types/product";
@@ -16,6 +18,7 @@ import { validateName, validateEmail, validatePhone } from "@/components/common/
 import app, { auth } from "@/lib/firebaseInit";
 import { getShippData } from "@/queries";
 import { useTranslations } from "next-intl";
+import VatNote from "@/components/common/VatNote";
 // ResponseData interface for API responses
 interface ResponseData {
    success: boolean;
@@ -38,6 +41,11 @@ export default function CheckoutPage() {
    const [selectedBillingId, setSelectedBillingId] = useState<string | null>(null);
    const [isBusinessOrder, setIsBusinessOrder] = useState(false);
    const [voucherCode, setVoucherCode] = useState("");
+   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(["cod"]);
+   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number } | null>(null);
+   const [voucherError, setVoucherError] = useState("");
+   const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
    const [isProcessing, setIsProcessing] = useState(false);
    const [showAddressDropdown, setShowAddressDropdown] = useState(false);
    const [showBillingDropdown, setShowBillingDropdown] = useState(false);
@@ -65,6 +73,48 @@ export default function CheckoutPage() {
       };
       fetchShipping();
    }, []);
+
+   // Previews the voucher; the order function checks and applies it again when the order is placed
+   const applyVoucher = async (code: string) => {
+      if (!code.trim()) return;
+      setIsCheckingVoucher(true);
+      setVoucherError("");
+      try {
+         const checkVoucher = httpsCallable<{ code: string; subtotal: number }, { valid: boolean; code?: string; discount?: number; message?: string }>(getFunctions(app, "europe-west3"), "checkVoucher");
+         const { data } = await checkVoucher({ code, subtotal: subTotal });
+         if (data.valid && data.code) {
+            setAppliedVoucher({ code: data.code, discount: data.discount ?? 0 });
+            setVoucherCode(data.code);
+         } else {
+            setAppliedVoucher(null);
+            setVoucherError(data.message || t("Checkout.invalidVoucher"));
+         }
+      } catch (error) {
+         console.error("Voucher check error:", error);
+         setAppliedVoucher(null);
+         setVoucherError(t("Checkout.voucherCheckError"));
+      } finally {
+         setIsCheckingVoucher(false);
+      }
+   };
+
+   // Only the payment methods enabled in the admin settings are offered
+   useEffect(() => {
+      getPaymentSettings().then((settings) => {
+         const methods = availablePaymentMethods(settings);
+         setPaymentMethods(methods);
+         setPaymentMethod((current) => (methods.includes(current) ? current : methods[0]));
+      });
+   }, []);
+
+   // A percentage voucher depends on the subtotal, so check it again when the cart changes
+   useEffect(() => {
+      if (appliedVoucher) applyVoucher(appliedVoucher.code);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [subTotal]);
+
+   const voucherDiscount = appliedVoucher?.discount ?? 0;
+   const grandTotal = Math.max(Number((total - voucherDiscount).toFixed(2)), 0);
 
    // Redirect to cart if it's empty
    useEffect(() => {
@@ -251,9 +301,10 @@ export default function CheckoutPage() {
             billing_address_id: selectedBillingId,
             shipping_address: selectedShippingAddress,
             billing_address: selectedBillingAddress,
-            voucher: !!voucherCode,
-            ...(!!voucherCode ? { voucher_id: voucherCode } : {}),
+            voucher: !!appliedVoucher,
+            ...(appliedVoucher ? { voucher_id: appliedVoucher.code } : {}),
             is_business: isBusinessOrder,
+            payment_method: paymentMethod,
             products: cart.map(
                (item) =>
                   ({
@@ -273,7 +324,7 @@ export default function CheckoutPage() {
                   } as CartProduct)
             ),
             shipping_price: shippingCost,
-            total: total,
+            total: grandTotal,
             // Add idempotency key to prevent duplicate orders
             idempotency_key: `${user.uid}_${token?.token}_${Date.now()}`,
          };
@@ -331,6 +382,16 @@ export default function CheckoutPage() {
          } else if (responseData.success && responseData.orderId) {
             // Order successfully created
             await clearCart();
+            if (paymentMethod !== "cod") {
+               // Card payments continue on the provider's payment page; if that can't start, the order page offers to retry
+               try {
+                  window.location.assign(await startCardPayment(responseData.orderId, paymentMethod));
+               } catch (paymentError) {
+                  console.error("Payment start error:", paymentError);
+                  router.push(`/profile/orders/${responseData.orderId}?payment=failed`);
+               }
+               return;
+            }
             router.push(`/checkout/success?order=${responseData.orderId}`);
          } else {
             // Handle unexpected success response without order ID
@@ -692,22 +753,56 @@ export default function CheckoutPage() {
                {/* Payment Method */}
                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                   <h2 className="text-lg font-medium mb-4">{t("Checkout.paymentMethod")}</h2>
-                  <div className="border border-pink-600 bg-pink-50 rounded-md p-4 flex items-center">
-                     <CheckCircle className="w-5 h-5 text-pink-600 mr-3" />
-                     <div>
-                        <p className="font-medium">{t("Checkout.paymentMethodRamburs")}</p>
-                        <p className="text-gray-600 text-sm">{t("Checkout.paymentMethodRambursDescription")}</p>
-                     </div>
+                  <div className="space-y-3" role="radiogroup" aria-label={t("Checkout.paymentMethod")}>
+                     {paymentMethods.map((method) => {
+                        const selected = paymentMethod === method;
+                        const [title, description] =
+                           method === "cod"
+                              ? [t("Checkout.paymentMethodRamburs"), t("Checkout.paymentMethodRambursDescription")]
+                              : method === "stripe"
+                                ? [t("Checkout.paymentMethodStripe"), t("Checkout.paymentMethodStripeDescription")]
+                                : [t("Checkout.paymentMethodNetopia"), t("Checkout.paymentMethodNetopiaDescription")];
+                        return (
+                           <label key={method} className={`border rounded-md p-4 flex items-center cursor-pointer ${selected ? "border-pink-600 bg-pink-50" : "border-gray-200 hover:border-gray-300"}`}>
+                              <input type="radio" name="paymentMethod" value={method} checked={selected} onChange={() => setPaymentMethod(method)} className="sr-only" />
+                              {selected ? <CheckCircle className="w-5 h-5 text-pink-600 mr-3 shrink-0" /> : <Circle className="w-5 h-5 text-gray-300 mr-3 shrink-0" />}
+                              <div>
+                                 <p className="font-medium">{title}</p>
+                                 <p className="text-gray-600 text-sm">{description}</p>
+                              </div>
+                           </label>
+                        );
+                     })}
                   </div>
                </div>
 
                {/* Voucher Code */}
                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                   <h2 className="text-lg font-medium mb-4">{t("Checkout.voucherCode")}</h2>
-                  <div className="flex">
-                     <input type="text" value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} placeholder={t("Checkout.voucherCodePlaceholder")} className="border border-pink-600 rounded-l-md px-4 py-2 flex-1 focus:outline-none " />
-                     <button className="bg-pink-600 text-white px-4 py-2 rounded-r-md cursor-not-allowed">{t("Checkout.apply")}</button>
-                  </div>
+                  {appliedVoucher ? (
+                     <div className="flex items-center justify-between gap-4 rounded-md bg-green-50 text-green-800 px-4 py-3">
+                        <span>
+                           {t("Checkout.voucherApplied", { code: appliedVoucher.code })} <span className="font-medium">-{appliedVoucher.discount.toFixed(2)} Lei</span>
+                        </span>
+                        <button type="button" onClick={() => setAppliedVoucher(null)} className="text-sm underline">
+                           {t("Checkout.removeVoucher")}
+                        </button>
+                     </div>
+                  ) : (
+                     <form
+                        className="flex"
+                        onSubmit={(e) => {
+                           e.preventDefault();
+                           applyVoucher(voucherCode);
+                        }}
+                     >
+                        <input type="text" value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} placeholder={t("Checkout.voucherCodePlaceholder")} className="border border-pink-600 rounded-l-md px-4 py-2 flex-1 min-w-0 focus:outline-none uppercase" />
+                        <button type="submit" disabled={!voucherCode.trim() || isCheckingVoucher} className="bg-pink-600 text-white px-4 py-2 rounded-r-md disabled:opacity-50">
+                           {isCheckingVoucher ? <Loader2 className="w-4 h-4 animate-spin" /> : t("Checkout.apply")}
+                        </button>
+                     </form>
+                  )}
+                  {voucherError && <p className="mt-2 text-sm text-red-600">{voucherError}</p>}
                </div>
             </div>
 
@@ -732,8 +827,8 @@ export default function CheckoutPage() {
                            <div className="divide-y divide-gray-50">
                               {group.variants.map((item) => {
                                  const price = {
-                                    price: item.product_price?.toFixed(2).split(".").map(Number) || [0, 0],
-                                    discount: item.discount_price?.toFixed(2)?.split(".")?.map(Number),
+                                    price: item.product_price?.toFixed(2).split(".") || ["0", "00"],
+                                    discount: item.discount_price?.toFixed(2)?.split("."),
                                  };
 
                                  return (
@@ -798,11 +893,22 @@ export default function CheckoutPage() {
                      </div>
                   )}
 
+                  {/* Voucher discount */}
+                  {appliedVoucher && (
+                     <div className="flex justify-between py-4 border-t border-gray-100 text-green-700">
+                        <span>
+                           {t("Checkout.voucherDiscount")} ({appliedVoucher.code})
+                        </span>
+                        <span className="font-medium">-{voucherDiscount.toFixed(2)} Lei</span>
+                     </div>
+                  )}
+
                   {/* Total */}
                   <div className="flex justify-between py-4 border-t border-gray-100">
                      <span className="font-medium">{t("Orders.total")}</span>
-                     <span className="font-bold text-lg">{total.toFixed(2)} Lei</span>
+                     <span className="font-bold text-lg">{grandTotal.toFixed(2)} Lei</span>
                   </div>
+                  <VatNote gross={grandTotal} className="-mt-2 mb-2" />
 
                   {/* Terms */}
                   <div className="mt-3 mb-6 text-xs text-gray-500">
@@ -844,8 +950,10 @@ export default function CheckoutPage() {
                         </span>
                      ) : user.emailVerified === false ? (
                         t("Checkout.verifyEmailToContinue")
-                     ) : (
+                     ) : paymentMethod === "cod" ? (
                         t("Checkout.placeOrder")
+                     ) : (
+                        t("Checkout.continueToPayment")
                      )}
                   </button>
                </div>

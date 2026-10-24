@@ -81,20 +81,21 @@ bun install
 
 3. Set up environment variables
 
-Create a `.env.local` file in the root directory and add your Firebase and Algolia credentials.
+Copy `.example.env` to `.env.local` in the root directory and fill in your store details, the public store URL (`NEXT_PUBLIC_SITE_URL`, used for SEO links and the sitemap) and your Firebase and Algolia credentials. The Firebase and Algolia keys are:
 
 ```
 # Firebase
-NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+NEXT_PUBLIC_APIKEY=your-api-key
+NEXT_PUBLIC_AUTHDOMAIN=your-auth-domain
+NEXT_PUBLIC_PROJECTID=your-project-id
+NEXT_PUBLIC_STORAGEBUCKET=your-storage-bucket
+NEXT_PUBLIC_MESSAGINGSENDERID=your-messaging-sender-id
+NEXT_PUBLIC_APPID=your-app-id
+NEXT_PUBLIC_MEASUREMENTID=your-measurement-id
 
 # Algolia
 NEXT_PUBLIC_ALGOLIA_APP_ID=your-app-id
-NEXT_PUBLIC_ALGOLIA_API_KEY=your-api-key
+NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=your-search-only-api-key
 ```
 
 4. Run the development server
@@ -110,6 +111,42 @@ bun dev
 ```
 
 The app should now be running at [http://localhost:3000](http://localhost:3000)
+
+### Search index (Algolia)
+
+The store queries an Algolia index named `products` plus sorted replicas: `products_price_asc`, `products_price_desc`, `products_created_at_desc` (`desc(created_at._seconds)`), `products_sold_desc`, `products_sold_asc`, `products_name_asc` and `products_name_desc`. Filtering uses `category_name`, `subcategory_name`, `brand`, `sku_variants.name` and `product_code` (set as filter-only facets) and the numeric `price`.
+
+The Cloud Functions keep the index in sync when products change; they read `ALGOLIA_APP_ID`, `ALGOLIA_API_WRITE_KEY` and `ALGOLIA_INDEX_NAME` from `functions/.env`. Admins can rebuild the whole index from **Admin → Settings → Reindex search**.
+
+### Card payments (Stripe and NETOPIA Payments)
+
+Cash on delivery works out of the box. Card payments open the provider's own secure payment page (no card details pass through the store) and are switched on in **Admin → Settings → Payments** once their keys are set:
+
+1. Store the keys in Secret Manager (each command asks for the value):
+
+   ```bash
+   firebase functions:secrets:set STRIPE_SECRET_KEY
+   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+   firebase functions:secrets:set NETOPIA_API_KEY
+   firebase functions:secrets:set NETOPIA_PUBLIC_KEY --data-file path/to/netopia-public-certificate.cer
+   ```
+
+2. Switch the provider on in `functions/.env` (`ENABLE_STRIPE=true` and/or `ENABLE_NETOPIA=true`; a provider's functions, and the secrets they need, are only loaded once it is enabled) and deploy its functions: `firebase deploy --only functions:createStripeSession,functions:stripeWebhook` for Stripe, `functions:createNetopiaPayment,functions:netopiaIpn` for NETOPIA.
+3. Stripe: add a webhook endpoint pointing at the `stripeWebhook` function URL, with the events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` and `charge.refunded`.
+4. NETOPIA: enter the POS signature in the Payments settings and keep live mode off to test in the sandbox. Payment notifications go to the `netopiaIpn` function automatically.
+
+Paid orders are marked by the providers' webhooks. Card orders that stay unpaid for 3 hours are cancelled by the `cancelUnpaidOrders` function, which puts their items back in stock.
+
+### Checks
+
+```bash
+npm run lint       # ESLint
+npm run typecheck  # TypeScript
+npm test           # Vitest unit tests (src/**/*.test.ts)
+npm --prefix functions test   # Cloud Functions unit tests (functions/test)
+```
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs these checks and a production build on every push to `main` and on every pull request. The build needs the `NEXT_PUBLIC_*` values from `.example.env`, so add them as repository variables (Settings → Secrets and variables → Actions → Variables).
 
 ## Deployment
 
@@ -158,22 +195,22 @@ You can manage your deployments, domains, and environment variables directly thr
 -  [x] Responsive design for all devices
 -  [x] Multi-language support
 -  [x] Secure authentication and user management
--  [ ] Enhanced product filtering
--  [ ] Wishlist functionality
--  [ ] Product reviews and ratings
--  [ ] Related products recommendations
--  [ ] Recently viewed products
--  [ ] Social sharing integration
--  [ ] Email notifications for order status update
+-  [x] Enhanced product filtering (facet counts, multi-select brand/size/colour, in stock, on sale, filter chips)
+-  [x] Wishlist functionality (saved to the account, or in the browser for guests)
+-  [x] Product reviews and ratings (one review per signed-in customer per product)
+-  [x] Related products recommendations
+-  [x] Recently viewed products
+-  [x] Social sharing integration
+-  [x] Email notifications for order status update (toggle in Admin → Settings → Notifications)
 
 ### Admin Dashboard
 
 -  [x] Product management
 -  [x] Order management
 -  [x] User management
--  [ ] Analytics dashboard
--  [ ] Inventory management
--  [ ] Voucher and promo code management
+-  [x] Analytics dashboard
+-  [x] Inventory management (stock reserved on order, restored on rejection, admin stock page)
+-  [x] Voucher and promo code management
 
 ### Technical Improvements
 
@@ -183,57 +220,42 @@ You can manage your deployments, domains, and environment variables directly thr
 -  [x] Firebase Auth
 -  [x] Firebase Cloud Functions implementation
 -  [x] Algolia search implementation
--  [ ] Performance optimization
--  [ ] More server components implementation
--  [ ] Image optimization
--  [ ] SEO enhancements
--  [ ] PWA support
--  [ ] Testing implementation
--  [ ] CI/CD pipeline setup
+-  [x] Performance optimization (parallel data loading, server-rendered hero and categories, responsive images)
+-  [x] More server components implementation (home page hero and categories render on the server)
+-  [x] Image optimization (responsive sizes, AVIF/WebP, optimizer limited to the Storage bucket)
+-  [x] SEO enhancements (metadata, Open Graph, product structured data, sitemap, robots.txt)
+-  [x] PWA support (installable manifest and icons, offline page via service worker)
+-  [x] Testing implementation (Vitest unit tests; component and end-to-end tests still to add)
+-  [x] CI/CD pipeline setup (GitHub Actions checks; Vercel deploys on push)
 
 ### Payment & Shipping
 
--  [ ] Multiple payment gateway integration
+-  [x] Multiple payment gateway integration (Stripe and NETOPIA Payments, alongside cash on delivery)
 -  [ ] Shipping provider integration
--  [ ] Order tracking
+-  [x] Order tracking (status timeline and tracking number on the order page; no courier integration yet)
 -  [ ] Address verification
--  [ ] Tax calculation
+-  [x] Tax calculation (VAT included in prices, configurable rate, stored on each order)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the checks every change must pass, and the [roadmap](docs/ROADMAP.md) for where the project is heading. Please follow the [code of conduct](CODE_OF_CONDUCT.md), and report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
 -  GitHub: [@AlexT](https://github.com/alexandru-tiron)
 -  Linkedin: [@AlexT](https://www.linkedin.com/in/alextiron)
 
-## Firebase Cloud Functions
+## Firebase backend
 
-This project uses Firebase Cloud Functions for critical backend operations:
+Everything the store needs is in this repository:
 
--  User management (creating user documents when new accounts are registered)
--  Algolia search synchronization (keeping product data in sync with Algolia)
--  Order processing and validation
--  Transactional emails (order confirmations, shipping updates)
--  Admin privilege management
+-  `functions/`: Cloud Functions for order validation (prices, stock, vouchers, VAT), order e-mails and status updates, card payments, search sync, account creation and deletion, and admin rights.
+-  `firestore.rules` and `storage.rules`: deny-by-default security rules. Deploy them together with the functions, and never replace them with open "test mode" rules.
+-  `firestore.indexes.json`: the Firestore indexes the queries need.
+-  `scripts/`: demo data, search index setup and reindexing, and the script that creates the first admin (see [scripts/README.md](scripts/README.md)).
 
-**Note:** The Firebase Functions code is not included in this repository. These functions represent significant development effort and contain proprietary business logic that adds substantial value to the overall solution.
-
-If you're interested in the full solution including all backend components, please contact me for licensing information.
-
-## Firestore Database
-
-This project uses Firestore as its primary database, storing:
-
--  Product data (including variants, categories, pricing)
--  User profiles and preferences
--  Order information and history
--  Application settings and configurations
--  Analytics and operational metadata
-
-**Note:** The Firestore database structure, security rules, and indexing configurations are not included in this repository. The database design represents considerable intellectual property with optimized data relationships, efficient querying patterns, and robust security rules developed through extensive iteration and testing.
+Copy `.firebaserc.example` to `.firebaserc` and `functions/.example.env` to `functions/.env` with your own values before deploying.

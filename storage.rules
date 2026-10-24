@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAdmin() {
+      return request.auth.token.isAdmin == true;
+    }
+    function validContentType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    function validSvgContentType() {
+      return request.resource.contentType == 'image/svg+xml';
+    }
+    // Default rule - deny all access unless explicitly allowed
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // Product images - managed by admins
+    match /Products/{productId}/{allImages=**} {
+      // Anyone can view product images
+      allow read: if true;
+      // Only admins can upload or modify product images
+      allow write: if isAdmin() && validContentType();
+    }
+    
+    // Category images and icons
+    match /Categories/Icons/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && validSvgContentType();
+    }
+    
+    match /Categories/Images/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && validContentType();
+    }
+    
+    // Brand logos
+    match /Brands/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && validContentType();
+    }
+    
+    // Slides
+    match /Slides/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && validContentType();
+    }
+	}
+} 

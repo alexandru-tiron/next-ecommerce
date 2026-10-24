@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Package, Tag, Users, Settings, Grid, Home, X } from "lucide-react";
+import { Package, Tag, Users, Settings, Grid, Home, X, Boxes, TicketPercent, ChartColumn } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTranslations } from "next-intl";
@@ -45,7 +45,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { name: t("products"), href: "/admin/products", icon: <Tag className="w-5 h-5" /> },
       { name: t("orders"), href: "/admin/orders", icon: <Package className="w-5 h-5" /> },
       { name: t("customers"), href: "/admin/customers", icon: <Users className="w-5 h-5" /> },
-      //{ name: "Analize", href: "/admin/analytics", icon: <BarChart3 className="w-5 h-5" /> },
+      { name: t("inventory"), href: "/admin/inventory", icon: <Boxes className="w-5 h-5" /> },
+      { name: t("vouchers"), href: "/admin/vouchers", icon: <TicketPercent className="w-5 h-5" /> },
+      { name: t("analytics"), href: "/admin/analytics", icon: <ChartColumn className="w-5 h-5" /> },
       { name: t("settings"), href: "/admin/settings", icon: <Settings className="w-5 h-5" /> },
    ];
 

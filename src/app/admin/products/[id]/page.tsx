@@ -15,13 +15,13 @@ import Image from "next/image";
 import { getCategData } from "@/queries";
 import { useTranslations } from "next-intl";
 type EditPageParams = {
-   params: Promise<{ id: string }> | { id: string };
+   params: Promise<{ id: string }>;
 };
 
 export default function EditProductPage({ params }: EditPageParams) {
    const  t  = useTranslations();
    const router = useRouter();
-   const paramValues = use(params as unknown as Promise<{ id: string }>) as { id: string };
+   const paramValues = use(params);
    const productId = paramValues.id;
    const [categories, setCategories] = useState<Category[]>([]);
    const { setPopup } = usePopupContext();

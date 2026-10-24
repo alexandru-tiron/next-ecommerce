@@ -35,8 +35,12 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({ isOpen, onClose, ca
          if (iconUrl) URL.revokeObjectURL(iconUrl);
       };
    }, [imageUrl, iconUrl]);
-   if (!categoryId) onClose();
-   if (!categoryName) onClose();
+
+   // A subcategory needs a parent category: close the modal if it was opened without one.
+   // This runs in an effect because closing updates the parent's state, which isn't allowed during render.
+   useEffect(() => {
+      if (isOpen && (!categoryId || !categoryName)) onClose();
+   }, [isOpen, categoryId, categoryName, onClose]);
 
    const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {

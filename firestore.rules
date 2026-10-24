@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.isAdmin == true;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Default rule - deny all access unless explicitly allowed.
+    // Cloud Functions use the Admin SDK and are not affected by these rules.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Catalogue - read by everyone (including server-rendered pages), managed by admins.
+    // Covers the Variants, SkuVariants and Reviews subcollections.
+    match /Products/{path=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Customer reviews: one per user per product (the review id is the user's id).
+    // Customers can't set "verified"; that is reserved for admins and Cloud Functions.
+    match /Products/{productId}/Reviews/{reviewId} {
+      allow create, update: if isOwner(reviewId)
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'stars', 'review', 'date'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
+        && request.resource.data.review is string && request.resource.data.review.size() <= 1000
+        && request.resource.data.username is string && request.resource.data.username.size() <= 60
+        && request.resource.data.date == request.time;
+      allow delete: if isOwner(reviewId);
+    }
+
+    // Categories and their Subcategories
+    match /Categories/{path=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /Brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Store settings (Info, Shipping, Notifications) and the Info/Slider subcollection
+    // Discount codes: managed by admins; customers check them through the checkVoucher Cloud Function
+    match /Vouchers/{code} {
+      allow read, write: if isAdmin();
+    }
+
+    match /Settings/{path=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User profiles - only the user and admins can read them
+    match /Users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId);
+
+      match /Addresses/{addressId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId);
+      }
+
+      match /Cart/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Saved products; the document id is the product id
+      match /Wishlist/{productId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.keys().hasOnly(["added_at"]);
+      }
+    }
+
+    // Orders are created by the validateAndCreateOrder Cloud Function.
+    // Customers can read their own orders; admins can read all of them and update status / tracking.
+    match /Orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.user_id == request.auth.uid);
+      allow update: if isAdmin();
+    }
+  }
+}

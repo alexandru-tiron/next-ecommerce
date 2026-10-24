@@ -108,12 +108,15 @@ export interface SearchParams {
    min?: string;
    max?: string;
    size?: string;
+   colour?: string;
+   stock?: string;
+   sale?: string;
    page?: string;
    limit?: number;
 }
 export type Review = {
    id: string;
-   date: Timestamp;
+   date?: string; // ISO date, converted on the server so reviews can be passed to client components
    stars: number;
    uid: string;
    username: string;

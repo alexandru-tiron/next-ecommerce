@@ -39,7 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/functions
-firestore.indexes.json
-storage.rules
-firestore.rules
+
+# firebase
+# Each developer picks their own project (see .firebaserc.example)
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
