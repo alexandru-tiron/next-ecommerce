@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppSelector } from "@/state/hooks";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebaseInit";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -12,7 +12,7 @@ import { useTranslations } from "next-intl";
 const OrdersSection = () => {
    const t = useTranslations("Orders");
    const router = useRouter();
-   const { user } = useAuthContext();
+   const user = useAppSelector((state) => state.auth.user);
    const [orders, setOrders] = useState<Order[]>([]);
 
    useEffect(() => {

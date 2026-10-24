@@ -1,10 +1,6 @@
-import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { CartProduct } from "./product";
 
-export interface User extends FirebaseUser {
-   db?: UserData;
-}
 export type UserData = {
    email: string;
    first_name: string;

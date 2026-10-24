@@ -2,7 +2,7 @@ import { Product, SkuVariant, Variant } from "../types/product";
 import { logger } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
 import algoliasearch from "algoliasearch";
-import { algoliaWriteKey } from "./params";
+import { algoliaWriteKey, inEmulator } from "./params";
 const algoliaAppId = defineString("ALGOLIA_APP_ID");
 const algoliaIndexName = defineString("ALGOLIA_INDEX_NAME", { default: "products" });
 
@@ -32,14 +32,10 @@ export enum OPERATION_TYPE {
 
 export const updateProductToAlgolia = async (productId: string, operation: OPERATION_TYPE, product?: Partial<Product> | Product, variants?: Variant[], skuVariants?: SkuVariant[]) => {
    logger.info(`[Algolia Update] Starting update for product ${productId} with operation ${operation}`);
-   logger.info(
-      `[Algolia Update] Input data:`,
-      JSON.stringify({
-         product: product ? product : false,
-         variants: variants ? variants : false,
-         skuVariants: skuVariants ? skuVariants : false,
-      })
-   );
+   if (inEmulator) {
+      logger.info(`[Algolia Update] Skipped for product ${productId}: running in the emulator`);
+      return;
+   }
 
    try {
       let algoliaProduct: any;

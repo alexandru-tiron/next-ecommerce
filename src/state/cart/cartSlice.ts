@@ -1,6 +1,9 @@
 import { CartProduct } from "@/types/product";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, isFulfilled, isPending, isRejected, PayloadAction } from "@reduxjs/toolkit";
 import { addToCart } from "./actions/addToCart";
+import { clearCart } from "./actions/clearCart";
+import { reconstructCart } from "./actions/reconstructCart";
+import { removeItem } from "./actions/removeItem";
 
 interface CartState {
    cart: CartProduct[];
@@ -22,31 +25,19 @@ function updateTotals(state: CartState) {
    state.counter = state.cart.reduce((acc, cur) => acc + cur.quantity, 0);
 }
 
+const cartActions = [addToCart, removeItem, clearCart] as const;
+
 const cartSlice = createSlice({
    name: "cart",
    initialState,
    reducers: {
-      removeItem: (state, action: PayloadAction<string>) => {
-         state.cart = state.cart.filter((item) => item.id !== action.payload);
-         updateTotals(state);
-      },
-      clearCart: (state) => {
-         state.cart = [];
-         updateTotals(state);
-      },
-      clearLocalCart: (state) => {
-         state.cart = [];
-         updateTotals(state);
-      },
-      reconstructCart: (state, action: PayloadAction<CartProduct[]>) => {
+      // Replaces the whole cart: the Firestore listener for logged-in users, localStorage for guests
+      setCart: (state, action: PayloadAction<CartProduct[]>) => {
          state.cart = action.payload;
          updateTotals(state);
       },
    },
    extraReducers: (builder) => {
-      builder.addCase(addToCart.pending, (state) => {
-         state.isLoading = true;
-      });
       builder.addCase(addToCart.fulfilled, (state, action) => {
          const index = state.cart.findIndex((item) => item.id === action.payload.id);
          if (index !== -1) {
@@ -55,16 +46,29 @@ const cartSlice = createSlice({
             state.cart.push(action.payload);
          }
          updateTotals(state);
+      });
+      builder.addCase(removeItem.fulfilled, (state, action) => {
+         state.cart = state.cart.filter((item) => item.id !== action.payload);
+         updateTotals(state);
+      });
+      builder.addCase(clearCart.fulfilled, (state) => {
+         state.cart = [];
+         updateTotals(state);
+      });
+      builder.addMatcher(isPending(...cartActions), (state) => {
+         state.isLoading = true;
+      });
+      builder.addMatcher(isFulfilled(...cartActions), (state) => {
          state.isLoading = false;
       });
-      builder.addCase(addToCart.rejected, (state, action) => {
+      builder.addMatcher(isRejected(...cartActions), (state, action) => {
          console.log(action.error);
          state.isLoading = false;
       });
    },
 });
 
-export const { removeItem, clearCart, clearLocalCart, reconstructCart } = cartSlice.actions;
-export { addToCart };
+export const { setCart } = cartSlice.actions;
+export { addToCart, removeItem, clearCart, reconstructCart };
 
 export default cartSlice.reducer;

@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { Boxes, PackageX, AlertTriangle, Save, Search } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { LOW_STOCK_THRESHOLD, parseStockInput, stockStatus, StockStatus } from "@/components/admin/inventory/stockStatus";
+import { refreshStore } from "@/lib/refreshStore";
 
 type InventoryItem = { id: string; name: string; brand: string; product_code: string; image?: string; stoc?: number; sold: number };
 type View = "all" | "low" | "out";
@@ -77,6 +78,7 @@ export default function InventoryPage() {
       try {
          // Saving the product also updates the Algolia record through the sync function
          await updateDoc(doc(db, "Products", item.id), { stoc: value, updated_at: serverTimestamp() });
+         await refreshStore("catalog");
          setItems((current) => current.map((product) => (product.id === item.id ? { ...product, stoc: value } : product)));
          setDrafts((current) => {
             const rest = { ...current };

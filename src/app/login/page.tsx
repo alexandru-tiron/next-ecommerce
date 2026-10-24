@@ -1,11 +1,15 @@
 "use client";
 
 import GoogleButton from "@/components/common/Google/google-button";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import handleLogin from "@/state/auth/actions/handleLogin";
+import handleSignup from "@/state/auth/actions/handleSignup";
+import handleResetPassword from "@/state/auth/actions/handleResetPassword";
+import handleGoogleSignIn from "@/state/auth/actions/handleGoogleSignIn";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
-import { validateEmail, validatePassword, validatePhone, validateName } from "@/components/common/validators";
+import { validateEmail, validatePassword, validatePhone, validateName } from "@core/validators";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 enum MODE {
@@ -18,7 +22,8 @@ enum MODE {
 const LoginPage = () => {
    const router = useRouter();
    const t = useTranslations("Login");
-   const { user, handleLogin, handleSignup, handleResetPassword, handleGoogleSignIn } = useAuthContext();
+   const dispatch = useAppDispatch();
+   const user = useAppSelector((state) => state.auth.user);
 
    useEffect(() => {
       if (user) {
@@ -146,13 +151,13 @@ const LoginPage = () => {
       try {
          switch (mode) {
             case MODE.LOGIN:
-               await handleLogin(email, password);
+               await dispatch(handleLogin({ email, password }));
                break;
             case MODE.REGISTER:
-               await handleSignup(email, password, firstName, lastName, phoneNumber);
+               await dispatch(handleSignup({ email, password, firstName, lastName, phoneNumber }));
                break;
             case MODE.RESET_PASSWORD:
-               await handleResetPassword(email);
+               await dispatch(handleResetPassword(email));
                break;
             default:
                break;
@@ -259,7 +264,7 @@ const LoginPage = () => {
 
                {/* {message && <div className="text-green-600 text-sm">{message}</div>} */}
             </form>
-            {mode !== MODE.RESET_PASSWORD && <GoogleButton text={t("continueWithGoogle")} onclick={handleGoogleSignIn} className={mode === MODE.REGISTER ? " md:w-2/4 md:self-center" : ""} />}
+            {mode !== MODE.RESET_PASSWORD && <GoogleButton text={t("continueWithGoogle")} onclick={() => dispatch(handleGoogleSignIn())} className={mode === MODE.REGISTER ? " md:w-2/4 md:self-center" : ""} />}
             {error && <div className="text-red-600">{error}</div>}
             {mode === MODE.LOGIN && (
                <div className="text-sm underline cursor-pointer" onClick={() => setMode(MODE.REGISTER)}>

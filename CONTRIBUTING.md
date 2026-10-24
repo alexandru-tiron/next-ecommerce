@@ -12,8 +12,9 @@ Thanks for helping build an open-source store anyone can run. This guide covers 
 
 | Path | What it is |
 |---|---|
-| `src/` | The Next.js storefront and admin panel (App Router) |
-| `functions/` | Firebase Cloud Functions: orders, stock, vouchers, payments, e-mails, search sync |
+| `src/` | The Next.js storefront and admin panel (App Router). State is in Redux (`src/state`); server pages read store data through `src/lib/server` |
+| `packages/core/` | Business rules shared by the storefront and the functions (VAT, vouchers, payments, validators), imported as `@core/*` |
+| `functions/` | Firebase Cloud Functions: orders, stock, vouchers, payments, e-mails, contact messages, search sync. Bundled with esbuild |
 | `firestore.rules`, `storage.rules`, `firestore.indexes.json` | Security rules and indexes, deployed with the Firebase CLI |
 | `messages/` | Translations (`en.json`, `ro.json`) |
 | `scripts/` | Search index setup and reindexing, demo data |
@@ -21,7 +22,7 @@ Thanks for helping build an open-source store anyone can run. This guide covers 
 
 ## Setting up
 
-You need Node.js 22, the [Firebase CLI](https://firebase.google.com/docs/cli) (`npm install -g firebase-tools`), and Java 11 or newer for the Firebase emulators.
+You need Node.js 22 and Java 11 or newer for the Firebase emulators. The npm scripts run Firebase CLI 14 through npx; for deploys, install the CLI yourself (`npm install -g firebase-tools@14`, or a newer one once you have Java 21).
 
 ```bash
 npm install
@@ -29,10 +30,23 @@ npm --prefix functions install
 cp .example.env .env.local              # storefront settings, see the README
 cp functions/.example.env functions/.env  # function settings
 cp .firebaserc.example .firebaserc        # then set your Firebase project id
-npm run dev
 ```
 
-To try the store with demo data on your machine, without touching a real project, run the demo seed against the Firebase emulators (see [scripts/README.md](scripts/README.md)).
+### Run everything locally (recommended)
+
+The Firebase emulators give you a private copy of the whole backend, filled with demo data, so you can sign in, place orders and use the admin panel without touching a real project:
+
+```bash
+cp functions/.secret.local.example functions/.secret.local   # once: placeholder secrets for the functions emulator
+npm --prefix functions run build                             # the emulator runs the built functions
+npm run emulators                                            # terminal 1: Auth, Firestore, Storage and Functions
+npm run seed:emulators                                       # terminal 2: demo catalogue, orders and an admin account
+npm run dev:emulators                                        # terminal 2: the store, connected to the emulators
+```
+
+The seed prints the password for `admin@example.com`. In the emulators, order and contact e-mails are skipped and nothing is sent to Algolia, so search shows your real index while everything else is local. Emulator data is gone when you stop them; seed again after a restart.
+
+To work against your own Firebase project instead, run `npm run dev` with your keys in `.env.local`.
 
 ## Checks every change must pass
 

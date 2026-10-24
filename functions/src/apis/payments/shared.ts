@@ -3,6 +3,8 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { siteUrl } from "../../utils/params";
+import { paymentInputSchema } from "../../schemas";
+import { parseInput } from "../../utils/validation";
 import { cancelsOrder, isMethodEnabled, PaymentStatus, paymentSettingsFrom, safeReturnOrigin, shouldApplyPaymentStatus } from "../../utils/payments";
 
 // Shared by the Stripe and NETOPIA modules. Those declare Secret Manager secrets, so index.ts only loads them once enabled.
@@ -18,8 +20,7 @@ export async function loadPaymentSettings() {
 // Checks shared by both providers: the caller owns the order, it was placed for this method and still needs paying
 export async function payableOrder(request: CallableRequest<{ orderId?: string; origin?: string }>, method: "stripe" | "netopia") {
    if (!request.auth) throw new HttpsError("unauthenticated", "Utilizatorul nu este autentificat.");
-   const orderId = request.data?.orderId;
-   if (typeof orderId !== "string" || orderId === "") throw new HttpsError("invalid-argument", "ID-ul comenzii este obligatoriu.");
+   const { orderId, origin } = parseInput(paymentInputSchema, request.data, "ID-ul comenzii este obligatoriu.");
 
    const ref = db.collection("Orders").doc(orderId);
    const snap = await ref.get();
@@ -31,7 +32,7 @@ export async function payableOrder(request: CallableRequest<{ orderId?: string; 
 
    const settings = await loadPaymentSettings();
    if (!isMethodEnabled(method, settings)) throw new HttpsError("failed-precondition", "Metoda de plată nu este disponibilă momentan.");
-   return { ref, order, orderId, settings, origin: safeReturnOrigin(request.data?.origin, siteUrl.value()) };
+   return { ref, order, orderId, settings, origin: safeReturnOrigin(origin, siteUrl.value()) };
 }
 
 // Applies a payment result to an order. Results for an older payment attempt, or that would move a paid order back, are ignored.

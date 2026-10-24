@@ -4,8 +4,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CartModal from "./CartModal";
-import { useAuthContext } from "@/context/AuthContext";
-import { useCartContext } from "@/context/CartContext";
+import { usePopupContext } from "@/context/PopupContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import handleLogout from "@/state/auth/actions/handleLogout";
 import { User, LogOut, Package, MapPin, Search, UserRound, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; setIsSearchOpen: (isSearchOpen: boolean) => void }) => {
@@ -15,8 +16,10 @@ const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; se
    const [isLoading, setIsLoading] = useState(false);
 
    const router = useRouter();
-   const { user, handleLogout } = useAuthContext();
-   const { counter, clearLocalCart } = useCartContext();
+   const dispatch = useAppDispatch();
+   const { setPopup } = usePopupContext();
+   const user = useAppSelector((state) => state.auth.user);
+   const counter = useAppSelector((state) => state.cart.counter);
    const cartRef = useRef<HTMLDivElement>(null);
    const profileRef = useRef<HTMLDivElement>(null);
 
@@ -29,12 +32,28 @@ const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; se
       }
    };
 
-   const logout = async () => {
-      setIsLoading(true);
-      handleLogout();
-      clearLocalCart();
-      setIsLoading(false);
+   // Signing out switches the cart back to the guest cart (see App.tsx), so it no longer needs clearing here
+   const logout = () => {
       setIsProfileOpen(false);
+      setPopup({
+         title: "Deconectare",
+         description: [<p key="sign_out">Sunteți sigur că doriți să vă deconectați?</p>],
+         buttons: [
+            {
+               label: "Da",
+               onClick: async () => {
+                  setIsLoading(true);
+                  const result = await dispatch(handleLogout());
+                  setIsLoading(false);
+                  if (handleLogout.fulfilled.match(result)) {
+                     router.push("/");
+                  }
+               },
+               className: "primary",
+            },
+            { label: "Nu", onClick: () => {} },
+         ],
+      });
    };
 
    const navigateToProfile = (tab?: string) => {

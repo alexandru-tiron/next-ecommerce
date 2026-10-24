@@ -5,6 +5,7 @@ describe("vatIncluded", () => {
    it("extracts the VAT contained in a VAT-inclusive amount", () => {
       expect(vatIncluded(121, 21)).toBe(21);
       expect(vatIncluded(1699, 21)).toBe(294.87);
+      expect(vatIncluded(25, 21)).toBe(4.34);
       expect(vatIncluded(119, 19)).toBe(19);
    });
 

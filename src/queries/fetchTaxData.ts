@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebaseInit";
-import { DEFAULT_VAT_RATE, isValidVatRate } from "@/lib/vat";
+import { DEFAULT_VAT_RATE, isValidVatRate } from "@core/vat";
 import { Tax } from "@/types/user";
 import { doc, getDoc } from "firebase/firestore";
 import { cache } from "react";

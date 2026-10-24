@@ -14,6 +14,7 @@ import { Product, Variant, SkuVariant, VARIANT_TYPE, SKUVARIANT_TYPE, Category }
 import Image from "next/image";
 import { getCategData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 type EditPageParams = {
    params: Promise<{ id: string }>;
 };
@@ -150,7 +151,7 @@ export default function EditProductPage({ params }: EditPageParams) {
       };
 
       fetchProduct();
-   }, [productId]);
+   }, [productId, t]);
 
    // Handle image selection
    useEffect(() => {
@@ -689,6 +690,7 @@ export default function EditProductPage({ params }: EditPageParams) {
             }
          }
 
+         await refreshStore("catalog");
          // Navigate back to products page after successful save
          router.push("/admin/products");
       } catch (error) {
@@ -749,6 +751,7 @@ export default function EditProductPage({ params }: EditPageParams) {
 
          // Delete the main product document
          await deleteDoc(doc(db, "Products", productId));
+         await refreshStore("catalog");
 
          // Close the confirmation modal
          setPopup(null);

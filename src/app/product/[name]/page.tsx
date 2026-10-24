@@ -1,12 +1,10 @@
-import { Product, Review, SkuVariant, VARIANT_TYPE, Variant } from "@/types/product";
+import { Product, Review, SkuVariant } from "@/types/product";
 import ProductContent from "@/components/product/ProductContent";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import RecentlyViewed from "@/components/product/RecentlyViewed";
-import { db } from "@/lib/firebaseInit";
 import { productPath } from "@/lib/productUrl";
 import { siteUrl } from "@/lib/siteUrl";
-import { getProductDoc, getRelatedProducts } from "@/queries";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import { getProductPage, getProductReviews, getRelatedProducts } from "@/lib/server/storeData";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import React from "react";
@@ -15,10 +13,10 @@ type ProductPageProps = { params: Promise<{ name: string }>; searchParams: Promi
 
 export async function generateMetadata({ searchParams }: ProductPageProps): Promise<Metadata> {
    const { id } = await searchParams;
-   const productDoc = id ? await getProductDoc(id) : null;
-   if (!productDoc) return {};
+   const page = id ? await getProductPage(id) : null;
+   if (!page) return {};
 
-   const product = { id: productDoc.id, ...productDoc.data() } as Product;
+   const { product } = page;
    const url = productPath(product);
    return {
       title: product.name,
@@ -40,48 +38,17 @@ export default async function SinglePage({ searchParams }: ProductPageProps) {
       notFound();
    }
 
-   // Fetch product data on the server
-   const productDoc = await getProductDoc(id);
-   if (!productDoc) notFound();
-
-   const product = { id: productDoc.id, ...productDoc.data(), created_at: productDoc.data()?.created_at.toDate() as Timestamp };
-
-   // Variants, SKU variants, reviews and related products load in parallel
-   const [variantsSnap, skuVariantsSnap, reviewsSnap, relatedProducts] = await Promise.all([
-      getDocs(collection(db, "Products", product.id, "Variants")),
-      getDocs(collection(db, "Products", product.id, "SkuVariants")),
-      getDocs(collection(db, "Products", product.id, "Reviews")),
-      getRelatedProducts(product as Product),
-   ]);
-
-   // Variants
-   const variants = variantsSnap.docs.map((doc) => {
-      if (doc.data().media && doc.data().type === VARIANT_TYPE.MEDIA) (product as Product).product_images.push(doc.data().media);
-      return {
-         id: doc.id,
-         ...doc.data(),
-      };
-   });
-
-   // SKU variants
-   const skuVariants = skuVariantsSnap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-   }));
-   // Reviews, newest first
-   const reviews = reviewsSnap.docs
-      .map((doc) => ({
-         id: doc.id,
-         ...doc.data(),
-         date: (doc.data().date as Timestamp | undefined)?.toDate().toISOString(),
-      }))
-      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+   // Product and variants come from the data cache; reviews are read fresh
+   const [page, reviews] = await Promise.all([getProductPage(id), getProductReviews(id)]);
+   if (!page) notFound();
+   const { product, variants, skuVariants } = page;
+   const relatedProducts = await getRelatedProducts(product);
 
    // Pass data to the Client Component
    return (
       <>
-         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd(product as Product, skuVariants as SkuVariant[], reviews as Review[]) }} />
-         <ProductContent product={product as Product} variants={variants as Variant[]} skuVariants={skuVariants as SkuVariant[]} reviews={reviews as Review[]} />
+         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd(product, skuVariants, reviews) }} />
+         <ProductContent product={product} variants={variants} skuVariants={skuVariants} reviews={reviews} />
          <RelatedProducts products={relatedProducts} />
          <RecentlyViewed currentProductId={product.id} />
       </>

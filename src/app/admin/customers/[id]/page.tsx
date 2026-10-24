@@ -8,7 +8,8 @@ import Link from "next/link";
 import { UserData, Order, Address } from "@/types/user";
 import { useRouter } from "next/navigation";
 import { CartProduct } from "@/types/product";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppDispatch } from "@/state/hooks";
+import handleResetPassword from "@/state/auth/actions/handleResetPassword";
 import { useTranslations } from "next-intl";
 interface CustomerDetailPageProps {
    params: Promise<{
@@ -28,7 +29,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
    const resolvedParams = use(params) as { id: string };
    const t = useTranslations();
    const router = useRouter();
-   const { handleResetPassword } = useAuthContext();
+   const dispatch = useAppDispatch();
    const [isLoading, setIsLoading] = useState(true);
    const [customer, setCustomer] = useState<UserData | null>(null);
    const [recentOrders, setRecentOrders] = useState<Order[]>([]);
@@ -172,7 +173,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                            : "N/A"}
                      </span>
                   </div>
-                  <button onClick={() => handleResetPassword(customer.email)} className="flex items-center text-sm text-indigo-600 hover:text-indigo-900 mt-2">
+                  <button onClick={() => dispatch(handleResetPassword(customer.email))} className="flex items-center text-sm text-indigo-600 hover:text-indigo-900 mt-2">
                      <Key className="w-4 h-4 mr-2" />
                      {t("Admin.resetPassword")}
                   </button>

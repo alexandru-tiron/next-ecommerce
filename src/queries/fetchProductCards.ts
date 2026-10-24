@@ -1,18 +1,11 @@
 import { db } from "@/lib/firebaseInit";
 import { Product, SkuVariant } from "@/types/product";
-import { collection, doc, documentId, DocumentSnapshot, getDoc, getDocs, limit, query, where } from "firebase/firestore";
-import { cache } from "react";
+import { collection, documentId, DocumentSnapshot, getDocs, query, where } from "firebase/firestore";
 
 // The fields a product card needs, as plain data that can be passed to client components
 export type ProductCardData = Pick<Product, "id" | "name" | "brand" | "short_description" | "product_images" | "price" | "discount_price"> & {
    sku_variants?: Pick<SkuVariant, "price" | "discount_price">[];
 };
-
-// Product document, deduplicated between generateMetadata and the page within one request
-export const getProductDoc = cache(async (id: string) => {
-   const productDoc = await getDoc(doc(db, "Products", id));
-   return productDoc.exists() ? productDoc : null;
-});
 
 async function toCardData(productDoc: DocumentSnapshot): Promise<ProductCardData> {
    const data = productDoc.data() as Product;
@@ -27,22 +20,6 @@ async function toCardData(productDoc: DocumentSnapshot): Promise<ProductCardData
       discount_price: data.discount_price ?? undefined,
       sku_variants: skuVariantsSnap.docs.map((sku) => ({ price: sku.data().price, discount_price: sku.data().discount_price ?? undefined })),
    };
-}
-
-// Products from the same subcategory, topped up from the same category when there aren't enough
-export async function getRelatedProducts(product: Pick<Product, "id" | "subcategory_id" | "category_id">, max = 5): Promise<ProductCardData[]> {
-   const related: DocumentSnapshot[] = [];
-   for (const [field, value] of [
-      ["subcategory_id", product.subcategory_id],
-      ["category_id", product.category_id],
-   ] as const) {
-      if (!value || related.length >= max) continue;
-      const snap = await getDocs(query(collection(db, "Products"), where(field, "==", value), limit(max + 1)));
-      for (const productDoc of snap.docs) {
-         if (related.length < max && productDoc.id !== product.id && !related.some((item) => item.id === productDoc.id)) related.push(productDoc);
-      }
-   }
-   return Promise.all(related.map(toCardData));
 }
 
 // Card data for the given product ids, in the same order; ids that no longer exist are skipped

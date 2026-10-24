@@ -7,6 +7,8 @@ import { OrderData } from "../types/order";
 import { defineString, defineSecret } from "firebase-functions/params";
 import { getVatRate, vatIncluded } from "../utils/vat";
 import { enforceAppCheck } from "../utils/params";
+import { orderIdInputSchema } from "../schemas";
+import { parseInput } from "../utils/validation";
 const db = getFirestore();
 // Define parameters for Facturis API credentials
 const facturisApiKey = defineSecret("FACTURIS_API_KEY");
@@ -33,10 +35,7 @@ export const createInvoice = onCall(
             throw new functions.https.HttpsError("permission-denied", "Nu aveți permisiune să accesați această funcție.");
          }
 
-         const { orderId } = request.data;
-         if (!orderId) {
-            throw new functions.https.HttpsError("invalid-argument", "ID-ul comenzii este obligatoriu.");
-         }
+         const { orderId } = parseInput(orderIdInputSchema, request.data, "ID-ul comenzii este obligatoriu.");
 
          // Get Facturis API credentials
          const apiKey = facturisApiKey.value();

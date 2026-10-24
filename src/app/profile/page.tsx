@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppSelector } from "@/state/hooks";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +26,7 @@ const ProfileLoading = () => {
 };
 // Move the main profile content to a separate component
 const ProfileContent = () => {
-   const { user, isAuthReady } = useAuthContext();
+   const { user, isAuthReady } = useAppSelector((state) => state.auth);
    const searchParams = useSearchParams();
    const router = useRouter();
    const tabParam = searchParams.get("tab");

@@ -15,18 +15,19 @@ export interface CartProduct {
    discount_price?: number;
    quantity: number;
 }
+// Address forms save the short fields as text or as a number
 export type Address = {
-   id: string;
+   id?: string;
    city: string;
    county: string;
-   postal_code: number;
+   postal_code: number | string;
    street: string;
-   street_no: number;
-   apartment?: string;
-   building?: string;
-   building_no?: string;
-   floor?: number;
-   intercom?: string;
+   street_no: number | string;
+   apartment?: string | number;
+   building?: string | number;
+   building_no?: string | number;
+   floor?: number | string;
+   intercom?: string | number;
    details?: string;
    business?: boolean;
    business_details?: {

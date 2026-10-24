@@ -2,7 +2,6 @@ import * as functions from "firebase-functions/v2";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { CallableRequest, onCall } from "firebase-functions/v2/https";
-import { validateEmail, validateName, validatePhone } from "../utils/validators";
 import {
    validateProducts,
    validateAddress,
@@ -10,9 +9,10 @@ import {
 } from "../utils/validateOrderDetails";
 import { sendCustomerEmail, sendAdminEmail } from "../utils/sendNewOrderEmails";
 import { reserveStock } from "../utils/stock";
-import { isValidQuantity, MAX_ORDER_LINES } from "../utils/orderLimits";
+import { orderInputMessage, orderInputSchema } from "../schemas";
+import { parseInput } from "../utils/validation";
 import { emailPassword, enforceAppCheck } from "../utils/params";
-import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "../utils/voucher";
+import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "@core/voucher";
 import { getVatRate, vatIncluded } from "../utils/vat";
 import { isMethodEnabled, PAYMENT_METHODS, PaymentMethod, paymentSettingsFrom } from "../utils/payments";
 import { Address, OrderData } from "../types/order";
@@ -34,7 +34,7 @@ export const validateAndCreateOrder = onCall(
       secrets: [emailPassword],
       cors: true, // Enable CORS
    },
-   async (request: CallableRequest<OrderData>) => {
+   async (request: CallableRequest<unknown>) => {
       // Check if user is authenticated
       if (!request.auth) {
          logger.warn(
@@ -53,7 +53,8 @@ export const validateAndCreateOrder = onCall(
 
       try {
          const userId = request.auth.uid;
-         const orderData = request.data;
+         // Checked before anything else: unknown fields are dropped and every value is bounded
+         const orderData = parseInput(orderInputSchema, request.data, orderInputMessage);
          const ipAddress = request.rawRequest?.ip || undefined;
 
          logger.info(`[Order] Received order request from user ${userId} at IP ${ipAddress}`);
@@ -119,44 +120,6 @@ export const validateAndCreateOrder = onCall(
                `Prea multe comenzi într-o perioadă scurtă. Încearcă din nou după ${TIME_PERIOD_MINUTES} minute.`
             );
          }
-         // Basic validation
-         if (
-            !orderData ||
-            !orderData.products ||
-            !Array.isArray(orderData.products) ||
-            orderData.products?.length === 0 ||
-            orderData.products.length > MAX_ORDER_LINES ||
-            !orderData.products.every((product: { quantity?: unknown }) => isValidQuantity(product?.quantity))
-         ) {
-            logger.warn(`[Order] Invalid order data from user ${userId}`);
-            throw new functions.https.HttpsError(
-               "invalid-argument",
-               "Datele comenzii sunt invalide sau lipsesc."
-            );
-         }
-
-         if (!orderData.first_name || !validateName(orderData.first_name)) {
-            logger.warn(`[Order] Invalid first name from user ${userId}`);
-            throw new functions.https.HttpsError("invalid-argument", "Prenumele tău este invalid.");
-         }
-
-         if (!orderData.last_name || !validateName(orderData.last_name)) {
-            logger.warn(`[Order] Invalid last name from user ${userId}`);
-            throw new functions.https.HttpsError("invalid-argument", "Numele tău este invalid.");
-         }
-
-         if (!orderData.email || !validateEmail(orderData.email)) {
-            logger.warn(`[Order] Invalid email from user ${userId}`);
-            throw new functions.https.HttpsError("invalid-argument", "Emailul tău este invalid.");
-         }
-         if (!orderData.phone_no || !validatePhone(orderData.phone_no)) {
-            logger.warn(`[Order] Invalid phone number from user ${userId}`);
-            throw new functions.https.HttpsError(
-               "invalid-argument",
-               "Numărul de telefon este invalid."
-            );
-         }
-
          // Check if addresses exist - either via IDs or complete address objects
          let shippingAddress = orderData.shipping_address;
          let billingAddress = orderData.billing_address;
@@ -295,28 +258,11 @@ export const validateAndCreateOrder = onCall(
             free_shipping_threshold: 500,
          };
 
-         // Validate and adjust shipping price if free shipping threshold is enabled and met
-         let validatedShippingPrice = orderData.shipping_price;
-
-         if (
-            shippingSettings.enable_threshold &&
-            subtotal >= shippingSettings.free_shipping_threshold
-         ) {
-            // Free shipping should be applied
-            if (orderData.shipping_price !== 0) {
-               logger.warn(
-                  `[Order] Shipping price ${orderData.shipping_price} for user ${userId} doesn't match free shipping threshold policy`
-               );
-               validatedShippingPrice = 0;
-            }
-         } else {
-            // Regular shipping price should be applied
-            if (orderData.shipping_price !== shippingSettings.default_price) {
-               logger.warn(
-                  `[Order] Shipping price ${orderData.shipping_price} for user ${userId} doesn't match default shipping price`
-               );
-               validatedShippingPrice = shippingSettings.default_price;
-            }
+         // Shipping is what the store settings say, whatever the client sent: free above the threshold when it is enabled
+         const validatedShippingPrice =
+            shippingSettings.enable_threshold && subtotal >= shippingSettings.free_shipping_threshold ? 0 : shippingSettings.default_price;
+         if (orderData.shipping_price !== validatedShippingPrice) {
+            logger.warn(`[Order] Shipping price ${orderData.shipping_price} from user ${userId} corrected to ${validatedShippingPrice}`);
          }
 
          const total = subtotal + validatedShippingPrice;
@@ -434,14 +380,14 @@ export const validateAndCreateOrder = onCall(
             const duplicateOrderQuery = await db
                .collection("Orders")
                .where("user_id", "==", request.auth.uid)
-               .where("idempotency_key", "==", request.data.idempotency_key)
+               .where("idempotency_key", "==", (request.data as { idempotency_key?: string } | null)?.idempotency_key)
                .limit(1)
                .get();
 
             if (!duplicateOrderQuery.empty) {
                const duplicateOrder = duplicateOrderQuery.docs[0].data();
                logger.info(
-                  `[Order] Duplicate order detected for idempotency key ${request.data.idempotency_key}`
+                  `[Order] Duplicate order detected for idempotency key ${(request.data as { idempotency_key?: string } | null)?.idempotency_key}`
                );
                return {
                   status: 200, // OK

@@ -1,6 +1,3 @@
-import { AuthProvider } from "../context/AuthContext";
-import { CartProvider } from "../context/CartContext";
-//import LayoutWrapper from "../components/navigation/LayoutWrapper";
 import { PopUpProvider } from "../context/PopupContext";
 import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
@@ -54,17 +51,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                {/* messages={messages}> */}
                <StoreProvider>
                   <PopUpProvider>
-                     <AuthProvider>
-                        <CartProvider>
-                           <App>
-                              <div className="flex flex-col min-h-screen">
-                                 <Navbar />
-                                 <main className="flex-grow ">{children}</main>
-                                 <Footer />
-                              </div>
-                           </App>
-                        </CartProvider>
-                     </AuthProvider>
+                     <App>
+                        <div className="flex flex-col min-h-screen">
+                           <Navbar />
+                           <main className="flex-grow ">{children}</main>
+                           <Footer />
+                        </div>
+                     </App>
                   </PopUpProvider>
                </StoreProvider>
             </NextIntlClientProvider>

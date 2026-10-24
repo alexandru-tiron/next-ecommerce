@@ -54,7 +54,7 @@ const ProductList = ({ category, searchParams = {} }: { category?: string; searc
       };
 
       fetchProducts();
-   }, [category, searchParams.brand, searchParams.cat, searchParams.max, searchParams.min, searchParams.name, searchParams.page, searchParams.sort, searchParams.size, searchParams.subcat, searchParams.limit, searchParams.colour, searchParams.stock, searchParams.sale]);
+   }, [category, searchParams, t]);
 
    if (isLoading) {
       return (

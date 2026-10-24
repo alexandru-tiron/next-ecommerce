@@ -1,4 +1,4 @@
-import { getInfoData, getShippData } from "@/queries";
+import { getInfoData, getShippData } from "@/lib/server/storeData";
 import { getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 

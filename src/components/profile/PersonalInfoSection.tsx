@@ -3,15 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { Edit, AlertTriangle, Loader2, Mail, Trash2, Lock } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseInit";
-import { useAuthContext } from "@/context/AuthContext";
+import { auth, db } from "@/lib/firebaseInit";
 import { usePopupContext } from "@/context/PopupContext";
-import { EmailAuthProvider, reauthenticateWithCredential, updateEmail, User as FirebaseUser } from "firebase/auth";
-import { validateEmail, validatePhone, validateName, passwordRegex } from "@/components/common/validators";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import handleResendVerificationEmail from "@/state/auth/actions/handleResendVerificationEmail";
+import handleDeleteAccount from "@/state/auth/actions/handleDeleteAccount";
+import handleChangePassword from "@/state/auth/actions/handleChangePassword";
+import { EmailAuthProvider, reauthenticateWithCredential, updateEmail } from "firebase/auth";
+import { validateEmail, validatePhone, validateName, passwordRegex } from "@core/validators";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 const PersonalInfoSection = () => {
-   const { user, handleResendVerificationEmail, handleDeleteAccount, handleChangePassword } = useAuthContext();
+   const dispatch = useAppDispatch();
+   const router = useRouter();
+   const user = useAppSelector((state) => state.auth.user);
    const { setPopup } = usePopupContext();
    const [isEditing, setIsEditing] = useState(false);
    const [isSendingVerification, setIsSendingVerification] = useState(false);
@@ -63,7 +69,7 @@ const PersonalInfoSection = () => {
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    // Check if user signed in with Google
-   const isGoogleAccount = user?.providerData?.[0]?.providerId === "google.com";
+   const isGoogleAccount = user?.providerId === "google.com";
 
    useEffect(() => {
       if (user?.db) {
@@ -98,7 +104,7 @@ const PersonalInfoSection = () => {
 
       // Validate first name
       if (!formData.first_name.trim()) {
-         newErrors.first_name = t("Login.personalNameRequired");
+         newErrors.first_name = t("Login.firstNameRequired");
          isValid = false;
       } else if (!validateName(formData.first_name)) {
          newErrors.first_name = t("Login.firstNameTwoCharacters");
@@ -183,7 +189,7 @@ const PersonalInfoSection = () => {
    const handleResendVerification = async () => {
       try {
          setIsSendingVerification(true);
-         await handleResendVerificationEmail();
+         await dispatch(handleResendVerificationEmail());
       } catch (error) {
          console.error("Error sending verification email:", error);
       } finally {
@@ -501,12 +507,11 @@ const PersonalInfoSection = () => {
       setIsChangingEmail(true);
 
       try {
-         if (!user) {
+         // The store only holds a plain copy of the user, so use the Firebase user object
+         const firebaseUser = auth.currentUser;
+         if (!user || !firebaseUser) {
             throw new Error("Utilizatorul nu este autentificat");
          }
-
-         // Get the Firebase user object
-         const firebaseUser = user as unknown as FirebaseUser;
 
          // Reauthenticate the user
          const credential = EmailAuthProvider.credential(emailChangeData.currentEmail, emailChangeData.password);
@@ -603,7 +608,9 @@ const PersonalInfoSection = () => {
       setIsChangingPassword(true);
 
       try {
-         await handleChangePassword(passwordData.currentPassword, passwordData.newPassword);
+         const result = await dispatch(handleChangePassword({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }));
+         // Failures are shown by the auth error popup (see App.tsx)
+         if (!handleChangePassword.fulfilled.match(result)) return;
 
          // Show success message
          setPopup({
@@ -630,7 +637,7 @@ const PersonalInfoSection = () => {
          });
       } catch (error) {
          console.error("Error changing password:", error);
-         // Error handling is done by the AuthContext
+         // Error handling is done by the auth error popup
       } finally {
          setIsChangingPassword(false);
       }
@@ -666,16 +673,12 @@ const PersonalInfoSection = () => {
       setIsDeletingAccount(true);
 
       try {
-         // For email/password accounts, we use the handleDeleteAccount with password
-         if (!isGoogleAccount) {
-            await handleDeleteAccount(deletePassword);
-         } else {
-            // For Google accounts, we need a different approach
-            // Since we can't reauthenticate with password, we'll rely on existing session
-            await handleDeleteAccount("google-auth");
+         // Email/password accounts re-authenticate with their password. Google accounts can't,
+         // so they rely on the existing session. Failures are shown by the auth error popup.
+         const result = await dispatch(handleDeleteAccount(isGoogleAccount ? "google-auth" : deletePassword));
+         if (handleDeleteAccount.fulfilled.match(result)) {
+            router.push("/");
          }
-
-         // Note: No need to handle redirection here as the AuthContext will handle it
       } catch (error: unknown) {
          console.error("Error deleting account:", error);
 

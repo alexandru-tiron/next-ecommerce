@@ -24,6 +24,13 @@ describe("buildContentSecurityPolicy", () => {
       expect(policy).toContain("upgrade-insecure-requests");
    });
 
+   it("lets reCAPTCHA load and report back, so App Check gets its tokens", () => {
+      const policy = buildContentSecurityPolicy({ nonce: "n" });
+      expect(directive(policy, "script-src")).toEqual(expect.arrayContaining(["https://www.google.com/recaptcha/", "https://www.gstatic.com/recaptcha/"]));
+      expect(directive(policy, "connect-src")).toContain("https://www.google.com/recaptcha/");
+      expect(directive(policy, "frame-src")).toContain("https://www.google.com");
+   });
+
    it("allows the Firebase sign-in frame from the auth domain", () => {
       const policy = buildContentSecurityPolicy({ nonce: "n", authDomain: "shop.firebaseapp.com" });
       expect(directive(policy, "frame-src")).toContain("https://shop.firebaseapp.com");

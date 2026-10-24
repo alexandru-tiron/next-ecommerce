@@ -5,7 +5,7 @@ import { Plus, Trash, Building } from "lucide-react";
 import { doc, updateDoc, collection, addDoc, deleteDoc, deleteField } from "firebase/firestore";
 import { db } from "@/lib/firebaseInit";
 import { Address, BusinessDetails } from "@/types/user";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppSelector } from "@/state/hooks";
 import { useTranslations } from "next-intl";
 
 // Custom checkbox styles
@@ -37,7 +37,7 @@ const customCheckboxStyles = `
 `;
 
 const AddressesSection = () => {
-   const { user } = useAuthContext();
+   const user = useAppSelector((state) => state.auth.user);
    const t = useTranslations("Addresses");
 
    // Track default addresses in local state to update UI immediately

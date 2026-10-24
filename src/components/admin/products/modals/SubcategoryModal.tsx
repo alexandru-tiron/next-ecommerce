@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Subcategory } from "@/types/product";
 import { refreshCategData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 interface SubcategoryModalProps {
    isOpen: boolean;
    onClose: () => void;
@@ -138,6 +139,7 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({ isOpen, onClose, ca
          if (imageURL) subcategoryData.image = imageURL;
 
          await addDoc(collection(db, "Categories", categoryId, "Subcategories"), subcategoryData);
+         await refreshStore("catalog");
 
          // Refresh categories
          await refreshCategData();

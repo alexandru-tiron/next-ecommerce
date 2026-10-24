@@ -5,7 +5,7 @@ import { db } from "@/lib/firebaseInit";
 import { doc, getDoc, deleteDoc, collection, onSnapshot, setDoc } from "firebase/firestore";
 import { Save, RefreshCw, AlertTriangle, Plus, Trash2, Camera } from "lucide-react";
 import { Info, Notifications, Shipping, Slide, Tax } from "@/types/user";
-import { DEFAULT_VAT_RATE, isValidVatRate } from "@/lib/vat";
+import { DEFAULT_VAT_RATE, isValidVatRate } from "@core/vat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { TabsContent, TabsList, TabsTrigger, Tabs } from "@/components/common/tabs";
 import CategoryModal from "@/components/admin/products/modals/CategoryModal";
@@ -19,6 +19,7 @@ import PaymentSettingsForm from "@/components/admin/settings/PaymentSettingsForm
 import { DEFAULT_PAYMENT_SETTINGS, PaymentSettings, paymentSettingsFrom } from "@/lib/payments";
 import { Category, Brand } from "@/types/product";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 interface FirebaseSlide extends Slide {
    id: string;
 }
@@ -161,7 +162,7 @@ export default function SettingsPage() {
       });
       fetchSettings();
       return () => sliderUnsub();
-   }, []);
+   }, [t]);
 
    // Handle input changes for Info settings
    const handleInfoChange = (field: keyof Info, value: string) => {
@@ -205,6 +206,7 @@ export default function SettingsPage() {
          await setDoc(doc(db, "Settings", "Tax"), taxSettings, { merge: true });
          await setDoc(doc(db, "Settings", "Payments"), paymentSettingsFrom(paymentSettings), { merge: true });
          await setDoc(doc(db, "Settings", "Notifications"), notificationSettings, { merge: true });
+         await refreshStore("settings");
 
          setSaveMessage({
             type: "success",
@@ -252,6 +254,7 @@ export default function SettingsPage() {
             await deleteDoc(doc(db, "Settings", "Info", "Slider", id));
          }
 
+         await refreshStore(type === "slider" ? "settings" : "catalog");
          await refreshCategData(setCateg);
          await refreshBrandData(setBrands);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppSelector } from "@/state/hooks";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
@@ -21,7 +21,7 @@ interface OrderDetailsProps {
 }
 
 export default function OrderDetailsPage({ params }: OrderDetailsProps) {
-   const { user } = useAuthContext();
+   const user = useAppSelector((state) => state.auth.user);
    const t = useTranslations("Orders");
    // ?payment=cancelled|failed when coming back from a payment page
    const paymentNotice = useSearchParams().get("payment");

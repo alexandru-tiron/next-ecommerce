@@ -9,7 +9,7 @@ import { ProductOfTheMonth } from "../components/home/ProductOfTheMonth";
 import RecentlyViewed from "../components/product/RecentlyViewed";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { getCategData, getSlides } from "@/queries";
+import { getCategData, getSlides } from "@/lib/server/storeData";
 
 export default async function Home() {
    const [t, slides, categories] = await Promise.all([getTranslations("HomePage"), getSlides(), getCategData()]);

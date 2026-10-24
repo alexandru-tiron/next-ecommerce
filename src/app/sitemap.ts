@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebaseInit";
+import { getSitemapData } from "@/lib/server/storeData";
 import { productPath } from "@/lib/productUrl";
 import { siteUrl } from "@/lib/siteUrl";
 
@@ -19,21 +18,19 @@ const STATIC_PATHS = [
    "/info/terms-and-conditions",
 ];
 
-const toDate = (value: unknown) => (value instanceof Timestamp ? value.toDate() : undefined);
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-   const [productsSnap, categoriesSnap] = await Promise.all([getDocs(collection(db, "Products")), getDocs(collection(db, "Categories"))]);
+   const { products, categories } = await getSitemapData();
 
    return [
       ...STATIC_PATHS.map((path) => ({ url: `${siteUrl}${path}`, changeFrequency: "weekly" as const, priority: path === "" ? 1 : 0.5 })),
-      ...categoriesSnap.docs.map((category) => ({
-         url: `${siteUrl}/list?cat=${encodeURIComponent(category.data().name)}`,
+      ...categories.map((name) => ({
+         url: `${siteUrl}/list?cat=${encodeURIComponent(name)}`,
          changeFrequency: "weekly" as const,
          priority: 0.7,
       })),
-      ...productsSnap.docs.map((product) => ({
-         url: `${siteUrl}${productPath({ id: product.id, name: product.data().name })}`,
-         lastModified: toDate(product.data().updated_at) ?? toDate(product.data().created_at),
+      ...products.map((product) => ({
+         url: `${siteUrl}${productPath(product)}`,
+         lastModified: product.lastModified ? new Date(product.lastModified) : undefined,
          changeFrequency: "weekly" as const,
          priority: 0.8,
       })),

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Brand } from "@/types/product";
 import { refreshBrandData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 interface BrandModalProps {
    isOpen: boolean;
    onClose: () => void;
@@ -78,6 +79,7 @@ const BrandModal: React.FC<BrandModalProps> = ({ isOpen, onClose }) => {
          if (logoURL) brandData.image = logoURL;
 
          await addDoc(collection(db, "Brands"), brandData);
+         await refreshStore("catalog");
 
          // Refresh categories and brands
          await refreshBrandData();

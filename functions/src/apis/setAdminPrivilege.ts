@@ -2,6 +2,8 @@ import { logger } from "firebase-functions/v2";
 import { getAuth } from "firebase-admin/auth";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { enforceAppCheck } from "../utils/params";
+import { adminPrivilegeInputSchema } from "../schemas";
+import { parseInput } from "../utils/validation";
 
 export const setAdminPrivilege = onCall(
    {
@@ -25,19 +27,14 @@ export const setAdminPrivilege = onCall(
          }
 
          // Get the target user ID from request data
-         const { uid } = request.data;
-
-         if (!uid || typeof uid !== "string") {
-            logger.error("[Firebase] Invalid or missing UID in setAdminPrivilege request");
-            throw new Error("Invalid request: UID is required");
-         }
+         const { uid } = parseInput(adminPrivilegeInputSchema, request.data, "Invalid request: UID is required");
 
          // Verify the target user exists
          try {
             await getAuth().getUser(uid);
-         } catch (error: any) {
+         } catch {
             logger.error(`[Firebase] User with UID ${uid} not found`);
-            throw new Error(`User with UID ${uid} not found`);
+            throw new HttpsError("not-found", `User with UID ${uid} not found`);
          }
 
          // Set the custom claim
@@ -52,7 +49,7 @@ export const setAdminPrivilege = onCall(
       } catch (error: any) {
          logger.error("[Firebase] Error in setAdminPrivilege:", error);
          if (error instanceof HttpsError) throw error;
-         throw new Error(`Failed to set admin privileges: ${error.message}`);
+         throw new HttpsError("internal", "Failed to set admin privileges");
       }
    }
 ); 

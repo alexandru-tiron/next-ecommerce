@@ -4,16 +4,31 @@ import { v4 } from "uuid";
 import { db } from "@/lib/firebaseInit";
 import { CartProduct } from "@/types/product";
 import type { RootState } from "@/state/store";
+import { readGuestCart, writeGuestCart } from "../guestCart";
 
 export type AddToCartArgs = Omit<CartProduct, "id" | "discount" | "discount_price">;
 
-const isSameItem = (item: CartProduct, args: AddToCartArgs) => item.product_id === args.product_id && item.variant_id === args.variant_id && item.sku_variant_id === args.sku_variant_id;
+// Matched in JS rather than with a Firestore where(): where("variant_id", "==", null) skips documents that don't have the field
+const isSameItem = (item: CartProduct, args: AddToCartArgs) =>
+   item.product_id === args.product_id && (item.variant_id ?? null) === (args.variant_id ?? null) && (item.sku_variant_id ?? null) === (args.sku_variant_id ?? null);
+
+// Turns a cart line back into addToCart arguments, e.g. to move it from the guest cart to Firestore
+export const toAddToCartArgs = ({ product_id, product_name, product_code, product_image, product_price, quantity, variant_id, variant_name, sku_variant_id, sku_variant_name }: CartProduct): AddToCartArgs => ({
+   product_id,
+   product_name,
+   product_code,
+   product_image,
+   product_price,
+   quantity,
+   variant_id,
+   variant_name,
+   sku_variant_id,
+   sku_variant_name,
+});
 
 export const addToCart = createAsyncThunk<CartProduct, AddToCartArgs, { state: RootState }>("cart/addToCart", async (args, { getState }) => {
    const { user } = getState().auth;
-   const cartItems: CartProduct[] = user
-      ? (await getDocs(collection(db, "Users", user.uid, "Cart"))).docs.map((item) => ({ id: item.id, ...item.data() }) as CartProduct)
-      : JSON.parse(localStorage.getItem("myCart") || "[]");
+   const cartItems: CartProduct[] = user ? (await getDocs(collection(db, "Users", user.uid, "Cart"))).docs.map((item) => ({ id: item.id, ...item.data() }) as CartProduct) : readGuestCart();
    const existingItem = cartItems.find((item) => isSameItem(item, args));
 
    let cartProduct: CartProduct;
@@ -49,9 +64,7 @@ export const addToCart = createAsyncThunk<CartProduct, AddToCartArgs, { state: R
    }
 
    if (!user) {
-      // Guests keep their cart in localStorage, under the same key CartContext uses
-      const nextCart = existingItem ? cartItems.map((item) => (item.id === cartProduct.id ? cartProduct : item)) : [...cartItems, cartProduct];
-      localStorage.setItem("myCart", JSON.stringify(nextCart));
+      writeGuestCart(existingItem ? cartItems.map((item) => (item.id === cartProduct.id ? cartProduct : item)) : [...cartItems, cartProduct]);
    }
 
    return cartProduct;

@@ -32,6 +32,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
    /* config options here */
    poweredByHeader: false,
+   // The Admin SDK is Node-only; server pages load it from node_modules instead of bundling it
+   serverExternalPackages: ["firebase-admin"],
    // `next dev --turbopack` ignores the webpack() config below, so it needs its own rule to import *.svg as React components
    turbopack: {
       rules: {
@@ -77,7 +79,8 @@ const nextConfig: NextConfig = {
       dangerouslyAllowSVG: true,
       contentDispositionType: "attachment",
       contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-      unoptimized: false, // Enables Next.js image optimization
+      // Images from the Storage emulator (npm run dev:emulators) are shown as they are; everything else is optimized
+      unoptimized: process.env.NEXT_PUBLIC_USE_EMULATORS === "true",
       formats: ["image/avif", "image/webp"],
       // Uploads get a new file name, so an optimized image can be cached for a long time
       minimumCacheTTL: 60 * 60 * 24 * 30,

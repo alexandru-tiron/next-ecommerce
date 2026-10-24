@@ -2,12 +2,13 @@ import { logger } from "firebase-functions/v1";
 import { getFirestore } from "firebase-admin/firestore";
 const nodemailer = require("nodemailer");
 import { defineString } from "firebase-functions/params";
-import { emailPassword } from "./params";
+import { emailPassword, inEmulator } from "./params";
 // Define parameters 
 const emailUser = defineString("EMAIL_USER");
 
 // Function to send email confirmation to customer
 export async function sendCustomerEmail(userEmail: string, orderId: string, orderData: any, updateOrder: boolean) {
+    if (inEmulator) return logger.info(`[Email] Confirmation email for order ${orderId} skipped in the emulator`);
     try {
        logger.info(`[Order] Sending confirmation email for order ${orderId}`);
  
@@ -121,6 +122,7 @@ export async function sendCustomerEmail(userEmail: string, orderId: string, orde
  
  // Function to send notification to admin
  export async function sendAdminEmail(orderId: string, orderData: any, userData: any) {
+    if (inEmulator) return logger.info(`[Email] Admin notification for order ${orderId} skipped in the emulator`);
     try {
        logger.info(`[Order] Sending admin notification for order ${orderId}`);
  

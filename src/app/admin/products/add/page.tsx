@@ -13,6 +13,7 @@ import { ProductBasicInfo, ProductPricing, ProductImages, ProductDescription, Va
 import { Product, Variant, SkuVariant, VARIANT_TYPE, SKUVARIANT_TYPE, Category } from "@/types/product";
 import { getCategData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 
 export default function AddProductPage() {
    const t = useTranslations();
@@ -461,6 +462,7 @@ export default function AddProductPage() {
             }
          }
 
+         await refreshStore("catalog");
          // Navigate back to products page after successful save
          router.push("/admin/products");
       } catch (error) {

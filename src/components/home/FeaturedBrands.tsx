@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { getBrandData } from "@/queries";
+import { getBrandData } from "@/lib/server/storeData";
 
 export const FeaturedBrands = async () => {
    const brands = await getBrandData();

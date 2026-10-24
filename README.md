@@ -112,6 +112,8 @@ bun dev
 
 The app should now be running at [http://localhost:3000](http://localhost:3000)
 
+To try everything (sign-in, checkout, the admin panel) without a Firebase project, run the store against the local Firebase emulators with demo data: see "Run everything locally" in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ### Search index (Algolia)
 
 The store queries an Algolia index named `products` plus sorted replicas: `products_price_asc`, `products_price_desc`, `products_created_at_desc` (`desc(created_at._seconds)`), `products_sold_desc`, `products_sold_asc`, `products_name_asc` and `products_name_desc`. Filtering uses `category_name`, `subcategory_name`, `brand`, `sku_variants.name` and `product_code` (set as filter-only facets) and the numeric `price`.
@@ -254,7 +256,8 @@ This project is licensed under the [MIT License](LICENSE).
 
 Everything the store needs is in this repository:
 
--  `functions/`: Cloud Functions for order validation (prices, stock, vouchers, VAT), order e-mails and status updates, card payments, search sync, account creation and deletion, and admin rights.
+-  `functions/`: Cloud Functions for order validation (prices, stock, vouchers, VAT), order e-mails and status updates, card payments, contact messages, search sync, account creation and deletion, and admin rights.
+-  `packages/core/`: the business rules the storefront and the functions share (see [packages/core/README.md](packages/core/README.md)).
 -  `firestore.rules` and `storage.rules`: deny-by-default security rules. Deploy them together with the functions, and never replace them with open "test mode" rules.
 -  `firestore.indexes.json`: the Firestore indexes the queries need.
 -  `scripts/`: demo data, search index setup and reindexing, and the script that creates the first admin (see [scripts/README.md](scripts/README.md)).

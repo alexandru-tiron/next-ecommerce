@@ -1,5 +1,6 @@
 "use client";
-import { useCartContext } from "@/context/CartContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import { removeItem } from "@/state/cart/cartSlice";
 import Image from "next/image";
 import Link from "next/link";
 import { CartProduct } from "@/types/product";
@@ -9,7 +10,8 @@ import VatNote from "@/components/common/VatNote";
 
 export default function CartPage() {
    const t = useTranslations();
-   const { cart, subTotal, isLoading, removeItem } = useCartContext();
+   const dispatch = useAppDispatch();
+   const { cart, subTotal, isLoading } = useAppSelector((state) => state.cart);
    if (cart.length === 0) {
       return (
          <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -85,7 +87,7 @@ export default function CartPage() {
                                        )}
                                     </div>
                                  </div>
-                                 <button className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600" style={{ cursor: isLoading ? "not-allowed" : "pointer" }} onClick={() => removeItem(item.id)} disabled={isLoading}>
+                                 <button className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600" style={{ cursor: isLoading ? "not-allowed" : "pointer" }} onClick={() => dispatch(removeItem(item.id))} disabled={isLoading}>
                                     <X className="size-3.5" />
                                  </button>
                               </div>

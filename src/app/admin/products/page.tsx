@@ -13,6 +13,7 @@ import { client } from "@/lib/algoliaClient";
 import { SearchResponse } from "@algolia/client-search";
 import { getCategData, getBrandData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 // Simple debounce function
 const useDebounce = (value: string, delay: number) => {
    const [debouncedValue, setDebouncedValue] = useState(value);
@@ -244,6 +245,7 @@ export default function ProductsPage() {
 
          // Delete the product from Firestore
          await deleteDoc(doc(db, "Products", productToDelete));
+         await refreshStore("catalog");
 
          // Also delete from Algolia index - this will be handled by a Cloud Function or backend process
 

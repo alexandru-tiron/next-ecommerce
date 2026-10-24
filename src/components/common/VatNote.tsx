@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { twMerge } from "tailwind-merge";
 import { getTaxData } from "@/queries/fetchTaxData";
-import { vatIncluded } from "@/lib/vat";
+import { vatIncluded } from "@core/vat";
 
 // "Includes VAT (21%): 294.87 Lei" under a VAT-inclusive total.
 // Pass `rate` for an existing order (the rate it was placed with); otherwise the current rate from Settings/Tax is used.

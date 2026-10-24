@@ -202,6 +202,23 @@ describe("wishlist", () => {
    });
 });
 
+describe("contact messages", () => {
+   it("only admins can read them, mark them read and delete them", async () => {
+      await seed("ContactMessages/m1", { email: "ana@example.com", message: "Hello", read: false });
+      await assertFails(getDoc(doc(anonymous(), "ContactMessages/m1")));
+      await assertFails(getDoc(doc(alice(), "ContactMessages/m1")));
+      await assertSucceeds(getDoc(doc(admin(), "ContactMessages/m1")));
+      await assertSucceeds(updateDoc(doc(admin(), "ContactMessages/m1"), { read: true }));
+      await assertFails(updateDoc(doc(admin(), "ContactMessages/m1"), { message: "changed" }));
+      await assertSucceeds(deleteDoc(doc(admin(), "ContactMessages/m1")));
+   });
+
+   it("can't be written from the browser; the sendContactMessage function saves them", async () => {
+      await assertFails(addDoc(collection(anonymous(), "ContactMessages"), { message: "spam" }));
+      await assertFails(addDoc(collection(alice(), "ContactMessages"), { message: "spam" }));
+   });
+});
+
 describe("orders", () => {
    beforeEach(async () => {
       await seed("Orders/o1", { user_id: "alice", total: 100, status: "pending" });

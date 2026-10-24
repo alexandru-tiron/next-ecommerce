@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Slide } from "@/types/user";
 import { v4 } from "uuid";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 interface FirebaseSlide extends Slide {
    id: string;
 }
@@ -219,8 +220,7 @@ const AddSlideModal: React.FC<AddSlideModalProps> = ({ isOpen, onClose, editSlid
             await addDoc(slideRef, { ...slideData, order: slideCount + 1 });
          }
 
-         // Refresh categories and brands
-         // await refreshSlideData();  
+         await refreshStore("settings");
 
          // Reset form
          setTitle("");

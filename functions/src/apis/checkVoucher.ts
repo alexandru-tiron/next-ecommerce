@@ -1,7 +1,8 @@
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
-import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "../utils/voucher";
+import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "@core/voucher";
 import { enforceAppCheck } from "../utils/params";
+import { voucherInputSchema } from "../schemas";
 const db = getFirestore();
 
 // Previews a voucher at checkout. Vouchers aren't readable by customers, so the check runs here.
@@ -10,11 +11,13 @@ export const checkVoucher = onCall({ enforceAppCheck }, async (request) => {
    if (!request.auth) {
       throw new HttpsError("unauthenticated", "Utilizatorul nu este autentificat.");
    }
-   const code = typeof request.data?.code === "string" ? normalizeVoucherCode(request.data.code) : "";
-   const subtotal = Number(request.data?.subtotal);
-   if (!/^[A-Z0-9_-]{3,30}$/.test(code) || !Number.isFinite(subtotal) || subtotal < 0) {
+   // A malformed code gets the same answer as an unknown one
+   const input = voucherInputSchema.safeParse(request.data);
+   const code = input.success ? normalizeVoucherCode(input.data.code) : "";
+   if (!input.success || !/^[A-Z0-9_-]{3,30}$/.test(code)) {
       return { valid: false, message: voucherMessage({ ok: false, reason: "not_found" }) };
    }
+   const { subtotal } = input.data;
 
    const snap = await db.collection("Vouchers").doc(code).get();
    if (!snap.exists) return { valid: false, message: voucherMessage({ ok: false, reason: "not_found" }) };

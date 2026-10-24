@@ -7,12 +7,15 @@ import Link from "next/link";
 import { getInfoData } from "@/queries";
 import { Info } from "@/types/user";
 import { useTranslations } from "next-intl";
+import { sendContactMessage } from "@/lib/contact";
+import { validateEmail, validatePhone } from "@core/validators";
 interface FormData {
    first_name: string;
    last_name: string;
    phone: string;
    email: string;
    message: string;
+   website?: string;
 }
 
 // components/Contact.tsx
@@ -21,11 +24,13 @@ const Contact = () => {
    const {
       register,
       handleSubmit,
+      reset,
       formState: { errors, isSubmitting },
    } = useForm<FormData>();
 
    const t = useTranslations("Contact");
    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+   const [errorMessage, setErrorMessage] = useState<string | null>(null);
    const [info, setInfo] = useState<Info | null>(null);
 
    useEffect(() => {
@@ -36,14 +41,16 @@ const Contact = () => {
       fetchInfo();
    }, []);
 
-   const onSubmit = async () => {
-
+   const onSubmit = async (data: FormData) => {
+      setSuccessMessage(null);
+      setErrorMessage(null);
       try {
-         // Simulate an API call (replace with real API endpoint)
-         await new Promise((resolve) => setTimeout(resolve, 1000));
+         await sendContactMessage({ type: "contact", ...data });
          setSuccessMessage(t("contactFormSuccess"));
+         reset();
       } catch (error) {
-         console.error(t("contactFormError"), error);
+         console.error("Failed to send message", error);
+         setErrorMessage(t("contactFormError"));
       }
    };
    return (
@@ -117,6 +124,7 @@ const Contact = () => {
                {successMessage && (
                   <p className="text-green-600 text-center mb-4">{successMessage}</p>
                )}
+               {errorMessage && <p className="text-red-600 text-center mb-4">{errorMessage}</p>}
                <form onSubmit={handleSubmit(onSubmit)} className=" flex flex-col w-full gap-4">
                   {/* Name */}
                   <div className="flex flex-col gap-4 md:flex-row w-full">
@@ -155,10 +163,7 @@ const Contact = () => {
                            type="email"
                            {...register("email", {
                               required: t("contactFormEmailRequired"),
-                              pattern: {
-                                 value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
-                                 message: t("contactFormEmailInvalid"),
-                              },
+                              validate: (value) => validateEmail(value) || t("contactFormEmailInvalid"),
                            })}
                            className="ring-2 ring-gray-300 rounded-md p-2 placeholder:text-sm"
                            placeholder={t("contactFormEmailPlaceholder")}
@@ -175,10 +180,7 @@ const Contact = () => {
                            type="text"
                            {...register("phone", {
                               required: t("contactFormPhoneRequired"),
-                              pattern: {
-                                 value: /^\+?[1-9]\d{1,14}$/,
-                                 message: t("contactFormPhoneInvalid"),
-                              },
+                              validate: (value) => !value || validatePhone(value) || t("contactFormPhoneInvalid"),
                            })}
                            className="ring-2 ring-gray-300 rounded-md p-2 placeholder:text-sm"
                            placeholder={t("contactFormPhonePlaceholder")}
@@ -201,6 +203,9 @@ const Contact = () => {
                         <p className="text-red-500 text-sm">{errors.message.message}</p>
                      )}
                   </div>
+
+                  {/* Left empty by people; bots that fill in every field are ignored */}
+                  <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" {...register("website")} />
 
                   {/* Submit Button */}
                   <button

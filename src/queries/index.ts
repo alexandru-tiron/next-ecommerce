@@ -6,5 +6,5 @@ export { getShippData } from "./fetchShippData";
 export { getTaxData } from "./fetchTaxData";
 export { getProductOfTheMonth } from "./fetchProductOfTheMonth";
 export { getSlides } from "./fetchSlides";
-export { getProductDoc, getRelatedProducts, getProductCards } from "./fetchProductCards";
+export { getProductCards } from "./fetchProductCards";
 export type { ProductCardData } from "./fetchProductCards";

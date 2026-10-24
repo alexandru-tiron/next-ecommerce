@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCartContext } from "@/context/CartContext";
-import { useAuthContext } from "@/context/AuthContext";
 import { usePopupContext } from "@/context/PopupContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import handleResendVerificationEmail from "@/state/auth/actions/handleResendVerificationEmail";
+import { clearCart, reconstructCart } from "@/state/cart/cartSlice";
 import Image from "next/image";
 import Link from "next/link";
 import { Address, Order, Shipping } from "@/types/user";
@@ -14,7 +15,7 @@ import { getPaymentSettings } from "@/queries/fetchPaymentSettings";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { FirebaseError } from "firebase/app";
 import { CartProduct } from "@/types/product";
-import { validateName, validateEmail, validatePhone } from "@/components/common/validators";
+import { validateName, validateEmail, validatePhone } from "@core/validators";
 import app, { auth } from "@/lib/firebaseInit";
 import { getShippData } from "@/queries";
 import { useTranslations } from "next-intl";
@@ -34,8 +35,9 @@ interface ResponseData {
 export default function CheckoutPage() {
    const router = useRouter();
    const t = useTranslations();
-   const { user, handleResendVerificationEmail } = useAuthContext();
-   const { cart, subTotal, clearCart, reconstructCart } = useCartContext();
+   const dispatch = useAppDispatch();
+   const { user, isAuthReady } = useAppSelector((state) => state.auth);
+   const { cart, subTotal } = useAppSelector((state) => state.cart);
    const { setPopup } = usePopupContext();
    const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null);
    const [selectedBillingId, setSelectedBillingId] = useState<string | null>(null);
@@ -56,8 +58,6 @@ export default function CheckoutPage() {
       phoneNumber: "",
    });
    const [shipping, setShipping] = useState<Shipping | null>(null);
-   const [shippingCost, setShippingCost] = useState(0);
-   const [total, setTotal] = useState(0);
    const [isSendingVerification, setIsSendingVerification] = useState(false);
    const [firstName, setFirstName] = useState(user?.db?.first_name || "");
    const [lastName, setLastName] = useState(user?.db?.last_name || "");
@@ -65,14 +65,12 @@ export default function CheckoutPage() {
    const [phoneNumber, setPhoneNumber] = useState(user?.db?.phone_no || "");
 
    useEffect(() => {
-      const fetchShipping = async () => {
-         const shipping = await getShippData();
-         setShipping(shipping);
-         setShippingCost(shipping.enable_threshold && subTotal >= shipping.free_shipping_threshold ? 0 : shipping.default_price);
-         setTotal(subTotal + (shipping.enable_threshold && subTotal >= shipping.free_shipping_threshold ? 0 : shipping.default_price));
-      };
-      fetchShipping();
+      getShippData().then(setShipping);
    }, []);
+
+   // Free above the threshold when the store has one; follows the cart as it loads and changes
+   const shippingCost = !shipping ? 0 : shipping.enable_threshold && subTotal >= shipping.free_shipping_threshold ? 0 : shipping.default_price;
+   const total = subTotal + shippingCost;
 
    // Previews the voucher; the order function checks and applies it again when the order is placed
    const applyVoucher = async (code: string) => {
@@ -123,12 +121,12 @@ export default function CheckoutPage() {
       }
    }, [cart, router]);
 
-   // Redirect to login if not authenticated
+   // Redirect to login if not authenticated (once Firebase has restored any existing session)
    useEffect(() => {
-      if (!user) {
+      if (isAuthReady && !user) {
          router.push("/login?redirect=/checkout");
       }
-   }, [user, router]);
+   }, [user, isAuthReady, router]);
 
    // Set default addresses when user data is loaded
    useEffect(() => {
@@ -163,7 +161,7 @@ export default function CheckoutPage() {
    const handleResendVerification = async () => {
       try {
          setIsSendingVerification(true);
-         await handleResendVerificationEmail();
+         await dispatch(handleResendVerificationEmail());
       } catch (error) {
          console.error("Error sending verification email:", error);
       } finally {
@@ -361,7 +359,7 @@ export default function CheckoutPage() {
                      const validProducts = cart.filter((product) => !invalidProductIds.includes(product.id));
 
                      // Reconstruct the cart with only valid products
-                     await reconstructCart(validProducts);
+                     await dispatch(reconstructCart(validProducts));
 
                      // Format invalid products error message
                      const productErrorsList = responseData.invalidProducts.map((p: { id: string; reason: string }) => `• ${p.reason}`).join("\n");
@@ -380,7 +378,7 @@ export default function CheckoutPage() {
             }
          } else if (responseData.success && responseData.orderId) {
             // Order successfully created
-            await clearCart();
+            await dispatch(clearCart());
             if (paymentMethod !== "cod") {
                // Card payments continue on the provider's payment page; if that can't start, the order page offers to retry
                try {
@@ -430,17 +428,17 @@ export default function CheckoutPage() {
                // Invalid argument errors (validation errors)
                case "invalid-argument":
                   if (firebaseError.message.includes("Prenumele")) {
-                     showErrorPopup(t("Login.invalidFirstName"));
-                     setFieldErrors({ ...fieldErrors, firstName: t("Login.invalidFirstName") });
+                     showErrorPopup(t("Login.firstNameInvalid"));
+                     setFieldErrors({ ...fieldErrors, firstName: t("Login.firstNameInvalid") });
                   } else if (firebaseError.message.includes("Numele")) {
-                     showErrorPopup(t("Login.invalidLastName"));
-                     setFieldErrors({ ...fieldErrors, lastName: t("Login.invalidLastName") });
+                     showErrorPopup(t("Login.lastNameInvalid"));
+                     setFieldErrors({ ...fieldErrors, lastName: t("Login.lastNameInvalid") });
                   } else if (firebaseError.message.includes("Emailul")) {
-                     showErrorPopup(t("Login.invalidEmail"));
-                     setFieldErrors({ ...fieldErrors, email: t("Login.invalidEmail") });
+                     showErrorPopup(t("Login.emailInvalid"));
+                     setFieldErrors({ ...fieldErrors, email: t("Login.emailInvalid") });
                   } else if (firebaseError.message.includes("telefon")) {
-                     showErrorPopup(t("Login.invalidPhone"));
-                     setFieldErrors({ ...fieldErrors, phoneNumber: t("Login.invalidPhone") });
+                     showErrorPopup(t("Login.phoneInvalid"));
+                     setFieldErrors({ ...fieldErrors, phoneNumber: t("Login.phoneInvalid") });
                   } else if (firebaseError.message.includes("Adresa de livrare lipsește")) {
                      showErrorPopup(t("Checkout.missingShippingAddress"));
                   } else if (firebaseError.message.includes("Adresa de facturare lipsește")) {
@@ -482,7 +480,7 @@ export default function CheckoutPage() {
                      const validProducts = cart.filter((product) => !invalidProductIds.includes(product.id));
 
                      // Reconstruct the cart with only valid products
-                     await reconstructCart(validProducts);
+                     await dispatch(reconstructCart(validProducts));
 
                      // Format error message for display
                      const productErrorsList = invalidProductsList.map((p) => `• ${p.reason}`).join("\n");

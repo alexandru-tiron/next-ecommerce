@@ -272,7 +272,8 @@
       "paymentMethodStripeDescription": "Pay securely by card on Stripe's payment page",
       "paymentMethodNetopia": "Card (NETOPIA Payments)",
       "paymentMethodNetopiaDescription": "Pay securely by card on NETOPIA's payment page",
-      "continueToPayment": "Continue to payment"
+      "continueToPayment": "Continue to payment",
+      "tooManyOrders": "Too many orders in a short time. Please try again in a few minutes."
    },
    "Orders": {
       "loadingOrders": "Loading orders...",
@@ -316,7 +317,9 @@
       "discount": "Discount",
       "placed": "Order placed",
       "orderProgress": "Order progress",
-      "orderCancelled": "This order was cancelled"
+      "orderCancelled": "This order was cancelled",
+      "shipping": "Shipping",
+      "free": "Free"
    },
    "Addresses": {
       "loadingAddresses": "Loading addresses...",
@@ -377,7 +380,9 @@
       "businessCuiRequired": "Tax ID is required",
       "businessCuiInvalid": "Tax ID is invalid",
       "businessRegNoRequired": "Registration number is required",
-      "businessRegNoInvalid": "Registration number is invalid (ex: J12/123/2020)"
+      "businessRegNoInvalid": "Registration number is invalid (ex: J12/123/2020)",
+      "floorShort": "Floor",
+      "postalCodeShort": "Postal code"
    },
    "AboutUs": {
       "aboutUs": "About Us",
@@ -458,7 +463,9 @@
       "consentModificationRequestMessagePlaceholder": "Your message",
       "consentModificationRequestMessageRequired": "Message is required",
       "consentModificationRequestSubmit": "Send",
-      "consentModificationRequestSubmitLoading": "Sending..."
+      "consentModificationRequestSubmitLoading": "Sending...",
+      "consentModificationRequestSuccess": "Your request has been sent. We'll reply by e-mail.",
+      "consentModificationRequestError": "Your request couldn't be sent. Please try again."
    },
    "DeliveryAndPayment": {
       "deliveryAndPaymentTitle": "Delivery & Payment",
@@ -1024,7 +1031,8 @@
       "stripeWebhookEvents": "Webhook events:",
       "netopiaIpnUrl": "Payment notifications (sent automatically with each payment) go to:",
       "paymentSetupNote": "Unpaid card orders are cancelled automatically after 3 hours, which puts their items back in stock.",
-      "paymentSetupEnable": "Then switch the provider on in functions/.env and deploy its functions:"
+      "paymentSetupEnable": "Then switch the provider on in functions/.env and deploy its functions:",
+      "noCategorySelected": "No category selected"
    },
    "Offline": {
       "title": "You're offline",

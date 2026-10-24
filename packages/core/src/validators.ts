@@ -1,4 +1,4 @@
-import {phone} from 'phone';
+import { phone } from "phone";
 
 export const emailRegex = new RegExp("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
 
@@ -17,15 +17,11 @@ export const validatePassword = (password: string): boolean => {
    return passwordRegex.test(password);
 };
 
+// Romanian numbers in any common format, or international numbers with their country code
 export const validatePhone = (phoneNumber: string): boolean => {
-   return phoneRegex.test(phoneNumber) || phone(phoneNumber, { country: "ROU" }).isValid;
+   return phoneRegex.test(phoneNumber) || phone(phoneNumber).isValid;
 };
 
 export const validateName = (name: string): boolean => {
    return name?.trim()?.length >= 2;
-};
-
-// Get password error message
-export const getPasswordErrorMessage = (): string => {
-   return "Parola trebuie să conțină cel puțin 8 caractere, o literă mare, o literă mică, un număr și un caracter special.";
 };

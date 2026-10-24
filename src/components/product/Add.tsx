@@ -1,7 +1,8 @@
 "use client";
 
 import { SkuVariant, Variant } from "@/types/product";
-import { useCartContext } from "@/context/CartContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import { addToCart } from "@/state/cart/cartSlice";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -47,7 +48,8 @@ const Add = ({
       }
    };
 
-   const { addItem, isLoading } = useCartContext();
+   const dispatch = useAppDispatch();
+   const isLoading = useAppSelector((state) => state.cart.isLoading);
 
    return (
       <div className="flex flex-col gap-4">
@@ -87,17 +89,19 @@ const Add = ({
                         router.push(`/${product_name}?id=${product_id}`);
                      }
                   } else {
-                     addItem(
-                        product_id,
-                        product_name,
-                        product_code,
-                        product_image,
-                        product_price,
-                        quantity,
-                        selectedVariant ? selectedVariant.id : undefined,
-                        selectedVariant ? selectedVariant.name : undefined,
-                        selectedSkuVariant ? selectedSkuVariant.id : undefined,
-                        selectedSkuVariant ? selectedSkuVariant.name : undefined
+                     dispatch(
+                        addToCart({
+                           product_id,
+                           product_name,
+                           product_code,
+                           product_image,
+                           product_price,
+                           quantity,
+                           variant_id: selectedVariant ? selectedVariant.id : undefined,
+                           variant_name: selectedVariant ? selectedVariant.name : undefined,
+                           sku_variant_id: selectedSkuVariant ? selectedSkuVariant.id : undefined,
+                           sku_variant_name: selectedSkuVariant ? selectedSkuVariant.name : undefined,
+                        })
                      );
                   }
                }}

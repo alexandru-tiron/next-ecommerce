@@ -66,6 +66,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Contact form and data-protection messages, written by the sendContactMessage function
+    match /ContactMessages/{messageId} {
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && changesOnly(["read"]);
+    }
+
     // Store settings (Info, Shipping, Notifications) and the Info/Slider subcollection
     // Discount codes: managed by admins; customers check them through the checkVoucher Cloud Function
     match /Vouchers/{code} {

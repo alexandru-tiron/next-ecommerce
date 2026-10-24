@@ -15,6 +15,8 @@ export function middleware(request: NextRequest) {
    // Server components can read the nonce from this header for any <Script> they add
    requestHeaders.set("x-nonce", nonce);
    requestHeaders.set("Content-Security-Policy", csp);
+   // Server components that render differently on some pages (the footer on admin pages) read the path from here
+   requestHeaders.set("x-pathname", request.nextUrl.pathname);
 
    const response = NextResponse.next({ request: { headers: requestHeaders } });
    response.headers.set("Content-Security-Policy", csp);

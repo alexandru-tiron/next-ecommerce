@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Package, Tag, Users, Settings, Grid, Home, X, Boxes, TicketPercent, ChartColumn } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAppSelector } from "@/state/hooks";
 import { useTranslations } from "next-intl";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-   const { user, admin, isAuthReady } = useAuthContext();
+   const { user, admin, isAuthReady } = useAppSelector((state) => state.auth);
    const t = useTranslations("Admin");
    const router = useRouter();
    const pathname = usePathname();

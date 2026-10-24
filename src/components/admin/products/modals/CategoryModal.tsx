@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Category } from "@/types/product";
 import { refreshCategData } from "@/queries";
 import { useTranslations } from "next-intl";
+import { refreshStore } from "@/lib/refreshStore";
 interface CategoryModalProps {
    isOpen: boolean;
    onClose: () => void;
@@ -127,6 +128,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose }) => {
          if (imageURL) categoryData.image = imageURL;
 
          await addDoc(collection(db, "Categories"), categoryData);
+         await refreshStore("catalog");
 
          // Refresh categories
          await refreshCategData();

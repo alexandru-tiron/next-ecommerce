@@ -24,10 +24,20 @@ export function buildContentSecurityPolicy({ nonce, isDev = false, authDomain }:
       ],
       // React style props set inline styles, which a nonce can't cover
       "style-src": ["'self'", "'unsafe-inline'"],
-      "img-src": ["'self'", "data:", "blob:", "https://firebasestorage.googleapis.com"],
+      "img-src": ["'self'", "data:", "blob:", "https://firebasestorage.googleapis.com", ...(isDev ? ["http://127.0.0.1:*"] : [])],
       "font-src": ["'self'", "data:"],
-      // Firebase (Auth, Firestore, Storage, App Check), Cloud Functions and Algolia search
-      "connect-src": ["'self'", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.algolia.net", "https://*.algolianet.com", "https://*.algolia.io"],
+      // Firebase (Auth, Firestore, Storage, App Check), Cloud Functions, Algolia search and reCAPTCHA (App Check's checks)
+      "connect-src": [
+         "'self'",
+         "https://*.googleapis.com",
+         "https://*.cloudfunctions.net",
+         "https://*.algolia.net",
+         "https://*.algolianet.com",
+         "https://*.algolia.io",
+         "https://www.google.com/recaptcha/",
+         // The local Firebase emulators
+         ...(isDev ? ["http://127.0.0.1:*", "http://localhost:*"] : []),
+      ],
       // Firebase sign-in helper, reCAPTCHA and the Google Maps embed on the contact page
       "frame-src": ["'self'", ...(authDomain ? [`https://${authDomain}`] : []), "https://www.google.com", "https://recaptcha.google.com"],
       "worker-src": ["'self'"],

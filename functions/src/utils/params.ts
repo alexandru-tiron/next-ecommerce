@@ -10,3 +10,6 @@ export const algoliaWriteKey = defineSecret("ALGOLIA_API_WRITE_KEY");
 
 // Callable functions reject requests without a valid App Check token once ENFORCE_APP_CHECK=true is set in functions/.env
 export const enforceAppCheck = process.env.ENFORCE_APP_CHECK === "true";
+
+// Set by the Firebase emulators. Demo data must never reach the real search index or real inboxes.
+export const inEmulator = process.env.FUNCTIONS_EMULATOR === "true";

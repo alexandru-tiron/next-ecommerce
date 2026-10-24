@@ -272,7 +272,8 @@
       "paymentMethodStripeDescription": "Plătește în siguranță cu cardul pe pagina Stripe",
       "paymentMethodNetopia": "Card (NETOPIA Payments)",
       "paymentMethodNetopiaDescription": "Plătește în siguranță cu cardul pe pagina NETOPIA",
-      "continueToPayment": "Continuă spre plată"
+      "continueToPayment": "Continuă spre plată",
+      "tooManyOrders": "Prea multe comenzi într-un timp scurt. Încearcă din nou peste câteva minute."
    },
    "Orders": {
       "loadingOrders": "Se încarcă comenzile...",
@@ -316,7 +317,9 @@
       "discount": "Discount",
       "placed": "Comandă plasată",
       "orderProgress": "Progresul comenzii",
-      "orderCancelled": "Această comandă a fost anulată"
+      "orderCancelled": "Această comandă a fost anulată",
+      "shipping": "Livrare",
+      "free": "Gratuit"
    },
    "Addresses": {
       "loadingAddresses": "Se încarcă adresele...",
@@ -377,7 +380,9 @@
       "businessCuiRequired": "CUI/CIF este obligatoriu",
       "businessCuiInvalid": "CUI/CIF-ul nu este valid",
       "businessRegNoRequired": "Numărul de înregistrare este obligatoriu",
-      "businessRegNoInvalid": "Numărul de înregistrare nu este valid (ex: J12/123/2020)"
+      "businessRegNoInvalid": "Numărul de înregistrare nu este valid (ex: J12/123/2020)",
+      "floorShort": "Et.",
+      "postalCodeShort": "Cod poștal"
    },
    "AboutUs": {
       "aboutUs": "Despre Noi",
@@ -458,7 +463,9 @@
       "consentModificationRequestMessagePlaceholder": "Mesajul dvs",
       "consentModificationRequestMessageRequired": "Mesajul este obligatoriu",
       "consentModificationRequestSubmit": "Trimite",
-      "consentModificationRequestSubmitLoading": "Se trimite..."
+      "consentModificationRequestSubmitLoading": "Se trimite...",
+      "consentModificationRequestSuccess": "Cererea a fost trimisă. Îți vom răspunde pe e-mail.",
+      "consentModificationRequestError": "Cererea nu a putut fi trimisă. Te rugăm să încerci din nou."
    },
    "DeliveryAndPayment": {
       "deliveryAndPaymentTitle": "Livrare & Plata",
@@ -1024,7 +1031,8 @@
       "stripeWebhookEvents": "Evenimente webhook:",
       "netopiaIpnUrl": "Notificările de plată (trimise automat cu fiecare plată) ajung la:",
       "paymentSetupNote": "Comenzile cu cardul neplătite sunt anulate automat după 3 ore, iar produsele revin în stoc.",
-      "paymentSetupEnable": "Apoi activează procesatorul în functions/.env și publică funcțiile lui:"
+      "paymentSetupEnable": "Apoi activează procesatorul în functions/.env și publică funcțiile lui:",
+      "noCategorySelected": "Nicio categorie selectată"
    },
    "Offline": {
       "title": "Ești offline",

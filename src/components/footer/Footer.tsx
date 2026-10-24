@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { Phone, Mail, MapPin, Instagram, Facebook, Twitter } from "lucide-react";
-import { getCategData, getInfoData } from "@/queries";
+import { getCategData, getInfoData } from "@/lib/server/storeData";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 
 const Footer = async () => {
-   const headersList = await headers();
-   const fullUrl = headersList.get("referer") || "";
-   const isAdminRoute = fullUrl.includes("admin");
-   if (isAdminRoute) return null;
+   // Admin pages have no store footer (x-pathname is set in src/middleware.ts)
+   const pathname = (await headers()).get("x-pathname") ?? "";
+   if (pathname.startsWith("/admin")) return null;
 
    const info = await getInfoData();
    const categ = await getCategData();

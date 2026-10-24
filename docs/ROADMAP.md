@@ -96,6 +96,22 @@ Give contributors one clear structure.
 
 **Done when:** no business rule exists in two places, and `npm run build`, lint, typecheck and all tests run from the repository root.
 
+**Status:** done, with one change to the plan.
+
+- **Layout:** the storefront stays at the repository root instead of moving to `apps/storefront`. A move would change Vercel's Root Directory for every store. Shared rules live in `packages/core` and are imported as `@core/*`; the functions bundle them with esbuild. Moving `packages/emails` out is left for Phase 5, together with the e-mail provider interface.
+- **Done:**
+  - Redux merged and the contexts removed. Tested signed in on the emulators: profile, address, cart, wishlist and a cash-on-delivery order.
+  - `npm run dev:emulators` and `npm run seed:emulators` run the whole store locally.
+  - zod schemas for every callable function.
+  - Server pages read through the Admin SDK and Next's data cache. Admin saves refresh it through `/api/revalidate`.
+  - The contact and data-request forms send their messages: saved in `ContactMessages`, e-mailed to the store, rate-limited.
+  - No lint warnings.
+- **Fixed along the way:**
+  - Missing translations, now caught by a test.
+  - The checkout total ignoring cart changes.
+  - Product pages failing for products with an `updated_at` timestamp.
+- **Left for the owner:** set `FIREBASE_SERVICE_ACCOUNT_KEY` in Vercel, then enforce App Check on Firestore (see [docs/SECURITY-SETUP.md](SECURITY-SETUP.md)). Storage stays unenforced, because the image optimizer reads product images without App Check.
+
 ## Phase 3: White-label configuration
 
 Everything a store owner changes lives in the admin panel.

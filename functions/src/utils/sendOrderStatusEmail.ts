@@ -1,7 +1,7 @@
 import { logger } from "firebase-functions/v2";
 import { getFirestore } from "firebase-admin/firestore";
 import { defineString } from "firebase-functions/params";
-import { emailPassword, siteUrl } from "./params";
+import { emailPassword, inEmulator, siteUrl } from "./params";
 const nodemailer = require("nodemailer");
 
 const emailUser = defineString("EMAIL_USER");
@@ -34,6 +34,7 @@ const messages: Record<NotifiedStatus, { subject: (id: string) => string; title:
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] as string);
 
 export async function sendOrderStatusEmail(userEmail: string, orderId: string, order: { status: NotifiedStatus; first_name?: string; tracking_number?: string }) {
+   if (inEmulator) return logger.info(`[Email] Status email for order ${orderId} skipped in the emulator`);
    const message = messages[order.status];
    const info = (await getFirestore().collection("Settings").doc("Info").get()).data();
    const storeName = escapeHtml(info?.store_name ?? "");

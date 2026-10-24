@@ -1,5 +1,6 @@
 "use client";
-import { useCartContext } from "@/context/CartContext";
+import { useAppDispatch, useAppSelector } from "@/state/hooks";
+import { removeItem } from "@/state/cart/cartSlice";
 import Image from "next/image";
 import { forwardRef } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,8 @@ import { useTranslations } from "next-intl";
 
 const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) => void }>((props, ref) => {
    const t = useTranslations("CartModal");
-   const { cart, subTotal, isLoading, removeItem } = useCartContext();
+   const dispatch = useAppDispatch();
+   const { cart, subTotal, isLoading } = useAppSelector((state) => state.cart);
    const router = useRouter();
 
    const handleCheckout = async () => {
@@ -89,7 +91,7 @@ const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) =
                                              )}
                                           </div>
                                        </div>
-                                       <button className="p-0.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600" style={{ cursor: isLoading ? "not-allowed" : "pointer" }} onClick={() => removeItem(item.id)} disabled={isLoading}>
+                                       <button className="p-0.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600" style={{ cursor: isLoading ? "not-allowed" : "pointer" }} onClick={() => dispatch(removeItem(item.id))} disabled={isLoading}>
                                           <X className="size-3" />
                                        </button>
                                     </div>
