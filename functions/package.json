@@ -21,9 +21,9 @@
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.4.0",
     "nodemailer": "^10.2.1",
-    "phone": "^3.1.59",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "phone": "^3.1.72",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "stripe": "^23.0.0",
     "zod": "^4.6.7"
   },
@@ -34,7 +34,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^8.9.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-import": "^2.32.0",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5"
   },
