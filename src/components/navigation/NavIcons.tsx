@@ -11,6 +11,7 @@ import { User, LogOut, Package, MapPin, Search, UserRound, ShoppingCart } from "
 import { useTranslations } from "next-intl";
 const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; setIsSearchOpen: (isSearchOpen: boolean) => void }) => {
    const t = useTranslations("Navbar");
+   const tPopup = useTranslations("Popup");
    const [isProfileOpen, setIsProfileOpen] = useState(false);
    const [isCartOpen, setIsCartOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
@@ -36,11 +37,11 @@ const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; se
    const logout = () => {
       setIsProfileOpen(false);
       setPopup({
-         title: "Deconectare",
-         description: [<p key="sign_out">Sunteți sigur că doriți să vă deconectați?</p>],
+         title: tPopup("signOutTitle"),
+         description: [<p key="sign_out">{tPopup("signOutText")}</p>],
          buttons: [
             {
-               label: "Da",
+               label: tPopup("yes"),
                onClick: async () => {
                   setIsLoading(true);
                   const result = await dispatch(handleLogout());
@@ -51,7 +52,7 @@ const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; se
                },
                className: "primary",
             },
-            { label: "Nu", onClick: () => {} },
+            { label: tPopup("no"), onClick: () => {} },
          ],
       });
    };
@@ -154,7 +155,7 @@ const NavIcons = ({ isSearchOpen, setIsSearchOpen }: { isSearchOpen: boolean; se
             }}
          >
             <ShoppingCart className="size-6" />
-            {counter != 0 && <div className="absolute -top-3 -right-3 w-5 h-5 bg-pink-700 rounded-full text-white text-xs flex items-center justify-center">{counter}</div>}
+            {counter != 0 && <div className="absolute -top-3 -right-3 w-5 h-5 bg-brand-700 rounded-full text-white text-xs flex items-center justify-center">{counter}</div>}
          </div>
          {isCartOpen && <CartModal ref={cartRef} setIsCartOpen={setIsCartOpen} />}
       </div>

@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebaseInit";
+import { useTranslations } from "next-intl";
 import { usePopupContext } from "@/context/PopupContext";
 import { useAppDispatch, useAppSelector } from "@/state/hooks";
 import { AuthNotice, clearUser, dismissNotice } from "@/state/auth/authSlice";
@@ -18,6 +19,7 @@ import { readGuestCart } from "@/state/cart/guestCart";
 const App = ({ children }: { children: ReactNode }) => {
    const dispatch = useAppDispatch();
    const router = useRouter();
+   const t = useTranslations("Popup");
    const { setPopup, setLoadPop } = usePopupContext();
    const uid = useAppSelector((state) => state.auth.user?.uid);
    const isAuthReady = useAppSelector((state) => state.auth.isAuthReady);
@@ -58,57 +60,63 @@ const App = ({ children }: { children: ReactNode }) => {
    useEffect(() => {
       if (!notice) return;
       dispatch(dismissNotice());
-      setPopup(getNoticePopup(notice, () => router.push("/")));
-   }, [dispatch, notice, router, setPopup]);
+      setPopup(getNoticePopup(notice, () => router.push("/"), t));
+   }, [dispatch, notice, router, setPopup, t]);
 
    return <>{children}</>;
 };
 
 export default App;
 
-function getNoticePopup(notice: AuthNotice, goHome: () => void) {
+type Translate = ReturnType<typeof useTranslations<"Popup">>;
+
+function getNoticePopup(notice: AuthNotice, goHome: () => void, t: Translate) {
    switch (notice.type) {
       case "error":
          return {
-            title: "Eroare",
-            description: [<p key="error">{getAuthErrorMessage(notice.error)}</p>],
-            buttons: [{ label: "OK", onClick: () => {}, className: "primary" }],
+            title: t("error"),
+            variant: "error" as const,
+            description: [<p key="error">{getAuthErrorMessage(notice.error, t)}</p>],
+            buttons: [{ label: t("ok"), onClick: () => {}, className: "primary" }],
          };
       case "signedUp":
          return {
-            title: "Cont creat cu succes",
-            description: [<p key="verify">Un email de verificare a fost trimis la adresa {notice.email}. Vă rugăm să verificați căsuța de email și să urmați instrucțiunile pentru a vă activa contul.</p>],
-            buttons: [{ label: "OK", onClick: goHome, className: "primary" }],
+            title: t("signedUpTitle"),
+            variant: "success" as const,
+            description: [<p key="verify">{t("signedUpText", { email: notice.email })}</p>],
+            buttons: [{ label: t("ok"), onClick: goHome, className: "primary" }],
          };
       case "passwordResetSent":
          return {
-            title: "Succes",
-            description: [<p key="success">Un email pentru resetare a parolei a fost trimis la adresa {notice.email}.</p>],
-            buttons: [{ label: "OK", onClick: goHome, className: "primary" }],
+            title: t("passwordResetTitle"),
+            variant: "success" as const,
+            description: [<p key="success">{t("passwordResetText", { email: notice.email })}</p>],
+            buttons: [{ label: t("ok"), onClick: goHome, className: "primary" }],
          };
       case "verificationSent":
          return {
-            title: "Email trimis",
-            description: [<p key="verify">Un nou email de verificare a fost trimis. Vă rugăm să verificați căsuța de email și să urmați instrucțiunile pentru a vă activa contul.</p>],
-            buttons: [{ label: "OK", onClick: () => {}, className: "primary" }],
+            title: t("verificationSentTitle"),
+            variant: "success" as const,
+            description: [<p key="verify">{t("verificationSentText")}</p>],
+            buttons: [{ label: t("ok"), onClick: () => {}, className: "primary" }],
          };
    }
 }
 
-// Map error codes to user-friendly messages
-function getAuthErrorMessage({ code, message }: AuthError) {
+// Firebase Auth error codes as messages for the visitor
+function getAuthErrorMessage({ code }: AuthError, t: Translate) {
    switch (code) {
       case "auth/user-not-found":
-         return "Utilizatorul nu a fost găsit";
+         return t("authErrors.userNotFound");
       case "auth/internal-error":
-         return "Eroare internă";
+         return t("authErrors.internal");
       case "auth/invalid-credential":
-         return "Credențiale invalide";
+         return t("authErrors.invalidCredential");
       case "auth/invalid-email":
-         return "Email invalid";
+         return t("authErrors.invalidEmail");
       case "auth/wrong-password":
-         return "Parola greșită";
+         return t("authErrors.wrongPassword");
       default:
-         return message;
+         return t("authErrors.unknown");
    }
 }

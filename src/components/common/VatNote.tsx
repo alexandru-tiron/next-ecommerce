@@ -5,8 +5,9 @@ import { useTranslations } from "next-intl";
 import { twMerge } from "tailwind-merge";
 import { getTaxData } from "@/queries/fetchTaxData";
 import { vatIncluded } from "@core/vat";
+import { Money } from "@/components/common/Price";
 
-// "Includes VAT (21%): 294.87 Lei" under a VAT-inclusive total.
+// "Includes VAT (21%): €294.87" under a VAT-inclusive total.
 // Pass `rate` for an existing order (the rate it was placed with); otherwise the current rate from Settings/Tax is used.
 const VatNote = ({ gross, rate: orderRate, className }: { gross: number; rate?: number; className?: string }) => {
    const t = useTranslations("Checkout");
@@ -30,7 +31,7 @@ const VatNote = ({ gross, rate: orderRate, className }: { gross: number; rate?: 
    return (
       <div className={twMerge("flex justify-between text-sm text-gray-500", className)}>
          <span>{t("vatIncluded", { rate })}</span>
-         <span>{vatIncluded(gross, rate).toFixed(2)} Lei</span>
+         <span><Money amount={vatIncluded(gross, rate)} /></span>
       </div>
    );
 };

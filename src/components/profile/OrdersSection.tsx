@@ -8,9 +8,12 @@ import { db } from "@/lib/firebaseInit";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { Order } from "@/types/user";
 import { useTranslations } from "next-intl";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
 
 const OrdersSection = () => {
    const t = useTranslations("Orders");
+   const formatStoreDate = useFormatDate();
    const router = useRouter();
    const user = useAppSelector((state) => state.auth.user);
    const [orders, setOrders] = useState<Order[]>([]);
@@ -82,25 +85,17 @@ const OrdersSection = () => {
 
                            // Format date
                            const formattedDate = order.date
-                              ? new Date("toDate" in order.date ? order.date.toDate() : order.date._seconds * 1000).toLocaleDateString("ro-RO", {
-                                   day: "2-digit",
-                                   month: "2-digit",
-                                   year: "numeric",
-                                })
-                              : new Date().toLocaleDateString("ro-RO", {
-                                   day: "2-digit",
-                                   month: "2-digit",
-                                   year: "numeric",
-                                });
+                              ? formatStoreDate("toDate" in order.date ? order.date.toDate() : order.date._seconds * 1000, { day: "2-digit", month: "2-digit", year: "numeric" })
+                              : formatStoreDate(new Date(), { day: "2-digit", month: "2-digit", year: "numeric" });
 
                            return (
                               <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleOrderClick(order.id)}>
                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium truncate max-w-[80px] sm:max-w-none">{order.id}</td>
                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">{formattedDate}</td>
-                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">{total.toFixed(2)} Lei</td>
+                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500"><Money amount={total} /></td>
                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">{order.products.length}</td>
                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
-                                    <button className="text-pink-600 hover:text-pink-900">{t("viewDetails")}</button>
+                                    <button className="text-brand-600 hover:text-brand-900">{t("viewDetails")}</button>
                                  </td>
                               </tr>
                            );

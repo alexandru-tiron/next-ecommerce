@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CartProduct } from "@/types/product";
 import { ShoppingCart, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Money } from "@/components/common/Price";
 
 const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) => void }>((props, ref) => {
    const t = useTranslations("CartModal");
@@ -75,7 +76,7 @@ const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) =
                                              </>
                                           )}
                                        </div>
-                                       <span className="text-[10px] text-gray-400">Cantitate: {item.quantity}</span>
+                                       <span className="text-[10px] text-gray-400">{t("quantity")}: {item.quantity}</span>
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -83,11 +84,11 @@ const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) =
                                           <div className="relative">
                                              {price.discount ? (
                                                 <div className="flex flex-col relative">
-                                                   <h3 className="text-[10px] text-gray-500 line-through absolute -top-2 right-0">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h3>
-                                                   <h2 className="font-medium text-sm text-pink-700">{(Number(price.discount.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                   <h3 className="text-[10px] text-gray-500 line-through absolute -top-2 right-0"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h3>
+                                                   <h2 className="font-medium text-sm text-brand-700"><Money amount={(Number(price.discount.join(".")) * item.quantity)} /></h2>
                                                 </div>
                                              ) : (
-                                                <h2 className="font-medium text-sm text-pink-700">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                <h2 className="font-medium text-sm text-brand-700"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h2>
                                              )}
                                           </div>
                                        </div>
@@ -107,11 +108,11 @@ const CartModal = forwardRef<HTMLDivElement, { setIsCartOpen: (value: boolean) =
                   <div className="h-[1px] bg-gray-100" />
                   <div className="flex items-center justify-between font-medium text-sm my-1">
                      <span>{t("total")}</span>
-                     <span>{subTotal} Lei</span>
+                     <span><Money amount={subTotal} /></span>
                   </div>
                   <div className="h-[1px] bg-gray-100" />
 
-                  <button className="rounded-md flex items-center justify-center gap-2 w-full text-sm py-2 px-4 bg-pink-700 text-white mt-2 disabled:cursor-not-allowed disabled:opacity-75 hover:bg-pink-800" disabled={isLoading} onClick={handleCheckout}>
+                  <button className="rounded-md flex items-center justify-center gap-2 w-full text-sm py-2 px-4 bg-brand-700 text-white mt-2 disabled:cursor-not-allowed disabled:opacity-75 hover:bg-brand-800" disabled={isLoading} onClick={handleCheckout}>
                      <ShoppingCart className="text-white fill-current size-4" /> {t("viewDetails")}
                   </button>
                </div>

@@ -30,6 +30,14 @@ describe("validatePhone", () => {
       expect(validatePhone("+447911123456")).toBe(true);
    });
 
+   it.each(["+49 30 1234567", "+49 (0)89 123456", "+1 212-555-0123"])("accepts the landline %s written with its country code", (phoneNumber) => {
+      expect(validatePhone(phoneNumber)).toBe(true);
+   });
+
+   it.each(["+49 12", "+0 123 456 789", "+49 30 1234 5678 9012", "+49 30 abc"])("rejects the malformed international number %j", (phoneNumber) => {
+      expect(validatePhone(phoneNumber)).toBe(false);
+   });
+
    it.each(["", "123", "07211234567890"])("rejects %j", (phoneNumber) => {
       expect(validatePhone(phoneNumber)).toBe(false);
    });

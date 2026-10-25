@@ -11,14 +11,36 @@ import { db as clientDb } from "@/lib/firebaseInit";
 const APP_NAME = "store-server";
 const useEmulators = process.env.NEXT_PUBLIC_USE_EMULATORS === "true";
 
-// A read-only service account key: the JSON file's contents, or the same JSON in base64
-function serviceAccount() {
-   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
-   if (!raw) return null;
-   return JSON.parse(raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8"));
-}
+type ServiceAccount = { project_id: string; client_email: string; private_key: string };
 
 let warned = false;
+const warnOnce = (message: string) => {
+   if (warned) return;
+   console.warn(message);
+   warned = true;
+};
+
+// A read-only service account key: the whole downloaded JSON file, or the same JSON in base64.
+// A missing or unusable key falls back to the web SDK instead of failing every page.
+function serviceAccount(): ServiceAccount | null {
+   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
+   if (!raw) {
+      if (process.env.NODE_ENV === "production") warnOnce("FIREBASE_SERVICE_ACCOUNT_KEY isn't set: server pages read Firestore with the web SDK. See docs/SECURITY-SETUP.md.");
+      return null;
+   }
+   try {
+      const account = JSON.parse(raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8"));
+      if (typeof account.project_id === "string" && typeof account.client_email === "string" && typeof account.private_key === "string") return account;
+   } catch {
+      // Reported below
+   }
+   warnOnce(
+      "FIREBASE_SERVICE_ACCOUNT_KEY must be the whole service account JSON file (or that JSON in base64), with project_id, client_email and private_key. " +
+         "Server pages read Firestore with the web SDK until it's fixed. See docs/SECURITY-SETUP.md."
+   );
+   return null;
+}
+
 function adminApp(): App | null {
    const existing = getApps().find((app) => app.name === APP_NAME);
    if (existing) return existing;
@@ -27,14 +49,8 @@ function adminApp(): App | null {
       return initializeApp({ projectId: "demo-store" }, APP_NAME);
    }
    const account = serviceAccount();
-   if (!account) {
-      if (!warned && process.env.NODE_ENV === "production") {
-         console.warn("FIREBASE_SERVICE_ACCOUNT_KEY isn't set: server pages read Firestore with the web SDK. See docs/SECURITY-SETUP.md.");
-         warned = true;
-      }
-      return null;
-   }
-   return initializeApp({ credential: cert(account), projectId: account.project_id }, APP_NAME);
+   if (!account) return null;
+   return initializeApp({ credential: cert({ projectId: account.project_id, clientEmail: account.client_email, privateKey: account.private_key }), projectId: account.project_id }, APP_NAME);
 }
 
 function adminDb(): Firestore | null {

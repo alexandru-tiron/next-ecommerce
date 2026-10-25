@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { cardPrice, productPath } from "@/lib/productUrl";
 import type { ProductCardData } from "@/queries/fetchProductCards";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import { PriceTag } from "@/components/common/Price";
 
 // Image widths matching the card widths: full, sm:45%, md:30%, lg:18%
 const CARD_IMAGE_SIZES = "(min-width: 1024px) 18vw, (min-width: 768px) 30vw, (min-width: 640px) 45vw, 100vw";
@@ -36,24 +37,18 @@ const ProductCard = ({ item, showBrand = true, className }: { item: ProductCardD
                         left: price.discount ? "3.5rem" : " ",
                      }}
                   >
-                     {price.price[0]}
-                     <sup className=" text-[0.5rem] leading-none -top-[0.3rem]">{price.price[1]}</sup>
-                     Lei
+                     {<PriceTag amount={Number(price.price.join("."))} supClassName="text-[0.5rem] leading-none -top-[0.3rem]" />}
                      <div className="absolute bottom-[calc(50%-1px)] left-0 h-[1px] w-full bg-gray-700" />
                   </h3>
-                  <h2 className="font-medium text-2xl text-pink-700 ">
+                  <h2 className="font-medium text-2xl text-brand-700 ">
                      {price.fromPrice && <span className=" text-base font-normal text-gray-700">{t("from")}</span>}
-                     {price.discount[0]}
-                     <sup className=" text-xs leading-none -top-2">{price.discount[1]}</sup>
-                     <span className=" text-base">Lei</span>
+                     {<PriceTag amount={Number(price.discount.join("."))} supClassName="text-xs leading-none -top-2" currencyClassName="text-base" />}
                   </h2>
                </div>
             ) : (
-               <h2 className="font-medium text-2xl text-pink-700 self-end mr-2">
+               <h2 className="font-medium text-2xl text-brand-700 self-end mr-2">
                   {price.fromPrice && <span className=" text-sm font-normal text-gray-700">{t("from")}</span>}
-                  {price.price[0]}
-                  <sup className=" text-xs leading-none -top-2">{price.price[1]}</sup>
-                  <span className=" text-base">Lei</span>
+                  {<PriceTag amount={Number(price.price.join("."))} supClassName="text-xs leading-none -top-2" currencyClassName="text-base" />}
                </h2>
             )}
             <button className="rounded-2xl bg-black text-white w-max py-2 px-4 text-xs hover:bg-lama hover:text-white ml-auto  ">{t("addToCart")}</button>

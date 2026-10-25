@@ -1,9 +1,11 @@
-import { CallableRequest, HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
+import { CallableRequest, onCall, onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import Stripe from "stripe";
-import { stripeEventPaymentStatus, toMinorUnits } from "../../utils/payments";
+import { orderCurrency, stripeEventPaymentStatus, toMinorUnits } from "../../utils/payments";
+import { loadStoreInfo } from "../../utils/settings";
 import { enforceAppCheck } from "../../utils/params";
+import { storeError } from "../../utils/errors";
 import { applyPaymentStatus, db, payableOrder } from "./shared";
 
 // Loaded only when ENABLE_STRIPE=true in functions/.env (see index.ts); set both secrets first:
@@ -14,6 +16,7 @@ const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const createStripeSession = onCall({ secrets: [stripeSecretKey], enforceAppCheck }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
    const { ref, order, orderId, origin } = await payableOrder(request, "stripe");
    const stripe = new Stripe(stripeSecretKey.value());
+   const { store_name } = await loadStoreInfo();
    try {
       const session = await stripe.checkout.sessions.create({
          mode: "payment",
@@ -22,7 +25,7 @@ export const createStripeSession = onCall({ secrets: [stripeSecretKey], enforceA
          metadata: { order_id: orderId },
          payment_intent_data: { metadata: { order_id: orderId } },
          // One line for the whole order: the total already includes vouchers and shipping
-         line_items: [{ quantity: 1, price_data: { currency: "ron", unit_amount: toMinorUnits(order.total), product_data: { name: `Comanda #${orderId}` } } }],
+         line_items: [{ quantity: 1, price_data: { currency: orderCurrency(order).toLowerCase(), unit_amount: toMinorUnits(order.total), product_data: { name: `${store_name} #${orderId}` } } }],
          success_url: `${origin}/checkout/success?order=${encodeURIComponent(orderId)}&payment=stripe`,
          cancel_url: `${origin}/profile/orders/${encodeURIComponent(orderId)}?payment=cancelled`,
          expires_at: Math.floor(Date.now() / 1000) + 2 * 60 * 60,
@@ -31,7 +34,7 @@ export const createStripeSession = onCall({ secrets: [stripeSecretKey], enforceA
       return { url: session.url };
    } catch (error) {
       logger.error(`[Payments] Stripe session for order ${orderId} failed:`, error);
-      throw new HttpsError("internal", "Plata cu cardul nu a putut fi inițiată. Te rugăm să încerci din nou.");
+      throw storeError("internal", "payment_start_failed");
    }
 });
 

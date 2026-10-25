@@ -11,6 +11,8 @@ import { CartProduct } from "@/types/product";
 import { useAppDispatch } from "@/state/hooks";
 import handleResetPassword from "@/state/auth/actions/handleResetPassword";
 import { useTranslations } from "next-intl";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
 interface CustomerDetailPageProps {
    params: Promise<{
       id: string;
@@ -28,6 +30,7 @@ const toDate = (timestamp: Timestamp | { _seconds: number; _nanoseconds: number 
 export default function CustomerDetailPage({ params }: CustomerDetailPageProps) {
    const resolvedParams = use(params) as { id: string };
    const t = useTranslations();
+   const formatStoreDate = useFormatDate();
    const router = useRouter();
    const dispatch = useAppDispatch();
    const [isLoading, setIsLoading] = useState(true);
@@ -165,12 +168,8 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                      <span className="text-gray-600">
                         {t("Admin.memberSince")}{" "}
                         {customer.created_at
-                           ? toDate(customer.created_at).toLocaleDateString("ro-RO", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                             })
-                           : "N/A"}
+                           ? formatStoreDate(toDate(customer.created_at))
+                           : "—"}
                      </span>
                   </div>
                   <button onClick={() => dispatch(handleResetPassword(customer.email))} className="flex items-center text-sm text-indigo-600 hover:text-indigo-900 mt-2">
@@ -193,19 +192,15 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   </div>
                   <div className="flex justify-between">
                      <span className="text-gray-600">{t("Admin.totalSpent")}:</span>
-                     <span className="font-medium">{totalSpent.toFixed(2)} Lei</span>
+                     <span className="font-medium"><Money amount={totalSpent} /></span>
                   </div>
                   {recentOrders.length > 0 && (
                      <div className="flex justify-between">
                         <span className="text-gray-600">{t("Admin.lastOrder")}:</span>
                         <span className="font-medium">
                            {recentOrders[0].date
-                              ? toDate(recentOrders[0].date).toLocaleDateString("ro-RO", {
-                                   day: "2-digit",
-                                   month: "2-digit",
-                                   year: "numeric",
-                                })
-                              : "N/A"}
+                              ? formatStoreDate(toDate(recentOrders[0].date))
+                              : "—"}
                         </span>
                      </div>
                   )}
@@ -231,16 +226,12 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                                  </Link>
                                  <p className="text-sm text-gray-500">
                                     {order.date
-                                       ? toDate(order.date).toLocaleDateString("ro-RO", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                            year: "numeric",
-                                         })
-                                       : "N/A"}
+                                       ? formatStoreDate(toDate(order.date))
+                                       : "—"}
                                  </p>
                               </div>
                               <div className="text-right">
-                                 <span className="font-medium">{(order.products.reduce((sum, product) => sum + (product.discount_price || product.product_price) * (product.quantity || 1), 0) + order.shipping_price).toFixed(2)} Lei</span>
+                                 <span className="font-medium"><Money amount={(order.products.reduce((sum, product) => sum + (product.discount_price || product.product_price) * (product.quantity || 1), 0) + order.shipping_price)} /></span>
                                  <p className="text-sm text-gray-500 capitalize">
                                     {order.status === "pending" && t("Orders.pending")}
                                     {order.status === "accepted" && t("Orders.accepted")}

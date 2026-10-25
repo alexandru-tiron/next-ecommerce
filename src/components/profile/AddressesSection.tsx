@@ -14,9 +14,9 @@ const customCheckboxStyles = `
    w-4 h-4
    border border-gray-300
    rounded
-   checked:bg-pink-700
-   checked:border-pink-700
-   checked:hover:bg-pink-700
+   checked:bg-brand-700
+   checked:border-brand-700
+   checked:hover:bg-brand-700
    hover:border-gray-400
    transition-colors
    cursor-pointer
@@ -561,7 +561,7 @@ const AddressesSection = () => {
                         </div>
                         <div>
                            <label className="block text-sm text-gray-700 mb-1">{t("businessIban")}</label>
-                           <input type="text" name="business_iban" value={newAddress.business_details?.iban || ""} onChange={handleInputChange} className={`w-full p-2 border border-gray-300 rounded-md`} placeholder="Ex: RO49AAAA1B31007593840000" />
+                           <input type="text" name="business_iban" value={newAddress.business_details?.iban || ""} onChange={handleInputChange} className={`w-full p-2 border border-gray-300 rounded-md`} placeholder={t("businessIbanPlaceholder")} />
                         </div>
                      </div>
                   )}
@@ -581,11 +581,11 @@ const AddressesSection = () => {
          <div className="space-y-6">
             {user.db?.addresses && user.db.addresses.length > 0 ? (
                user.db.addresses.map((address) => (
-                  <div key={address.id} className={`border ${address.business ? "border-pink-200 bg-pink-50" : "border-gray-200"} rounded-lg p-4 hover:border-gray-300 transition-colors`}>
+                  <div key={address.id} className={`border ${address.business ? "border-brand-200 bg-brand-50" : "border-gray-200"} rounded-lg p-4 hover:border-gray-300 transition-colors`}>
                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
                         <div>
                            {address.business && (
-                              <div className="flex items-center mb-2 text-pink-700">
+                              <div className="flex items-center mb-2 text-brand-700">
                                  <Building size={16} className="mr-1" />
                                  <span className="text-sm font-medium">{address.business_details?.name}</span>
                               </div>

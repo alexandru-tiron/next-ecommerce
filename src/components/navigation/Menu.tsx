@@ -1,6 +1,6 @@
 "use client";
 
-import { getCategData, getInfoData } from "@/queries";
+import { getCategData } from "@/queries";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 // import SearchBar from "./SearchBar";
@@ -8,8 +8,9 @@ import { twMerge } from "tailwind-merge";
 import { Category, Subcategory } from "@/types/product";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, Menu as MenuIcon, X } from "lucide-react";
-import { Info } from "@/types/user";
 import { useTranslations } from "next-intl";
+import { useStoreSettings } from "@/components/StoreSettingsProvider";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Menu = () => {
    const t = useTranslations("Navbar");
@@ -17,20 +18,15 @@ const Menu = () => {
    const [bgOpen, setBgOpen] = useState(false);
    const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
    const [categ, setCateg] = useState<Category[]>([]);
-   const [info, setInfo] = useState<Info | null>(null);
    useEffect(() => {
       const fetchCateg = async () => {
          const categ = await getCategData();
          setCateg(categ);
       };
-      const fetchInfo = async () => {
-         const info = await getInfoData();
-         setInfo(info);
-      };
       fetchCateg();
-      fetchInfo();
    }, []);
    const pathname = usePathname();
+   const { storeName } = useStoreSettings();
 
    const setMenu = (state: boolean) => {
       if (state) {
@@ -53,7 +49,7 @@ const Menu = () => {
 
    return (
       <div className="">
-         <MenuIcon className="cursor-pointer w-7 h-7 text-gray-800 hover:text-pink-600 transition-colors" onClick={() => setMenu(!open)} />
+         <MenuIcon className="cursor-pointer w-7 h-7 text-gray-800 hover:text-brand-600 transition-colors" onClick={() => setMenu(!open)} />
          <div
             id="bfMenuOverlay"
             key={"bfMenuOverlay"}
@@ -71,7 +67,7 @@ const Menu = () => {
             >
                <div className="relative border-b border-gray-100 py-4">
                   <h2 className="w-full text-center text-2xl font-medium text-gray-800">{t("menu")}</h2>
-                  <button className="absolute right-4 top-4 p-2 rounded-full bg-gray-100 hover:bg-pink-100 text-gray-600 hover:text-pink-600 transition-all" onClick={() => setMenu(false)}>
+                  <button className="absolute right-4 top-4 p-2 rounded-full bg-gray-100 hover:bg-brand-100 text-gray-600 hover:text-brand-600 transition-all" onClick={() => setMenu(false)}>
                      <X className="w-5 h-5" />
                   </button>
                </div>
@@ -92,18 +88,18 @@ const Menu = () => {
                               <div className="flex items-center ">
                                  <Link
                                     href={`/list?cat=${item.name}`}
-                                    className={twMerge("flex items-center gap-3 py-3 px-4 rounded-lg mx-2 transition-all flex-grow", isActive ? "bg-pink-50 text-pink-700" : "hover:bg-gray-50 text-gray-700 hover:text-pink-600")}
+                                    className={twMerge("flex items-center gap-3 py-3 px-4 rounded-lg mx-2 transition-all flex-grow", isActive ? "bg-brand-50 text-brand-700" : "hover:bg-gray-50 text-gray-700 hover:text-brand-600")}
                                     onClick={() => {
                                        setMenu(false);
                                     }}
                                  >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={item.icon} alt={item.name} className={twMerge("w-6 h-6 transition-transform", isActive ? "scale-110" : "")} />
-                                    <span className={twMerge("font-medium transition-colors", isActive ? "text-pink-700" : "")}>{item.name[0].toUpperCase() + item.name.slice(1)}</span>
+                                    <span className={twMerge("font-medium transition-colors", isActive ? "text-brand-700" : "")}>{item.name[0].toUpperCase() + item.name.slice(1)}</span>
                                  </Link>
 
                                  {hasSubcategories && (
-                                    <button onClick={() => toggleCategory(item.id)} className={twMerge("p-2 rounded-full mr-3 text-gray-500 hover:text-pink-600 hover:bg-gray-100 transition-all ", isExpanded ? "bg-gray-100" : "")}>
+                                    <button onClick={() => toggleCategory(item.id)} className={twMerge("p-2 rounded-full mr-3 text-gray-500 hover:text-brand-600 hover:bg-gray-100 transition-all ", isExpanded ? "bg-gray-100" : "")}>
                                        {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                                     </button>
                                  )}
@@ -117,7 +113,7 @@ const Menu = () => {
                                           <Link
                                              key={subcat.id}
                                              href={`/list?cat=${item.name}&subcat=${subcat.name}`}
-                                             className={twMerge("flex items-center py-2 px-4 rounded-lg my-1 text-sm transition-all", isSubActive ? "bg-pink-50 text-pink-700" : "hover:bg-gray-50 text-gray-600 hover:text-pink-600")}
+                                             className={twMerge("flex items-center py-2 px-4 rounded-lg my-1 text-sm transition-all", isSubActive ? "bg-brand-50 text-brand-700" : "hover:bg-gray-50 text-gray-600 hover:text-brand-600")}
                                              onClick={() => {
                                                 setMenu(false);
                                                 toggleCategory(item.id);
@@ -135,9 +131,10 @@ const Menu = () => {
                   </div>
                </div>
 
-               <div className="mt-auto border-t border-gray-100 p-4">
+               <div className="mt-auto border-t border-gray-100 p-4 flex flex-col items-center gap-3">
+                  <LanguageSwitcher />
                   <p className="text-center text-gray-500 text-sm">
-                     © {new Date().getFullYear()} {info?.store_name}
+                     © {new Date().getFullYear()} {storeName}
                   </p>
                </div>
             </div>

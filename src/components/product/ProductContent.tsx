@@ -10,6 +10,7 @@ import ShareButtons from "./ShareButtons";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { PriceTag } from "@/components/common/Price";
 async function trowError(e: HTMLUListElement) {
    e.classList.add("animate-outline-flash");
    // e.classList.add("animate-bounce")
@@ -81,22 +82,18 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
                {price && price.discount ? (
                   <div className="flex flex-col relative ">
                      <h3 className="text-[0.85rem] text-gray-700 absolute bottom-6 left-10 ">
-                        {price.price[0]}
-                        <sup className=" text-[0.495rem] leading-none -top-[0.3rem]">{price.price[1]}</sup>
-                        Lei
+                        {<PriceTag amount={Number(price.price.join("."))} supClassName="text-[0.495rem] leading-none -top-[0.3rem]" />}
                         <div className="absolute bottom-[calc(50%-1px)] left-0 h-[1px] w-full bg-gray-700" />
                      </h3>
-                     <h2 className="font-medium text-2xl text-pink-700 ">
+                     <h2 className="font-medium text-2xl text-brand-700 ">
                         {!selectedSkuVariant && skuVariants.length > 0 && <span className=" text-base font-normal text-gray-700">{t("from")}</span>}
-                        {price.discount[0]}
-                        <sup className=" text-xs leading-none -top-2">{price.discount[1]}</sup> Lei
+                        {<PriceTag amount={Number(price.discount.join("."))} supClassName="text-xs leading-none -top-2" />}
                      </h2>
                   </div>
                ) : (
-                  <h2 className="font-medium text-2xl text-pink-700">
+                  <h2 className="font-medium text-2xl text-brand-700">
                      {!selectedSkuVariant && skuVariants.length > 0 && <span className=" text-base font-normal text-gray-700">{t("from")}</span>}
-                     {price && price.price[0]}
-                     <sup className=" text-xs leading-none -top-2">{price && price.price[1]}</sup> Lei
+                     {price && <PriceTag amount={Number(price.price.join("."))} supClassName="text-xs leading-none -top-2" />}
                   </h2>
                )}
                <div className="h-[2px] bg-gray-100" />
@@ -180,7 +177,7 @@ const ProductContent = ({ product, variants, skuVariants, reviews }: { product: 
                                  .map((option) => {
                                     return (
                                        <li
-                                          className={twMerge("skuVariant rounded-lg border-2 border-pink-700 ring-gray-300 py-1 px-4 text-sm   cursor-pointer", selectedSkuVariant && selectedSkuVariant.id === option.id ? " bg-pink-700 text-white font-semibold" : " bg-white text-pink-700")}
+                                          className={twMerge("skuVariant rounded-lg border-2 border-brand-700 ring-gray-300 py-1 px-4 text-sm   cursor-pointer", selectedSkuVariant && selectedSkuVariant.id === option.id ? " bg-brand-700 text-white font-semibold" : " bg-white text-brand-700")}
                                           onClick={() => setSelectedSkuVariant(option)}
                                           key={option.id}
                                        >

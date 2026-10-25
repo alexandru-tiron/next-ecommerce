@@ -1,26 +1,25 @@
 import { createHash } from "crypto";
 import { logger } from "firebase-functions/v2";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { defineString } from "firebase-functions/params";
+import { onCall } from "firebase-functions/v2/https";
 import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { contactMessageSchema } from "../schemas";
 import { emailPassword, enforceAppCheck, inEmulator } from "../utils/params";
 import { parseInput } from "../utils/validation";
-const nodemailer = require("nodemailer");
+import { storeError } from "../utils/errors";
+import { loadEmailContext } from "../emails/context";
+import { contactMessageEmail } from "../emails/templates";
+import { sendEmail, storeInbox } from "../emails/send";
 
 const db = getFirestore();
-const emailUser = defineString("EMAIL_USER");
 
 // Messages one visitor can send per hour
 const MAX_MESSAGES_PER_HOUR = 5;
 const HOUR_MS = 60 * 60 * 1000;
 
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] as string);
-
 // Contact form and data-protection requests from the info pages. Visitors don't need an account.
 // Each message is kept in ContactMessages (admins only) and e-mailed to the store's contact address.
 export const sendContactMessage = onCall({ enforceAppCheck, secrets: [emailPassword], maxInstances: 10 }, async (request) => {
-   const { website, ...message } = parseInput(contactMessageSchema, request.data, "Verifică datele din formular și încearcă din nou.");
+   const { website, ...message } = parseInput(contactMessageSchema, request.data);
    // Only bots fill in the hidden field; they get the usual answer and nothing is saved
    if (website) return { success: true };
 
@@ -31,7 +30,7 @@ export const sendContactMessage = onCall({ enforceAppCheck, secrets: [emailPassw
       const now = Date.now();
       const recent = ((await transaction.get(limitRef)).data()?.sent ?? []).filter((time: number) => time > now - HOUR_MS);
       if (recent.length >= MAX_MESSAGES_PER_HOUR) {
-         throw new HttpsError("resource-exhausted", "Ai trimis prea multe mesaje. Încearcă din nou mai târziu.");
+         throw storeError("resource-exhausted", "too_many_messages");
       }
       transaction.set(limitRef, { sent: [...recent, now], expires_at: Timestamp.fromMillis(now + HOUR_MS) });
    });
@@ -45,24 +44,10 @@ export const sendContactMessage = onCall({ enforceAppCheck, secrets: [emailPassw
    }
 
    try {
-      const info = (await db.doc("Settings/Info").get()).data();
-      const user = emailUser.value();
-      const to = info?.contact_mail || user;
-      const subject = message.type === "consent" ? "Cerere privind datele personale" : "Mesaj nou din formularul de contact";
-      const name = escapeHtml(`${message.first_name} ${message.last_name}`);
-      await nodemailer.createTransport({ service: "gmail", auth: { user, pass: emailPassword.value() } }).sendMail({
-         from: `"${info?.store_name ?? ""}" <${user}>`,
-         to,
-         replyTo: message.email,
-         subject: `${subject} – ${name}`,
-         html: `
-         <div style="font-family: Arial, sans-serif; max-width: 600px;">
-           <h2>${subject}</h2>
-           <p><strong>${name}</strong> &lt;${escapeHtml(message.email)}&gt;${message.phone ? `, ${escapeHtml(message.phone)}` : ""}</p>
-           <p style="white-space: pre-wrap;">${escapeHtml(message.message)}</p>
-           <p style="color: #666; font-size: 12px;">Răspunde direct la acest e-mail pentru a-i scrie clientului. Mesajul este salvat și în ContactMessages (${ref.id}).</p>
-         </div>`,
-      });
+      // In the store's default language, to the contact address (or the sending account when there is none)
+      const ctx = await loadEmailContext();
+      const email = await contactMessageEmail(ctx, ref.id, message);
+      await sendEmail({ to: storeInbox(ctx.info.contact_mail || ctx.info.support_mail), email, fromName: ctx.info.store_name, replyTo: message.email });
    } catch (error) {
       // The message is saved, so the visitor still gets a success answer
       logger.error(`[Email] Couldn't e-mail contact message ${ref.id}:`, error);

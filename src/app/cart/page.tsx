@@ -7,6 +7,7 @@ import { CartProduct } from "@/types/product";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import VatNote from "@/components/common/VatNote";
+import { Money } from "@/components/common/Price";
 
 export default function CartPage() {
    const t = useTranslations();
@@ -16,7 +17,7 @@ export default function CartPage() {
       return (
          <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 min-h-[60vh] flex flex-col items-center justify-center gap-4">
             <h1 className="text-2xl font-medium">{t("CartModal.emptyCart")}</h1>
-            <Link href="/" className="text-pink-700 hover:underline">
+            <Link href="/" className="text-brand-700 hover:underline">
                {t("Checkout.continueShopping")}
             </Link>
          </div>
@@ -47,7 +48,7 @@ export default function CartPage() {
                   <div className="p-3 bg-gray-50 border-b border-gray-100">
                      <Link href={`/product/${group.product_name}?id=${productId}`} className="flex gap-3 items-center">
                         <Image src={group.product_image} alt={group.product_name} width={80} height={80} className="object-contain rounded-md max-h-[80px] max-w-[80px] bg-white" />
-                        <h2 className="font-medium text-sm hover:text-pink-700">{group.product_name}</h2>
+                        <h2 className="font-medium text-sm hover:text-brand-700">{group.product_name}</h2>
                      </Link>
                   </div>
 
@@ -79,11 +80,11 @@ export default function CartPage() {
                                     <div className="relative">
                                        {price.discount ? (
                                           <div className="flex flex-col relative">
-                                             <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h3>
-                                             <h2 className="font-medium text-base text-pink-700">{(Number(price.discount.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                             <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h3>
+                                             <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.discount.join(".")) * item.quantity)} /></h2>
                                           </div>
                                        ) : (
-                                          <h2 className="font-medium text-base text-pink-700">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                          <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h2>
                                        )}
                                     </div>
                                  </div>
@@ -106,15 +107,15 @@ export default function CartPage() {
                <div className="flex flex-col gap-4">
                   <div className="flex justify-between">
                      <span className="text-gray-500">{t("Orders.subtotal")}</span>
-                     <span className="font-semibold">{subTotal} Lei</span>
+                     <span className="font-semibold"><Money amount={subTotal} /></span>
                   </div>
                   <div className="h-[1px] bg-gray-100" />
                   <div className="flex justify-between text-lg">
                      <span className="font-medium">{t("Orders.total")}</span>
-                     <span className="font-semibold">{subTotal} Lei</span>
+                     <span className="font-semibold"><Money amount={subTotal} /></span>
                   </div>
                   <VatNote gross={subTotal} className="-mt-3" />
-                  <Link href="/checkout" className="w-full bg-pink-700 text-white py-3 rounded-md font-medium hover:bg-pink-800 transition-colors text-center">
+                  <Link href="/checkout" className="w-full bg-brand-700 text-white py-3 rounded-md font-medium hover:bg-brand-800 transition-colors text-center">
                      {t("Checkout.finalizeOrder")}
                   </Link>
                </div>

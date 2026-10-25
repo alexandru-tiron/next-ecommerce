@@ -316,6 +316,7 @@ export default function AddProductPage() {
          const firstError = Object.values(newErrors)[0];
          setPopup({
             title: t("Admin.error"),
+            variant: "error",
             description: [<p key="error-msg">{firstError}</p>],
             buttons: [
                {
@@ -469,6 +470,7 @@ export default function AddProductPage() {
          console.error("Error adding product:", error);
          setPopup({
             title: t("Admin.error"),
+            variant: "error",
             description: [<p key="error-msg">{t("Admin.errorAddingProduct")}</p>],
             buttons: [
                {

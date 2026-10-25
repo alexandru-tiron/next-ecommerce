@@ -14,7 +14,6 @@ jobs:
     # The Firebase/Algolia config is public (it ships in the browser bundle), so it's read from repository variables.
     # Without them (forks, new clones) placeholders keep the build check working; the build never contacts these services.
     env:
-      NEXT_PUBLIC_STORE_NAME: ${{ vars.NEXT_PUBLIC_STORE_NAME || 'CI store' }}
       NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://ci.example.com' }}
       NEXT_PUBLIC_APIKEY: ${{ vars.NEXT_PUBLIC_APIKEY || 'ci-placeholder' }}
       NEXT_PUBLIC_AUTHDOMAIN: ${{ vars.NEXT_PUBLIC_AUTHDOMAIN || 'demo-ci.firebaseapp.com' }}

@@ -8,6 +8,7 @@ import { getInfoData } from "@/queries";
 import { Info } from "@/types/user";
 import { useTranslations } from "next-intl";
 import { sendContactMessage } from "@/lib/contact";
+import { storeErrorOf, useStoreErrorMessage } from "@/components/common/useStoreError";
 import { validateEmail, validatePhone } from "@core/validators";
 interface FormData {
    first_name: string;
@@ -29,6 +30,7 @@ const Contact = () => {
    } = useForm<FormData>();
 
    const t = useTranslations("Contact");
+   const storeErrorMessage = useStoreErrorMessage();
    const [successMessage, setSuccessMessage] = useState<string | null>(null);
    const [errorMessage, setErrorMessage] = useState<string | null>(null);
    const [info, setInfo] = useState<Info | null>(null);
@@ -50,7 +52,8 @@ const Contact = () => {
          reset();
       } catch (error) {
          console.error("Failed to send message", error);
-         setErrorMessage(t("contactFormError"));
+         const storeError = storeErrorOf(error);
+         setErrorMessage(storeError ? storeErrorMessage(storeError.code, storeError.params) : t("contactFormError"));
       }
    };
    return (
@@ -68,23 +71,24 @@ const Contact = () => {
             <div className="contact-info w-full lg:w-1/3 flex flex-col">
                <div className="info-contc ">
                   <h3 className="hidden">{t("contactInfo")}</h3>
-                  <a href={`tel:${info?.phone_no}`} className="flex items-center gap-4 mb-4 text-gray-700">
-                     <Phone className="size-6" />
-                     <span>{info?.phone_no}</span>
-                  </a>
-                  <a href={`mailto:${info?.contact_mail}`} className="flex items-center gap-4 mb-4 text-gray-700">
-                     <Mail className="size-6" />
-                     <span>{info?.contact_mail}</span>
-                  </a>
-                  <a
-                     href="https://maps.app.goo.gl/WZKoCNVHFeuJPdXx9"
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="flex items-center gap-4 text-gray-700"
-                  >
-                     <MapPin className="size-6" />
-                     <span>{info?.store_address}</span>
-                  </a>
+                  {info?.phone_no && (
+                     <a href={`tel:${info.phone_no}`} className="flex items-center gap-4 mb-4 text-gray-700">
+                        <Phone className="size-6" />
+                        <span>{info.phone_no}</span>
+                     </a>
+                  )}
+                  {info?.contact_mail && (
+                     <a href={`mailto:${info.contact_mail}`} className="flex items-center gap-4 mb-4 text-gray-700">
+                        <Mail className="size-6" />
+                        <span>{info.contact_mail}</span>
+                     </a>
+                  )}
+                  {info?.store_address && (
+                     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.store_address)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 text-gray-700">
+                        <MapPin className="size-6" />
+                        <span>{info.store_address}</span>
+                     </a>
+                  )}
                </div>
                <div className="social-info mt-8">
                   <h3 className="text-lg font-semibold mb-4">{t("contactSocialAccounts")}</h3>
@@ -106,18 +110,20 @@ const Contact = () => {
                      )}
                   </div>
                </div>
-               {/* Map */}
-               <div id="map" className="w-full mt-8">
-                  <iframe
-                     id="google-maps"
-                     title="maps"
-                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2800.2879045381173!2d28.020687017013735!3d45.42369272759964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40b6dfce24b54d87%3A0x3f895b93d0333a6c!2sHouse%20of%20Hair-Luxury%20Brand!5e0!3m2!1sro!2sro!4v1739366413055!5m2!1sro!2sro"
-                     allowFullScreen
-                     loading="lazy"
-                     referrerPolicy="no-referrer-when-downgrade"
-                     className="w-full h-64 rounded-lg"
-                  ></iframe>
-               </div>
+               {/* Map of the store address */}
+               {info?.store_address && (
+                  <div id="map" className="w-full mt-8">
+                     <iframe
+                        id="google-maps"
+                        title={info.store_address}
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(info.store_address)}&output=embed`}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="w-full h-64 rounded-lg"
+                     ></iframe>
+                  </div>
+               )}
             </div>
             {/* Contact Form */}
             <div className="contact-form   ">
@@ -210,7 +216,7 @@ const Contact = () => {
                   {/* Submit Button */}
                   <button
                      type="submit"
-                     className="bg-black text-white p-2 rounded-md disabled:bg-pink-200 disabled:cursor-not-allowed w-2/4 self-center"
+                     className="bg-black text-white p-2 rounded-md disabled:bg-brand-200 disabled:cursor-not-allowed w-2/4 self-center"
                      disabled={isSubmitting}
                   >
                      {isSubmitting ? t("contactFormSubmitLoading") : t("contactFormSubmit")}

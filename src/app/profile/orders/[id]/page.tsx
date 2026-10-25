@@ -16,13 +16,17 @@ import OrderStatusTimeline from "@/components/profile/OrderStatusTimeline";
 import VatNote from "@/components/common/VatNote";
 import PaymentPanel from "@/components/payments/PaymentPanel";
 import { useSearchParams } from "next/navigation";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
 interface OrderDetailsProps {
    params: Promise<{ id: string }>;
 }
 
 export default function OrderDetailsPage({ params }: OrderDetailsProps) {
    const user = useAppSelector((state) => state.auth.user);
+   const formatStoreDate = useFormatDate();
    const t = useTranslations("Orders");
+   const tCart = useTranslations("CartModal");
    // ?payment=cancelled|failed when coming back from a payment page
    const paymentNotice = useSearchParams().get("payment");
    const paramValues = use(params);
@@ -139,7 +143,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
       return (
          <div className="py-8 px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64">
             <div className="h-96 flex items-center justify-center">
-               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
             </div>
          </div>
       );
@@ -174,7 +178,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
       return "seconds" in timestamp ? timestamp.seconds : timestamp._seconds;
    };
    const date = order.date ? new Date(getTimestampSeconds(order.date) * 1000) : new Date();
-   const formattedDate = date.toLocaleDateString("ro-RO");
+   const formattedDate = formatStoreDate(date);
 
    const groupedCart = order.products.reduce((acc, item) => {
       if (!acc[item.product_id]) {
@@ -300,7 +304,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                      <div className="p-3 bg-gray-50 border-b border-gray-100">
                         <Link href={`/product/${group.product_name}?id=${productId}`} className="flex gap-3 items-center">
                            <Image src={group.product_image} alt={group.product_name} width={80} height={80} className="object-contain rounded-md max-h-[80px] max-w-[80px] bg-white" />
-                           <h2 className="font-medium text-sm hover:text-pink-700">{group.product_name}</h2>
+                           <h2 className="font-medium text-sm hover:text-brand-700">{group.product_name}</h2>
                         </Link>
                      </div>
 
@@ -324,7 +328,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                           </>
                                        )}
                                     </div>
-                                    <span className="text-xs text-gray-400">Cantitate: {item.quantity}</span>
+                                    <span className="text-xs text-gray-400">{tCart("quantity")}: {item.quantity}</span>
                                  </div>
 
                                  <div className="flex items-center gap-4">
@@ -332,11 +336,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                                        <div className="relative">
                                           {price.discount ? (
                                              <div className="flex flex-col relative">
-                                                <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h3>
-                                                <h2 className="font-medium text-base text-pink-700">{(Number(price.discount.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h3>
+                                                <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.discount.join(".")) * item.quantity)} /></h2>
                                              </div>
                                           ) : (
-                                             <h2 className="font-medium text-base text-pink-700">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                             <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h2>
                                           )}
                                        </div>
                                     </div>
@@ -352,21 +356,21 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
             <div className="border-t border-gray-100 p-4 sm:p-6">
                <div className="flex justify-between mb-2">
                   <p className="text-gray-600">{t("subtotal")}:</p>
-                  <p>{subtotal.toFixed(2)} Lei</p>
+                  <p><Money amount={subtotal} /></p>
                </div>
                <div className="flex justify-between mb-2">
                   <p className="text-gray-600">{t("shippingCost")}:</p>
-                  <p>{order.shipping_price.toFixed(2)} Lei</p>
+                  <p><Money amount={order.shipping_price} /></p>
                </div>
                {order.voucher && (
                   <div className="flex justify-between mb-2 text-green-600">
                      <p>{t("discount")} {t("voucher")}:</p>
-                     <p>-{voucherDiscount.toFixed(2)} Lei</p>
+                     <p>-<Money amount={voucherDiscount} /></p>
                   </div>
                )}
                <div className="flex justify-between font-medium text-lg mt-4 pt-4 border-t border-gray-100">
                   <p>{t("total")}:</p>
-                  <p>{total.toFixed(2)} Lei</p>
+                  <p><Money amount={total} /></p>
                </div>
                {order.vat_rate !== undefined && <VatNote gross={total} rate={order.vat_rate} className="mt-1" />}
             </div>

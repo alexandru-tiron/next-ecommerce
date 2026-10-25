@@ -81,7 +81,7 @@ bun install
 
 3. Set up environment variables
 
-Copy `.example.env` to `.env.local` in the root directory and fill in your store details, the public store URL (`NEXT_PUBLIC_SITE_URL`, used for SEO links and the sitemap) and your Firebase and Algolia credentials. The Firebase and Algolia keys are:
+Copy `.example.env` to `.env.local` in the root directory and fill in the public store URL (`NEXT_PUBLIC_SITE_URL`, used for SEO links and the sitemap) and your Firebase and Algolia credentials. The store itself (name, contact details, branding, languages, currency, shipping) is set up later in **Admin → Settings**; see [docs/STORE-SETUP.md](docs/STORE-SETUP.md). The Firebase and Algolia keys are:
 
 ```
 # Firebase
@@ -262,4 +262,4 @@ Everything the store needs is in this repository:
 -  `firestore.indexes.json`: the Firestore indexes the queries need.
 -  `scripts/`: demo data, search index setup and reindexing, and the script that creates the first admin (see [scripts/README.md](scripts/README.md)).
 
-Copy `.firebaserc.example` to `.firebaserc` and `functions/.example.env` to `functions/.env` with your own values before deploying. Then follow [docs/SECURITY-SETUP.md](docs/SECURITY-SETUP.md) to deploy the rules, store the secrets and turn on App Check.
+Copy `.firebaserc.example` to `.firebaserc` and `functions/.example.env` to `functions/.env` with your own values before deploying. Then follow [docs/SECURITY-SETUP.md](docs/SECURITY-SETUP.md) to deploy the rules, store the secrets and turn on App Check, and [docs/STORE-SETUP.md](docs/STORE-SETUP.md) to set up the store, your domain and e-mail.

@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { storeName } from "@/lib/siteUrl";
+import { getInfoData } from "@/lib/server/storeData";
 
 // Offline fallback cached by the service worker (public/sw.js).
 // It is plain HTML with no client JavaScript, because the app's JS chunks may not be cached when the visitor goes offline.
@@ -8,7 +8,8 @@ const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": 
 export async function GET() {
    const locale = await getLocale();
    const t = await getTranslations({ locale, namespace: "Offline" });
-   const [title, description, retry, store] = [t("title"), t("description"), t("retry"), storeName].map(escapeHtml);
+   const { store_name } = await getInfoData();
+   const [title, description, retry, store] = [t("title"), t("description"), t("retry"), store_name].map(escapeHtml);
 
    const html = `<!doctype html>
 <html lang="${escapeHtml(locale)}">

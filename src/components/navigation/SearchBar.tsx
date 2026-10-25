@@ -63,7 +63,7 @@ const SearchBar = ({ className, setIsSearchOpen }: { className?: string; setIsSe
 
    return (
       <div className="relative w-full max-w-xl mx-auto">
-         <form className={twMerge("flex items-center min-w-1/ mx-4 lg:w-full  justify-between gap-4 p-2 rounded-xl flex-1 border-slate-100 border focus-within:border-pink-600", className)} onSubmit={handleSearch}>
+         <form className={twMerge("flex items-center min-w-1/ mx-4 lg:w-full  justify-between gap-4 p-2 rounded-xl flex-1 border-slate-100 border focus-within:border-brand-600", className)} onSubmit={handleSearch}>
             <input ref={inputRef} type="text" name="name" placeholder={t("searchPlaceholder")} className="flex-1 bg-transparent outline-none" onChange={handleInputChange} />
             {inputRef.current?.value && (
                <button type="button" className="cursor-pointer" onClick={handleButtonClick}>

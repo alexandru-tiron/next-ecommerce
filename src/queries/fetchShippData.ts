@@ -1,12 +1,9 @@
 import { Shipping } from "@/types/user";
 import { getShipping } from "@/components/common/getProps";
+import { DEFAULT_SHIPPING, shippingFrom } from "@core/settings";
 import { cache } from "react";
-// Default values
-const DefaultShipping: Shipping = {
-   default_price: Number(process.env.NEXT_PUBLIC_DEFAULT_SHIPPING_PRICE) || 25,
-   enable_threshold: process.env.NEXT_PUBLIC_SHIPPING_THRESHOLD_ENABLED === "true",
-   free_shipping_threshold: Number(process.env.NEXT_PUBLIC_SHIPPING_THRESHOLD) || 500,
-};
+// Defaults for a store that hasn't saved these settings yet
+const DefaultShipping: Shipping = DEFAULT_SHIPPING;
 
 // In-memory cache with stale-while-revalidate pattern
 let cachedData: Shipping | null = null;
@@ -34,7 +31,7 @@ const CACHE_DURATION = (process.env.NEXT_PUBLIC_CACHE_DURATION ? parseInt(proces
 async function fetchShipping(): Promise<Shipping> {
    try {
       const shipping = await getShipping();
-      return shipping || DefaultShipping;
+      return shipping ? shippingFrom(shipping) : DefaultShipping;
    } catch (error) {
       console.error("Error fetching shipping:", error);
       return DefaultShipping;

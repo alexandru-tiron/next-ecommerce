@@ -1,6 +1,7 @@
 import React from "react";
 import { Product } from "@/types/product";
 import { useTranslations } from "next-intl";
+import { useStoreFormat } from "@/components/StoreSettingsProvider";
 interface ProductPricingProps {
    productData: Product;
    errors: Record<string, string>;
@@ -10,14 +11,15 @@ interface ProductPricingProps {
 
 const ProductPricing: React.FC<ProductPricingProps> = ({ productData, errors, handleInputChange, isPriceDisabled = false }) => {
    const t = useTranslations();
+   const { currency } = useStoreFormat();
    return (
       <div className="pt-4 border-t border-gray-200">
-         <h2 className="text-lg font-medium text-gray-900 mb-4">Prețuri și stoc</h2>
+         <h2 className="text-lg font-medium text-gray-900 mb-4">{t("Admin.pricingAndStock")}</h2>
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("Admin.price")} (RON)*
+                  {t("Admin.price")} ({currency})*
                </label>
                <div className="relative">
                   <input
@@ -32,7 +34,7 @@ const ProductPricing: React.FC<ProductPricingProps> = ({ productData, errors, ha
                      className={`block w-full rounded-md border ${errors.price ? "border-red-300" : "border-gray-300"} px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${isPriceDisabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
                      placeholder="0.00"
                   />
-                  {isPriceDisabled && <div className="mt-1 text-xs text-gray-500">Prețul este calculat automat din variantele de cantitate</div>}
+                  {isPriceDisabled && <div className="mt-1 text-xs text-gray-500">{t("Admin.priceFromVariants")}</div>}
                </div>
                {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
             </div>
@@ -76,7 +78,7 @@ const ProductPricing: React.FC<ProductPricingProps> = ({ productData, errors, ha
                {productData.discount && !isPriceDisabled && (
                   <div>
                      <label htmlFor="discount_price" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t("Admin.discountPrice")} (RON)*
+                        {t("Admin.discountPrice")} ({currency})*
                      </label>
                      <input
                         type="number"

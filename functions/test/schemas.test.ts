@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactMessageSchema, orderInputMessage, orderInputSchema, paymentInputSchema, voucherInputSchema } from "../src/schemas";
+import { contactMessageSchema, orderInputError, orderInputSchema, paymentInputSchema, voucherInputSchema } from "../src/schemas";
 
 const address = { city: "Cluj-Napoca", county: "Cluj", street: "Strada Exemplu", street_no: 12, postal_code: "400001", business: false };
 const line = { id: "line-1", product_id: "demo-aurion-pods-anc", product_name: "Aurion Pods ANC", product_code: "AUR-3139", product_image: "x", product_price: 799, quantity: 2 };
@@ -26,6 +26,21 @@ describe("orderInputSchema", () => {
       expect(parsed.products[0]).not.toHaveProperty("verified");
    });
 
+   // The Firebase SDK sends undefined values as null, e.g. the discount of a cart line that has none
+   it("treats null optional fields as missing", () => {
+      const parsed = orderInputSchema.parse({ ...order, shipping_address: { ...address, floor: null }, products: [{ ...line, discount: null, discount_price: null }] });
+      expect(parsed.products[0].discount).toBeUndefined();
+      expect(parsed.shipping_address?.floor).toBeUndefined();
+   });
+
+   // Older checkouts sent keys built from the sign-in token, about 1,000 characters long
+   it("keeps short idempotency keys and hashes long ones", () => {
+      expect(orderInputSchema.parse({ ...order, idempotency_key: "a1b2-c3" }).idempotency_key).toBe("a1b2-c3");
+      const hashed = orderInputSchema.parse({ ...order, idempotency_key: "x".repeat(1200) }).idempotency_key;
+      expect(hashed).toMatch(/^[0-9a-f]{64}$/);
+      expect(orderInputSchema.parse({ ...order, idempotency_key: "x".repeat(1200) }).idempotency_key).toBe(hashed);
+   });
+
    it.each([0, -3, 1.5, 1000])("rejects quantity %s", (quantity) => {
       expect(orderInputSchema.safeParse({ ...order, products: [{ ...line, quantity }] }).success).toBe(false);
    });
@@ -40,8 +55,8 @@ describe("orderInputSchema", () => {
 
    it("explains which field is wrong", () => {
       const field = orderInputSchema.safeParse({ ...order, phone_no: "123" }).error?.issues[0]?.path[0];
-      expect(orderInputMessage(field)).toBe("Numărul de telefon este invalid.");
-      expect(orderInputMessage("products")).toBe("Datele comenzii sunt invalide sau lipsesc.");
+      expect(orderInputError(field)).toBe("invalid_phone");
+      expect(orderInputError("products")).toBe("invalid_order");
    });
 });
 

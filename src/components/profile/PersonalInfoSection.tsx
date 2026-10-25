@@ -246,17 +246,17 @@ const PersonalInfoSection = () => {
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.emailSecurityCurrentEmail")}</label>
-                  <input type="email" name="currentEmail" value={localEmailData.currentEmail} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" readOnly disabled />
+                  <input type="email" name="currentEmail" value={localEmailData.currentEmail} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" readOnly disabled />
                </div>
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.emailSecurityNewEmail")}</label>
-                  <input type="email" name="newEmail" value={localEmailData.newEmail} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="email" name="newEmail" value={localEmailData.newEmail} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.emailSecurityPassword")}</label>
-                  <input type="password" name="password" value={localEmailData.password} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="password" name="password" value={localEmailData.password} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
 
                <p className="text-xs text-gray-500 mt-2">{t("Profile.emailSecurityDescription")}</p>
@@ -350,17 +350,17 @@ const PersonalInfoSection = () => {
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.currentPassword")}</label>
-                  <input type="password" name="currentPassword" value={localPasswordData.currentPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="password" name="currentPassword" value={localPasswordData.currentPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.newPassword")}</label>
-                  <input type="password" name="newPassword" value={localPasswordData.newPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="password" name="newPassword" value={localPasswordData.newPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.confirmNewPassword")}</label>
-                  <input type="password" name="confirmPassword" value={localPasswordData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="password" name="confirmPassword" value={localPasswordData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
 
                <p className="text-xs text-gray-500 mt-2">{t("Profile.passwordRequirements")}</p>
@@ -441,13 +441,13 @@ const PersonalInfoSection = () => {
                {!isGoogleAccount && (
                   <div>
                      <label className="block text-sm text-gray-700 mb-1">{t("Profile.emailSecurityPassword")}</label>
-                     <input type="password" value={localPassword} onChange={(e) => setLocalPassword(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                     <input type="password" value={localPassword} onChange={(e) => setLocalPassword(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                   </div>
                )}
 
                <div>
                   <label className="block text-sm text-gray-700 mb-1">{t("Profile.confirmDeleteText")}<b>{t("Profile.confirmDeleteWords")}</b></label>
-                  <input type="text" value={localConfirmText} onChange={(e) => setLocalConfirmText(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-pink-500 focus:border-pink-500" />
+                  <input type="text" value={localConfirmText} onChange={(e) => setLocalConfirmText(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-500 focus:border-brand-500" />
                </div>
             </div>
          );
@@ -455,6 +455,7 @@ const PersonalInfoSection = () => {
 
       setPopup({
          title: t("Profile.deleteAccountButton"),
+         variant: "delete",
          description: [
             <p key="warning" className="text-red-600 text-sm mb-4">
                {t("Profile.deleteAccountWarning")}
@@ -532,6 +533,7 @@ const PersonalInfoSection = () => {
          // Show success message
          setPopup({
             title: t("Profile.success"),
+            variant: "success",
             description: [
                <div key="success-message" className="text-center py-4">
                   <p className="text-green-600 font-medium">{t("Profile.emailChangedSuccess")}</p>
@@ -615,6 +617,7 @@ const PersonalInfoSection = () => {
          // Show success message
          setPopup({
             title: t("Profile.success"),
+            variant: "success",
             description: [
                <div key="success-message" className="text-center py-4">
                   <p className="text-green-600 font-medium">{t("Profile.passwordChangedSuccess")}</p>
@@ -649,7 +652,7 @@ const PersonalInfoSection = () => {
 
       // For Google accounts, we don't check password but require confirmation
       if (isGoogleAccount) {
-         if (confirmDeleteText !== "STERGE CONT") {
+         if (confirmDeleteText.trim() !== t("Profile.confirmDeleteWords")) {
             setDeleteAccountError(t("Profile.confirmDeleteText"));
             openDeleteAccountPopup(); // Reopen with error
             return;
@@ -662,7 +665,7 @@ const PersonalInfoSection = () => {
             return;
          }
 
-         if (confirmDeleteText !== "STERGE CONT") {
+         if (confirmDeleteText.trim() !== t("Profile.confirmDeleteWords")) {
             setDeleteAccountError(t("Profile.pleaseConfirmDeleteText"));
             openDeleteAccountPopup(); // Reopen with error
             return;

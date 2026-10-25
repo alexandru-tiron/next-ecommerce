@@ -61,7 +61,10 @@ Server-rendered pages (the home page, product pages, the footer, the sitemap) re
 
 1. In the Google Cloud console, open **IAM & Admin → Service accounts** and create an account (for example `storefront-reader`) with only the **Cloud Datastore Viewer** role. It can read data but not change it.
 2. Open the account's **Keys** tab, add a JSON key and download it.
-3. In Vercel, add an environment variable `FIREBASE_SERVICE_ACCOUNT_KEY` with the file's contents (or the contents in base64), marked **Sensitive**, then redeploy. Delete the downloaded file.
+3. In Vercel, add an environment variable `FIREBASE_SERVICE_ACCOUNT_KEY` with the **whole** downloaded file, from the opening `{` to the closing `}` (or that whole text in base64), marked **Sensitive**, then redeploy. The `private_key` value alone isn't enough: the server also needs `project_id` and `client_email`. Delete the downloaded file afterwards.
+4. Only Vercel needs it. Don't put it in `functions/.env` (the Firebase CLI refuses `FIREBASE_` names there, and the functions have their own credentials).
+
+If the key is missing or incomplete, server pages keep working with the web SDK and the Vercel logs say so. Don't enforce App Check on Firestore until those warnings are gone.
 
 The key can read every document, customers' details included, so treat it like a password. Never put it in a `NEXT_PUBLIC_` variable or the repository. To rotate it, create a new key, update the variable, redeploy, and delete the old key.
 

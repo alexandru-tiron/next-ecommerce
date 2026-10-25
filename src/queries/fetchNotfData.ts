@@ -1,12 +1,9 @@
 import { Notifications } from "@/types/user";
 import { getNotifications } from "@/components/common/getProps";
+import { DEFAULT_NOTIFICATIONS, notificationsFrom } from "@core/settings";
 import { cache } from "react";
-// Default values
-const DefaultNotifications: Notifications = {
-   send_new_order_mails: process.env.NEXT_PUBLIC_SEND_NEW_ORDER_MAILS === "true",
-   send_order_status_update_mails: process.env.NEXT_PUBLIC_SEND_ORDER_STATUS_UPDATE_MAILS === "true",
-   send_confirmation_mails: process.env.NEXT_PUBLIC_SEND_CONFIRMATION_MAILS === "true",
-};
+// Defaults for a store that hasn't saved these settings yet
+const DefaultNotifications: Notifications = DEFAULT_NOTIFICATIONS;
 
 // In-memory cache with stale-while-revalidate pattern
 let cachedData: Notifications | null = null;
@@ -34,7 +31,7 @@ async function fetchNotfData(): Promise<Notifications> {
 async function fetchNotifications(): Promise<Notifications> {
    try {
       const notifications = await getNotifications();
-      return notifications || DefaultNotifications;
+      return notifications ? notificationsFrom(notifications) : DefaultNotifications;
    } catch (error) {
       console.error("Error fetching notifications:", error);
       return DefaultNotifications;

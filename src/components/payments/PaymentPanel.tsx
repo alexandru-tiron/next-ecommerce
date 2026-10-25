@@ -47,7 +47,7 @@ const PaymentPanel = ({ orderId, order, notice }: { orderId: string; order: { pa
                <span className={twMerge("px-2 py-0.5 rounded-full text-xs font-medium", statusClasses[status])}>{t(`status_${status}`)}</span>
             </div>
             {canPayOrder(order) && (
-               <button onClick={payNow} disabled={starting} className="inline-flex items-center rounded-md bg-pink-600 text-white text-sm px-4 py-2 hover:bg-pink-700 disabled:opacity-50">
+               <button onClick={payNow} disabled={starting} className="inline-flex items-center rounded-md bg-brand-600 text-white text-sm px-4 py-2 hover:bg-brand-700 disabled:opacity-50">
                   {starting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   {t("payNow")}
                </button>

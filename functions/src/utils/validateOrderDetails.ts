@@ -2,6 +2,7 @@ import { logger } from "firebase-functions/v1";
 import { Address, CartProduct } from "../types/order";
 import { getFirestore } from "firebase-admin/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { StoreErrorCode } from "@core/errors";
 
 const db = getFirestore();
 
@@ -11,10 +12,10 @@ export async function validateProducts(
    userId: string
 ): Promise<{
    validatedProducts: CartProduct[];
-   invalidProducts: Array<{ id: string; variant_id?: string; sku_variant_id?: string; reason: string }>;
+   invalidProducts: Array<{ id: string; variant_id?: string; sku_variant_id?: string; reason: StoreErrorCode }>;
 }> {
    const validatedProducts: CartProduct[] = [];
-   const invalidProducts: Array<{ id: string; variant_id?: string; sku_variant_id?: string; reason: string }> = [];
+   const invalidProducts: Array<{ id: string; variant_id?: string; sku_variant_id?: string; reason: StoreErrorCode }> = [];
 
    for (const product of products) {
       try {
@@ -25,7 +26,7 @@ export async function validateProducts(
             logger.warn(`[Order] Product ${product.product_id} not found`);
             invalidProducts.push({
                id: product.product_id,
-               reason: "Produsul nu există.",
+               reason: "product_missing",
             });
             continue;
          }
@@ -37,7 +38,7 @@ export async function validateProducts(
             logger.warn(`[Order] Product ${product.product_id} info mismatch`);
             invalidProducts.push({
                id: product.product_id,
-               reason: "Informațiile produsului nu corespund cu cele din baza de date.",
+               reason: "product_changed",
             });
             continue;
          }
@@ -57,7 +58,7 @@ export async function validateProducts(
             invalidProducts.push({
                id: product.product_id,
                variant_id: product.variant_id,
-               reason: "Varianta produsului nu există sau informațiile nu corespund.",
+               reason: "variant_missing",
             });
             continue;
          }
@@ -88,7 +89,7 @@ export async function validateProducts(
             invalidProducts.push({
                id: product.product_id,
                sku_variant_id: product.sku_variant_id,
-               reason: "Varianta SKU a produsului nu există sau informațiile nu corespund.",
+               reason: "variant_missing",
             });
             continue;
          }
@@ -105,7 +106,7 @@ export async function validateProducts(
             logger.warn(`[Order] Price mismatch for product ${product.product_id}`);
             invalidProducts.push({
                id: product.product_id,
-               reason: "Prețul produsului nu corespunde cu cel din baza de date.",
+               reason: "price_changed",
             });
             continue;
          }
@@ -125,7 +126,7 @@ export async function validateProducts(
          logger.error(`[Order] Error validating product ${product.product_id}:`, error);
          invalidProducts.push({
             id: product.product_id,
-            reason: "Eroare la validarea produsului.",
+            reason: "product_check_failed",
          });
       }
    }

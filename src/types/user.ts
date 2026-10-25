@@ -74,34 +74,12 @@ export type Order = {
    invoice_date?: Timestamp | { _seconds: number; _nanoseconds: number };
 };
 
-export type Info = {
-   store_name: string;
-   store_address: string;
-   phone_no: string;
-   contact_mail: string;
-   orders_mail: string;
-   support_mail: string;
-   facebook_link?: string;
-   instagram_link?: string;
-   x_link?: string;
-   pinterest_link?: string;
-};
-
-export type Notifications = {
-   send_new_order_mails: boolean;
-   send_order_status_update_mails: boolean;
-   send_confirmation_mails: boolean;
-};
+// Settings/Info, Settings/Notifications and Settings/Shipping (defaults and validation in packages/core/src/settings.ts)
+export type { StoreInfo as Info, NotificationSettings as Notifications, ShippingSettings as Shipping } from "@core/settings";
 
 // VAT percentage included in store prices (Settings/Tax)
 export type Tax = {
    vat_rate: number;
-};
-
-export type Shipping = {
-   default_price: number;
-   enable_threshold: boolean;
-   free_shipping_threshold: number;
 };
 
 export interface Slide {

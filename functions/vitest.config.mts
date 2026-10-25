@@ -7,7 +7,7 @@ export default defineConfig({
       alias: { "@core": fileURLToPath(new URL("../packages/core/src", import.meta.url)) },
    },
    test: {
-      include: ["test/**/*.test.ts"],
+      include: ["test/**/*.test.{ts,tsx}"],
       environment: "node",
    },
 });

@@ -1,11 +1,13 @@
-import { CallableRequest, HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
+import { CallableRequest, onCall, onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import axios from "axios";
 import { DEFAULT_VAT_RATE } from "../../utils/vat";
 import { netopiaPaymentStatus, verifyNetopiaToken } from "../../utils/payments";
 import { enforceAppCheck } from "../../utils/params";
+import { storeError } from "../../utils/errors";
 import { applyPaymentStatus, loadPaymentSettings, payableOrder } from "./shared";
+import { loadLocalization, loadStoreInfo } from "../../utils/settings";
 
 // Loaded only when ENABLE_NETOPIA=true in functions/.env (see index.ts); set both secrets first:
 // firebase functions:secrets:set NETOPIA_API_KEY / NETOPIA_PUBLIC_KEY (the public certificate from the NETOPIA admin panel)
@@ -19,6 +21,8 @@ const ROMANIA_ISO_CODE = 642;
 // Starts a payment on NETOPIA's hosted payment page (v2 API) and returns its URL
 export const createNetopiaPayment = onCall({ secrets: [netopiaApiKey], enforceAppCheck }, async (request: CallableRequest<{ orderId?: string; origin?: string }>) => {
    const { ref, order, orderId, settings, origin } = await payableOrder(request, "netopia");
+   const [{ store_name }, { default_locale }] = await Promise.all([loadStoreInfo(), loadLocalization()]);
+   const description = `${store_name} #${orderId}`;
    // NETOPIA needs a new order reference for every attempt; the part before the last "_" is our order id
    const reference = `${orderId}_${Date.now().toString(36)}`;
    const address = order.billing_address ?? order.shipping_address ?? {};
@@ -39,21 +43,23 @@ export const createNetopiaPayment = onCall({ secrets: [netopiaApiKey], enforceAp
          emailSubject: "",
          notifyUrl: `https://europe-west3-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/netopiaIpn`,
          redirectUrl: `${origin}/checkout/success?order=${encodeURIComponent(orderId)}&payment=netopia`,
-         language: "ro",
+         // NETOPIA's payment page is in Romanian or English
+         language: default_locale === "ro" ? "ro" : "en",
       },
       payment: { options: { installments: 0, bonus: 0 }, data: {} },
       order: {
          ntpID: "",
          posSignature: settings.netopia_pos_signature,
          dateTime: new Date().toISOString(),
-         description: `Comanda #${orderId}`,
+         description,
          orderID: reference,
          amount: order.total,
+         // Only offered for orders in RON (see isMethodEnabled)
          currency: "RON",
          billing: contact,
          shipping: contact,
          // One line for the whole order, so the products add up to the amount (vouchers and shipping included)
-         products: [{ name: `Comanda #${orderId}`, code: orderId, category: "order", price: order.total, vat: order.vat_rate ?? DEFAULT_VAT_RATE }],
+         products: [{ name: description, code: orderId, category: "order", price: order.total, vat: order.vat_rate ?? DEFAULT_VAT_RATE }],
          installments: { selected: 0, available: [0] },
          data: { order_id: orderId },
       },
@@ -73,7 +79,7 @@ export const createNetopiaPayment = onCall({ secrets: [netopiaApiKey], enforceAp
       return { url };
    } catch (error) {
       logger.error(`[Payments] NETOPIA payment for order ${orderId} failed:`, axios.isAxiosError(error) ? error.response?.data ?? error.message : error);
-      throw new HttpsError("internal", "Plata cu cardul nu a putut fi inițiată. Te rugăm să încerci din nou.");
+      throw storeError("internal", "payment_start_failed");
    }
 });
 

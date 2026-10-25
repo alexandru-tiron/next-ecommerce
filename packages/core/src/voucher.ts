@@ -1,3 +1,5 @@
+import { StoreErrorCode, StoreErrorParams } from "./errors";
+
 // Voucher rules shared by checkVoucher (preview at checkout) and validateAndCreateOrder (applied for real)
 export type Voucher = {
    code: string;
@@ -33,16 +35,17 @@ export function evaluateVoucher(voucher: Voucher, subtotal: number, now = Date.n
    return { ok: true, discount: Math.round(Math.min(raw, subtotal) * 100) / 100 };
 }
 
-// Customer-facing messages (Romanian, like the other order errors)
-export function voucherMessage(check: Exclude<VoucherCheck, { ok: true }> | { ok: false; reason: "not_found" }) {
+// The error the store shows for a voucher that can't be used. An inactive voucher looks like an unknown one.
+// The minimum order is a plain number; the store formats it in its currency.
+export function voucherError(check: Exclude<VoucherCheck, { ok: true }> | { ok: false; reason: "not_found" }): { error: StoreErrorCode; params: StoreErrorParams } {
    switch (check.reason) {
       case "expired":
-         return "Voucherul a expirat.";
+         return { error: "voucher_expired", params: {} };
       case "used_up":
-         return "Voucherul a fost folosit de numărul maxim de ori.";
+         return { error: "voucher_used_up", params: {} };
       case "min_order":
-         return `Voucherul se aplică doar comenzilor de minimum ${"minOrder" in check ? check.minOrder : ""} Lei.`;
+         return { error: "voucher_min_order", params: { minOrder: "minOrder" in check ? (check.minOrder ?? 0) : 0 } };
       default:
-         return "Codul de voucher nu este valid.";
+         return { error: "voucher_not_found", params: {} };
    }
 }

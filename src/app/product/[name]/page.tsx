@@ -4,7 +4,7 @@ import RelatedProducts from "@/components/product/RelatedProducts";
 import RecentlyViewed from "@/components/product/RecentlyViewed";
 import { productPath } from "@/lib/productUrl";
 import { siteUrl } from "@/lib/siteUrl";
-import { getProductPage, getProductReviews, getRelatedProducts } from "@/lib/server/storeData";
+import { getLocalization, getProductPage, getProductReviews, getRelatedProducts } from "@/lib/server/storeData";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import React from "react";
@@ -39,7 +39,7 @@ export default async function SinglePage({ searchParams }: ProductPageProps) {
    }
 
    // Product and variants come from the data cache; reviews are read fresh
-   const [page, reviews] = await Promise.all([getProductPage(id), getProductReviews(id)]);
+   const [page, reviews, { currency }] = await Promise.all([getProductPage(id), getProductReviews(id), getLocalization()]);
    if (!page) notFound();
    const { product, variants, skuVariants } = page;
    const relatedProducts = await getRelatedProducts(product);
@@ -47,7 +47,7 @@ export default async function SinglePage({ searchParams }: ProductPageProps) {
    // Pass data to the Client Component
    return (
       <>
-         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd(product, skuVariants, reviews) }} />
+         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd(product, skuVariants, reviews, currency) }} />
          <ProductContent product={product} variants={variants} skuVariants={skuVariants} reviews={reviews} />
          <RelatedProducts products={relatedProducts} />
          <RecentlyViewed currentProductId={product.id} />
@@ -56,7 +56,7 @@ export default async function SinglePage({ searchParams }: ProductPageProps) {
 }
 
 // schema.org Product data so search engines can show price, availability and rating
-function productJsonLd(product: Product, skuVariants: SkuVariant[], reviews: Review[]) {
+function productJsonLd(product: Product, skuVariants: SkuVariant[], reviews: Review[], currency: string) {
    const prices = skuVariants.length > 0 ? skuVariants.map((sku) => sku.discount_price ?? sku.price) : [product.discount_price ?? product.price];
    const availability = product.stoc === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock";
    const jsonLd = {
@@ -69,8 +69,8 @@ function productJsonLd(product: Product, skuVariants: SkuVariant[], reviews: Rev
       brand: { "@type": "Brand", name: product.brand },
       offers:
          prices.length > 1
-            ? { "@type": "AggregateOffer", priceCurrency: "RON", lowPrice: Math.min(...prices), highPrice: Math.max(...prices), offerCount: prices.length, availability }
-            : { "@type": "Offer", priceCurrency: "RON", price: prices[0], availability, url: `${siteUrl}${productPath(product)}` },
+            ? { "@type": "AggregateOffer", priceCurrency: currency, lowPrice: Math.min(...prices), highPrice: Math.max(...prices), offerCount: prices.length, availability }
+            : { "@type": "Offer", priceCurrency: currency, price: prices[0], availability, url: `${siteUrl}${productPath(product)}` },
       ...(reviews.length > 0 && {
          aggregateRating: {
             "@type": "AggregateRating",

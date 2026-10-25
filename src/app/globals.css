@@ -1,5 +1,66 @@
 @import "tailwindcss";
 
+/* Store branding. The root layout sets --brand-50 … --brand-950 (generated from the brand colour in
+   Settings/Branding), --store-radius (corner scale) and --store-font; the values after the commas are the defaults. */
+@theme inline {
+  --color-brand-50: var(--brand-50, #fdf2f8);
+  --color-brand-100: var(--brand-100, #fce7f3);
+  --color-brand-200: var(--brand-200, #fbcfe8);
+  --color-brand-300: var(--brand-300, #f9a8d4);
+  --color-brand-400: var(--brand-400, #f472b6);
+  --color-brand-500: var(--brand-500, #ec4899);
+  --color-brand-600: var(--brand-600, #db2777);
+  --color-brand-700: var(--brand-700, #be185d);
+  --color-brand-800: var(--brand-800, #9d174d);
+  --color-brand-900: var(--brand-900, #831843);
+  --color-brand-950: var(--brand-950, #500724);
+
+  --font-sans: var(--store-font, var(--font-inter)), ui-sans-serif, system-ui, sans-serif;
+
+  --radius: calc(0.25rem * var(--store-radius, 1));
+  --radius-xs: calc(0.125rem * var(--store-radius, 1));
+  --radius-sm: calc(0.25rem * var(--store-radius, 1));
+  --radius-md: calc(0.375rem * var(--store-radius, 1));
+  --radius-lg: calc(0.5rem * var(--store-radius, 1));
+  --radius-xl: calc(0.75rem * var(--store-radius, 1));
+  --radius-2xl: calc(1rem * var(--store-radius, 1));
+  --radius-3xl: calc(1.5rem * var(--store-radius, 1));
+}
+
+/* Rich text from the admin panel (information pages) */
+@layer components {
+  .store-prose {
+    @apply text-gray-900 leading-relaxed;
+  }
+  .store-prose h2 {
+    @apply text-2xl font-semibold mt-8 mb-3;
+  }
+  .store-prose h3 {
+    @apply text-xl font-semibold mt-6 mb-2;
+  }
+  .store-prose h4 {
+    @apply text-lg font-semibold mt-4 mb-2;
+  }
+  .store-prose p {
+    @apply mb-4;
+  }
+  .store-prose ul {
+    @apply list-disc pl-6 mb-4 space-y-1;
+  }
+  .store-prose ol {
+    @apply list-decimal pl-6 mb-4 space-y-1;
+  }
+  .store-prose a {
+    @apply text-brand-700 underline;
+  }
+  .store-prose blockquote {
+    @apply border-l-4 border-gray-200 pl-4 italic text-gray-700 mb-4;
+  }
+  .store-prose hr {
+    @apply my-6 border-gray-200;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;

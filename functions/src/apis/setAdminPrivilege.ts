@@ -27,7 +27,7 @@ export const setAdminPrivilege = onCall(
          }
 
          // Get the target user ID from request data
-         const { uid } = parseInput(adminPrivilegeInputSchema, request.data, "Invalid request: UID is required");
+         const { uid } = parseInput(adminPrivilegeInputSchema, request.data);
 
          // Verify the target user exists
          try {

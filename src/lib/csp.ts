@@ -24,7 +24,7 @@ export function buildContentSecurityPolicy({ nonce, isDev = false, authDomain }:
       ],
       // React style props set inline styles, which a nonce can't cover
       "style-src": ["'self'", "'unsafe-inline'"],
-      "img-src": ["'self'", "data:", "blob:", "https://firebasestorage.googleapis.com", ...(isDev ? ["http://127.0.0.1:*"] : [])],
+      "img-src": ["'self'", "data:", "blob:", "https://firebasestorage.googleapis.com", "https://*.google-analytics.com", "https://*.googletagmanager.com", ...(isDev ? ["http://127.0.0.1:*"] : [])],
       "font-src": ["'self'", "data:"],
       // Firebase (Auth, Firestore, Storage, App Check), Cloud Functions, Algolia search and reCAPTCHA (App Check's checks)
       "connect-src": [
@@ -35,6 +35,11 @@ export function buildContentSecurityPolicy({ nonce, isDev = false, authDomain }:
          "https://*.algolianet.com",
          "https://*.algolia.io",
          "https://www.google.com/recaptcha/",
+         // Analytics, when the owner turns it on and the visitor agrees (Settings → Analytics)
+         "https://*.google-analytics.com",
+         "https://*.analytics.google.com",
+         "https://*.googletagmanager.com",
+         "https://plausible.io",
          // The local Firebase emulators
          ...(isDev ? ["http://127.0.0.1:*", "http://localhost:*"] : []),
       ],

@@ -1,4 +1,7 @@
+import { createHash } from "crypto";
 import { z } from "zod";
+import { StoreErrorCode } from "@core/errors";
+import { LOCALES } from "@core/settings";
 import { MAX_LINE_QUANTITY, MAX_ORDER_LINES } from "@core/orderLimits";
 import { PAYMENT_METHODS } from "@core/payments";
 import { validateEmail, validateName, validatePhone } from "@core/validators";
@@ -7,8 +10,16 @@ import { docId } from "./utils/validation";
 // Input schemas for the callable functions. Lengths match the limits in firestore.rules.
 
 const text = (max: number) => z.string().trim().max(max);
+// The Firebase SDK sends undefined values as null, so optional fields also accept null (read as missing)
+const optional = <T extends z.ZodType>(schema: T) => schema.nullish().transform((value) => value ?? undefined).optional();
 // Address forms save these as text or as a number
 const shortValue = z.union([text(20), z.number().finite()]);
+
+// Checkouts before October 2026 built the key from the sign-in token (about 1,000 characters); long keys are hashed
+const idempotencyKey = z
+   .string()
+   .max(4096)
+   .transform((key) => (key.length > 200 ? createHash("sha256").update(key).digest("hex") : key));
 
 const addressSchema = z.object({
    id: docId.optional(),
@@ -17,13 +28,13 @@ const addressSchema = z.object({
    street: text(200).min(1),
    street_no: shortValue,
    postal_code: shortValue,
-   apartment: shortValue.optional(),
-   building: shortValue.optional(),
-   building_no: shortValue.optional(),
-   floor: shortValue.optional(),
-   intercom: shortValue.optional(),
-   details: text(500).optional(),
-   business: z.boolean().optional(),
+   apartment: optional(shortValue),
+   building: optional(shortValue),
+   building_no: optional(shortValue),
+   floor: optional(shortValue),
+   intercom: optional(shortValue),
+   details: optional(text(500)),
+   business: optional(z.boolean()),
    business_details: z
       .object({
          name: text(200),
@@ -43,8 +54,8 @@ const cartProductSchema = z.object({
    product_code: text(100),
    product_image: z.string().max(2048),
    product_price: z.number().finite().nonnegative(),
-   discount: z.boolean().optional(),
-   discount_price: z.number().finite().nonnegative().optional(),
+   discount: optional(z.boolean()),
+   discount_price: optional(z.number().finite().nonnegative()),
    quantity: z.number().int().min(1).max(MAX_LINE_QUANTITY),
    variant_id: docId.optional(),
    variant_name: text(200).optional(),
@@ -68,30 +79,31 @@ export const orderInputSchema = z.object({
    products: z.array(cartProductSchema).min(1).max(MAX_ORDER_LINES),
    shipping_price: z.number().finite().optional(),
    total: z.number().finite().optional(),
-   idempotency_key: z.string().max(200).optional(),
+   idempotency_key: optional(idempotencyKey),
+   locale: z.enum(LOCALES).optional(),
 });
 
 export type OrderInput = z.infer<typeof orderInputSchema>;
 
-// Customer-facing message for the first invalid field of an order (Romanian, like the other order errors)
-export function orderInputMessage(field: PropertyKey | undefined) {
+// The error for the first invalid field of an order
+export function orderInputError(field: PropertyKey | undefined): StoreErrorCode {
    switch (field) {
       case "first_name":
-         return "Prenumele tău este invalid.";
+         return "invalid_first_name";
       case "last_name":
-         return "Numele tău este invalid.";
+         return "invalid_last_name";
       case "email":
-         return "Emailul tău este invalid.";
+         return "invalid_email";
       case "phone_no":
-         return "Numărul de telefon este invalid.";
+         return "invalid_phone";
       case "shipping_address":
       case "shipping_address_id":
-         return "Adresa de livrare este incompletă sau invalidă.";
+         return "shipping_address_invalid";
       case "billing_address":
       case "billing_address_id":
-         return "Adresa de facturare este incompletă sau invalidă.";
+         return "billing_address_invalid";
       default:
-         return "Datele comenzii sunt invalide sau lipsesc.";
+         return "invalid_order";
    }
 }
 

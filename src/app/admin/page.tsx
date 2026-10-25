@@ -9,6 +9,7 @@ import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "fi
 import { Product } from "@/types/product";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
+import { Money } from "@/components/common/Price";
 
 // Extended interfaces for transformed Firestore data
 interface ExtendedOrder {
@@ -44,7 +45,7 @@ interface OrderProduct {
 }
 
 // Card component for metrics - update for responsiveness
-const MetricCard = ({ title, value, icon, description, change }: { title: string; value: string | number; icon: React.ReactNode; description?: string; change?: { value: number; positive: boolean } }) => {
+const MetricCard = ({ title, value, icon, description, change }: { title: string; value: React.ReactNode; icon: React.ReactNode; description?: string; change?: { value: number; positive: boolean } }) => {
    const t = useTranslations();
    return (
    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 h-full">
@@ -120,7 +121,7 @@ const RecentOrdersTable = ({ orders }: { orders: ExtendedOrder[] }) => {
                         <div className="text-gray-500">{t("Admin.date")}:</div>
                         <div>{order.date}</div>
                         <div className="text-gray-500">{t("Admin.total")}:</div>
-                        <div className="font-medium">{order.total} Lei</div>
+                        <div className="font-medium"><Money amount={order.total} /></div>
                      </div>
                   </div>
                );
@@ -165,7 +166,7 @@ const RecentOrdersTable = ({ orders }: { orders: ExtendedOrder[] }) => {
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerName}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.date}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.total} Lei</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><Money amount={order.total} /></td>
                            <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusDisplay.class}`}>{statusDisplay.text}</span>
                            </td>
@@ -184,7 +185,7 @@ const RecentOrdersTable = ({ orders }: { orders: ExtendedOrder[] }) => {
       </div>
 
       <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
-         <Link href="/admin/orders" className="text-xs sm:text-sm font-medium text-pink-600 hover:text-pink-800">
+         <Link href="/admin/orders" className="text-xs sm:text-sm font-medium text-brand-600 hover:text-brand-800">
             {t("Admin.viewAllOrders")} →
          </Link>
       </div>
@@ -213,7 +214,7 @@ const TopProductsTable = ({ products }: { products: ExtendedProduct[] }) => {
                      <div className="text-gray-500">{t("Admin.sales")}:</div>
                      <div>{product.sold}</div>
                      <div className="text-gray-500">{t("Admin.revenue")}:</div>
-                     <div className="font-medium">{product.revenue} Lei</div>
+                     <div className="font-medium"><Money amount={product.revenue} /></div>
                   </div>
                </div>
             ))
@@ -248,7 +249,7 @@ const TopProductsTable = ({ products }: { products: ExtendedProduct[] }) => {
                            </Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.sold}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.revenue} Lei</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><Money amount={product.revenue} /></td>
                      </tr>
                   ))
                ) : (
@@ -263,7 +264,7 @@ const TopProductsTable = ({ products }: { products: ExtendedProduct[] }) => {
       </div>
 
       <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
-         <Link href="/admin/products" className="text-xs sm:text-sm font-medium text-pink-600 hover:text-pink-800">
+         <Link href="/admin/products" className="text-xs sm:text-sm font-medium text-brand-600 hover:text-brand-800">
             {t("Admin.viewAllProducts")} →
          </Link>
       </div>
@@ -450,7 +451,7 @@ export default function AdminDashboard() {
          {/* Metrics */}
          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <MetricCard title={t("Admin.totalOrders")} value={dashboardData.totalOrders} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />} change={{ value: dashboardData.totalOrdersChange, positive: Math.sign(dashboardData.totalOrdersChange) === 1 }} />
-            <MetricCard title={t("Admin.totalRevenue")} value={`${dashboardData.totalRevenue} Lei`} icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />} change={{ value: dashboardData.totalRevenueChange, positive: Math.sign(dashboardData.totalRevenueChange) === 1 }} />
+            <MetricCard title={t("Admin.totalRevenue")} value={<Money amount={dashboardData.totalRevenue} />} icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />} change={{ value: dashboardData.totalRevenueChange, positive: Math.sign(dashboardData.totalRevenueChange) === 1 }} />
             <MetricCard title={t("Admin.products")} value={dashboardData.totalProducts} icon={<ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />} description={`${dashboardData.pendingOrders} ${t("Admin.ordersWaiting")}`} />
             <MetricCard title={t("Admin.newClients")} value={dashboardData.totalCustomers} icon={<Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />} change={{ value: dashboardData.totalCustomersChange, positive: Math.sign(dashboardData.totalCustomersChange) === 1 }} />
          </div>

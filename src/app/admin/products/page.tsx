@@ -14,6 +14,7 @@ import { SearchResponse } from "@algolia/client-search";
 import { getCategData, getBrandData } from "@/queries";
 import { useTranslations } from "next-intl";
 import { refreshStore } from "@/lib/refreshStore";
+import { Money } from "@/components/common/Price";
 // Simple debounce function
 const useDebounce = (value: string, delay: number) => {
    const [debouncedValue, setDebouncedValue] = useState(value);
@@ -202,6 +203,7 @@ export default function ProductsPage() {
       setProductToDelete(productId);
       setPopup({
          title: t("Admin.deleteProduct"),
+         variant: "delete",
          description: [<p key="delete-msg">{t("Admin.deleteProductConfirmation")}</p>],
          buttons: [
             {
@@ -261,6 +263,7 @@ export default function ProductsPage() {
          setDeleteLoading(false);
          setPopup({
             title: t("Admin.error"),
+            variant: "error",
             description: [<p key="error-msg">{t("Admin.deleteProductError")}</p>],
             buttons: [
                {
@@ -416,20 +419,20 @@ export default function ProductsPage() {
 
                         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                            <div>
-                              <span className="text-gray-500">{t("Admin.category")}:</span> {product.category_name || "N/A"}
+                              <span className="text-gray-500">{t("Admin.category")}:</span> {product.category_name || "—"}
                            </div>
                            <div>
-                              <span className="text-gray-500">{t("Admin.brand")}:</span> {product.brand || "N/A"}
+                              <span className="text-gray-500">{t("Admin.brand")}:</span> {product.brand || "—"}
                            </div>
                            <div>
                               <span className="text-gray-500">{t("Admin.price")}:</span>{" "}
                               {product.discount && product.discount_price ? (
                                  <span>
-                                    <span className="font-medium">{product.discount_price} Lei</span>
-                                    <span className="line-through ml-1">{product.price} Lei</span>
+                                    <span className="font-medium"><Money amount={product.discount_price} /></span>
+                                    <span className="line-through ml-1"><Money amount={product.price} /></span>
                                  </span>
                               ) : (
-                                 <span>{product.price} Lei</span>
+                                 <span><Money amount={product.price} /></span>
                               )}
                            </div>
                            <div>
@@ -528,18 +531,18 @@ export default function ProductsPage() {
                                  <div className="text-sm text-gray-900 flex items-center justify-center">{product.product_of_month ? <CheckCircle className="w-5 h-5 text-green-500" /> : null}</div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                 <div className="text-sm text-gray-900">{product.category_name || "N/A"}</div>
-                                 <div className="text-sm text-gray-500">{product.subcategory_name || "N/A"}</div>
+                                 <div className="text-sm text-gray-900">{product.category_name || "—"}</div>
+                                 <div className="text-sm text-gray-500">{product.subcategory_name || "—"}</div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">{product.brand || "N/A"}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">{product.brand || "—"}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                  {product.discount && product.discount_price ? (
                                     <div>
-                                       <div className="text-sm font-medium text-gray-900">{product.discount_price} Lei</div>
-                                       <div className="text-sm text-gray-500 line-through">{product.price} Lei</div>
+                                       <div className="text-sm font-medium text-gray-900"><Money amount={product.discount_price} /></div>
+                                       <div className="text-sm text-gray-500 line-through"><Money amount={product.price} /></div>
                                     </div>
                                  ) : (
-                                    <div className="text-sm text-gray-900">{product.price} Lei</div>
+                                    <div className="text-sm text-gray-900"><Money amount={product.price} /></div>
                                  )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">{product.stoc || 0}</td>

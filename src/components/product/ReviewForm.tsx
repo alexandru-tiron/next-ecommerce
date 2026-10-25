@@ -41,7 +41,7 @@ const ReviewForm = ({ productId, reviews }: { productId: string; reviews: Review
    if (user === null) {
       return (
          <p className="text-sm text-gray-600">
-            <Link href="/login" className="text-pink-700 hover:underline">
+            <Link href="/login" className="text-brand-700 hover:underline">
                {t("signInToReview")}
             </Link>
          </p>
@@ -96,7 +96,7 @@ const ReviewForm = ({ productId, reviews }: { productId: string; reviews: Review
             maxLength={REVIEW_MAX_LENGTH}
             rows={3}
             placeholder={t("reviewPlaceholder")}
-            className="w-full rounded-md border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200"
+            className="w-full rounded-md border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200"
          />
          <div className="flex items-center gap-3 flex-wrap">
             <button type="submit" disabled={stars < 1 || status === "saving"} className="rounded-md bg-black text-white py-2 px-4 text-sm disabled:opacity-40">

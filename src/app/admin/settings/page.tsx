@@ -5,6 +5,30 @@ import { db } from "@/lib/firebaseInit";
 import { doc, getDoc, deleteDoc, collection, onSnapshot, setDoc } from "firebase/firestore";
 import { Save, RefreshCw, AlertTriangle, Plus, Trash2, Camera } from "lucide-react";
 import { Info, Notifications, Shipping, Slide, Tax } from "@/types/user";
+import {
+   Analytics,
+   analyticsFrom,
+   Branding,
+   brandingFrom,
+   DEFAULT_ANALYTICS,
+   DEFAULT_BRANDING,
+   DEFAULT_HOME,
+   DEFAULT_LOCALIZATION,
+   DEFAULT_NAVIGATION,
+   DEFAULT_NOTIFICATIONS,
+   DEFAULT_SHIPPING,
+   DEFAULT_STORE_INFO,
+   HomeLayout,
+   homeFrom,
+   isHexColor,
+   Localization,
+   localizationFrom,
+   Navigation,
+   navigationFrom,
+   notificationsFrom,
+   shippingFrom,
+   storeInfoFrom,
+} from "@core/settings";
 import { DEFAULT_VAT_RATE, isValidVatRate } from "@core/vat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { TabsContent, TabsList, TabsTrigger, Tabs } from "@/components/common/tabs";
@@ -16,13 +40,25 @@ import Image from "next/image";
 import AddSlideModal from "@/components/admin/settings/AddSlideModal";
 import ReindexSearchButton from "@/components/admin/settings/ReindexSearchButton";
 import PaymentSettingsForm from "@/components/admin/settings/PaymentSettingsForm";
+import BrandingSettingsForm from "@/components/admin/settings/BrandingSettingsForm";
+import LocalizationSettingsForm from "@/components/admin/settings/LocalizationSettingsForm";
+import HomeNavigationForm from "@/components/admin/settings/HomeNavigationForm";
+import AnalyticsSettingsForm from "@/components/admin/settings/AnalyticsSettingsForm";
+import type { PageDrafts } from "@/components/admin/settings/InfoPagesEditor";
+import dynamic from "next/dynamic";
 import { DEFAULT_PAYMENT_SETTINGS, PaymentSettings, paymentSettingsFrom } from "@/lib/payments";
 import { Category, Brand } from "@/types/product";
 import { useTranslations } from "next-intl";
 import { refreshStore } from "@/lib/refreshStore";
+// The rich-text editor is large, so it loads only when the Pages tab is opened
+const InfoPagesEditor = dynamic(() => import("@/components/admin/settings/InfoPagesEditor"), { ssr: false, loading: () => <RefreshCw className="w-6 h-6 mx-auto my-24 animate-spin text-gray-400" /> });
+
 interface FirebaseSlide extends Slide {
    id: string;
 }
+
+const TABS = ["general", "branding", "localization", "shipping", "payments", "notifications", "home", "pages", "slider", "categories"] as const;
+const isTab = (value: string | null): value is (typeof TABS)[number] => TABS.includes(value as (typeof TABS)[number]);
 
 export default function SettingsPage() {
    const t = useTranslations();
@@ -47,41 +83,28 @@ export default function SettingsPage() {
    const [isAddBrandModalOpen, setIsAddBrandModalOpen] = useState(false);
 
    // State for each settings document
-   const [infoSettings, setInfoSettings] = useState<Info>({
-      store_name: process.env.NEXT_PUBLIC_STORE_NAME || "",
-      store_address: process.env.NEXT_PUBLIC_STORE_ADDRESS || "",
-      phone_no: process.env.NEXT_PUBLIC_PHONE_NO || "",
-      contact_mail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "",
-      orders_mail: process.env.NEXT_PUBLIC_ORDERS_EMAIL || "",
-      support_mail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
-      facebook_link: "",
-      instagram_link: "",
-      x_link: " ",
-      pinterest_link: "",
-   });
+   const [infoSettings, setInfoSettings] = useState<Info>(DEFAULT_STORE_INFO);
 
    const [sliderSettings, setSliderSettings] = useState<FirebaseSlide[]>([]);
    const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
    const [selectedSlide, setSelectedSlide] = useState<FirebaseSlide | null>(null);
 
-   const [shippingSettings, setShippingSettings] = useState<Shipping>({
-      default_price: 25,
-      enable_threshold: false,
-      free_shipping_threshold: 500,
-   });
+   const [shippingSettings, setShippingSettings] = useState<Shipping>(DEFAULT_SHIPPING);
 
    const [taxSettings, setTaxSettings] = useState<Tax>({ vat_rate: DEFAULT_VAT_RATE });
    const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
 
-   const [notificationSettings, setNotificationSettings] = useState<Notifications>({
-      send_new_order_mails: true,
-      send_order_status_update_mails: false,
-      send_confirmation_mails: true,
-   });
+   const [notificationSettings, setNotificationSettings] = useState<Notifications>(DEFAULT_NOTIFICATIONS);
+   const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
+   const [localization, setLocalization] = useState<Localization>(DEFAULT_LOCALIZATION);
+   const [homeLayout, setHomeLayout] = useState<HomeLayout>(DEFAULT_HOME);
+   const [navigation, setNavigation] = useState<Navigation>(DEFAULT_NAVIGATION);
+   const [analytics, setAnalytics] = useState<Analytics>(DEFAULT_ANALYTICS);
+   const [pageDrafts, setPageDrafts] = useState<PageDrafts>({});
 
    // Update the active tab when the URL parameter changes
    useEffect(() => {
-      if (tabParam && ["general", "shipping", "notifications", "categories"].includes(tabParam)) {
+      if (isTab(tabParam)) {
          setActiveTab(tabParam);
       }
    }, [tabParam]);
@@ -117,17 +140,17 @@ export default function SettingsPage() {
          try {
             setIsLoading(true);
 
-            // Fetch Info settings
-            const infoDoc = await getDoc(doc(db, "Settings", "Info"));
-            if (infoDoc.exists()) {
-               setInfoSettings(infoDoc.data() as Info);
-            }
-
-            // Fetch Shipping settings
-            const shippingDoc = await getDoc(doc(db, "Settings", "Shipping"));
-            if (shippingDoc.exists()) {
-               setShippingSettings(shippingDoc.data() as Shipping);
-            }
+            const read = async (name: string) => (await getDoc(doc(db, "Settings", name))).data();
+            const [info, shipping, brandingData, localizationData, homeData, navigationData, analyticsData] = await Promise.all(
+               ["Info", "Shipping", "Branding", "Localization", "Home", "Navigation", "Analytics"].map(read)
+            );
+            setInfoSettings(storeInfoFrom(info));
+            setShippingSettings(shippingFrom(shipping));
+            setBranding(brandingFrom(brandingData));
+            setLocalization(localizationFrom(localizationData));
+            setHomeLayout(homeFrom(homeData));
+            setNavigation(navigationFrom(navigationData));
+            setAnalytics(analyticsFrom(analyticsData));
 
             // Fetch Payment settings
             const paymentsDoc = await getDoc(doc(db, "Settings", "Payments"));
@@ -141,9 +164,7 @@ export default function SettingsPage() {
 
             // Fetch Notification settings
             const notificationsDoc = await getDoc(doc(db, "Settings", "Notifications"));
-            if (notificationsDoc.exists()) {
-               setNotificationSettings(notificationsDoc.data() as Notifications);
-            }
+            setNotificationSettings(notificationsFrom(notificationsDoc.data()));
 
             setIsLoading(false);
          } catch (error) {
@@ -199,14 +220,26 @@ export default function SettingsPage() {
       try {
          setIsSaving(true);
 
+         // Check what would otherwise be dropped silently
+         if (!isHexColor(branding.brand_color)) throw new Error(t("StoreSettings.invalidColor"));
+         const footerLinks = navigationFrom(navigation).footer_links;
+         if (footerLinks.length !== navigation.footer_links.length) throw new Error(t("StoreSettings.invalidLinks"));
+
          // Update each settings document
-         await setDoc(doc(db, "Settings", "Info"), infoSettings, { merge: true });
+         await setDoc(doc(db, "Settings", "Info"), storeInfoFrom(infoSettings), { merge: true });
          await setDoc(doc(db, "Settings", "Shipping"), shippingSettings, { merge: true });
          if (!isValidVatRate(taxSettings.vat_rate)) throw new Error("Invalid VAT rate");
          await setDoc(doc(db, "Settings", "Tax"), taxSettings, { merge: true });
          await setDoc(doc(db, "Settings", "Payments"), paymentSettingsFrom(paymentSettings), { merge: true });
          await setDoc(doc(db, "Settings", "Notifications"), notificationSettings, { merge: true });
+         await setDoc(doc(db, "Settings", "Branding"), brandingFrom(branding));
+         await setDoc(doc(db, "Settings", "Localization"), localizationFrom(localization));
+         await setDoc(doc(db, "Settings", "Home"), homeFrom(homeLayout));
+         await setDoc(doc(db, "Settings", "Navigation"), { footer_links: footerLinks });
+         await setDoc(doc(db, "Settings", "Analytics"), analyticsFrom(analytics));
          await refreshStore("settings");
+         // The root layout reads the branding and languages, so render it again
+         router.refresh();
 
          setSaveMessage({
             type: "success",
@@ -339,24 +372,11 @@ export default function SettingsPage() {
          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                <TabsList className="w-full flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
-                  <TabsTrigger value="general" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "general" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.general")}
-                  </TabsTrigger>
-                  <TabsTrigger value="shipping" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "shipping" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.shipping")}
-                  </TabsTrigger>
-                  <TabsTrigger value="payments" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "payments" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.payments")}
-                  </TabsTrigger>
-                  <TabsTrigger value="notifications" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "notifications" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.notifications")}
-                  </TabsTrigger>
-                  <TabsTrigger value="slider" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "slider" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.slider")}
-                  </TabsTrigger>
-                  <TabsTrigger value="categories" className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === "categories" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-                     {t("Admin.categories")}
-                  </TabsTrigger>
+                  {TABS.map((tab) => (
+                     <TabsTrigger key={tab} value={tab} className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === tab ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+                        {["branding", "localization", "home", "pages"].includes(tab) ? t(`StoreSettings.tabs.${tab}`) : t(`Admin.${tab}`)}
+                     </TabsTrigger>
+                  ))}
                </TabsList>
 
                <TabsContent value="general" className="p-6">
@@ -368,6 +388,44 @@ export default function SettingsPage() {
                               {t("Admin.storeName")}
                            </label>
                            <input type="text" id="storeName" value={infoSettings.store_name} onChange={(e) => handleInfoChange("store_name", e.target.value)} className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                        </div>
+
+                        <div>
+                           <label htmlFor="legalName" className="block text-sm font-medium text-gray-700">
+                              {t("StoreSettings.legalName")}
+                           </label>
+                           <input type="text" id="legalName" value={infoSettings.legal_name} onChange={(e) => handleInfoChange("legal_name", e.target.value)} className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                           <p className="mt-1 text-xs text-gray-500">{t("StoreSettings.legalNameHint")}</p>
+                        </div>
+
+                        <div>
+                           <label htmlFor="taxId" className="block text-sm font-medium text-gray-700">
+                              {t("StoreSettings.taxId")}
+                           </label>
+                           <input type="text" id="taxId" value={infoSettings.tax_id} onChange={(e) => handleInfoChange("tax_id", e.target.value)} className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                        </div>
+
+                        <div>
+                           <label htmlFor="regNo" className="block text-sm font-medium text-gray-700">
+                              {t("StoreSettings.regNo")}
+                           </label>
+                           <input type="text" id="regNo" value={infoSettings.reg_no} onChange={(e) => handleInfoChange("reg_no", e.target.value)} className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                        </div>
+
+                        <div>
+                           <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                              {t("StoreSettings.country")}
+                           </label>
+                           <input
+                              type="text"
+                              id="country"
+                              maxLength={2}
+                              value={infoSettings.country}
+                              onChange={(e) => handleInfoChange("country", e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
+                              placeholder="DE"
+                              className="mt-1 px-3 py-2 block w-24 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase"
+                           />
+                           <p className="mt-1 text-xs text-gray-500">{t("StoreSettings.countryHint")}</p>
                         </div>
 
                         <div>
@@ -469,7 +527,27 @@ export default function SettingsPage() {
                            />
                         </div>
                      </div>
+
+                     <div className="border-t border-gray-200 pt-6">
+                        <AnalyticsSettingsForm settings={analytics} onChange={setAnalytics} />
+                     </div>
                   </div>
+               </TabsContent>
+
+               <TabsContent value="branding" className="p-6">
+                  <BrandingSettingsForm settings={branding} onChange={setBranding} />
+               </TabsContent>
+
+               <TabsContent value="localization" className="p-6">
+                  <LocalizationSettingsForm settings={localization} onChange={setLocalization} />
+               </TabsContent>
+
+               <TabsContent value="home" className="p-6">
+                  <HomeNavigationForm home={homeLayout} onHomeChange={setHomeLayout} navigation={navigation} onNavigationChange={setNavigation} locales={localization.enabled_locales} />
+               </TabsContent>
+
+               <TabsContent value="pages" className="p-6">
+                  <InfoPagesEditor info={infoSettings} shipping={shippingSettings} vatRate={taxSettings.vat_rate} currency={localization.currency} locales={localization.enabled_locales} defaultLocale={localization.default_locale} drafts={pageDrafts} onDraftsChange={setPageDrafts} />
                </TabsContent>
 
                <TabsContent value="shipping" className="p-6">
@@ -478,7 +556,7 @@ export default function SettingsPage() {
                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <div>
                            <label htmlFor="defaultShippingPrice" className="block text-sm font-medium text-gray-700">
-                              {t("Admin.defaultShippingPrice")}
+                              {t("Admin.defaultShippingPrice", { currency: localization.currency })}
                            </label>
                            <input
                               type="number"
@@ -665,7 +743,7 @@ export default function SettingsPage() {
                                              value={slide.url || ""}
                                              disabled={true}
                                              className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                             placeholder="URL slide (optional)"
+                                             placeholder={t("Admin.urlSlidePlaceholder")}
                                           />
                                        </div>
 

@@ -7,21 +7,14 @@ import NavIcons from "./NavIcons";
 import Menu from "./Menu";
 import { twMerge } from "tailwind-merge";
 import { useEffect, useState } from "react";
-import { getInfoData } from "@/queries";
-import { Info } from "@/types/user";
 import { usePathname } from "next/navigation";
+import { useStoreSettings } from "@/components/StoreSettingsProvider";
+import LanguageSwitcher from "./LanguageSwitcher";
 const Navbar = () => {
    const pathname = usePathname();
    const [isScrolled, setIsScrolled] = useState(false);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
-   const [info, setInfo] = useState<Info | null>(null);
-   useEffect(() => {
-      const fetchInfo = async () => {
-         const info = await getInfoData();
-         setInfo(info);
-      };
-      fetchInfo();
-   }, []);
+   const { storeName, logoUrl } = useStoreSettings();
    useEffect(() => {
       const handleScroll = () => {
          setIsScrolled(window.scrollY > 64);
@@ -40,8 +33,8 @@ const Navbar = () => {
             <div className=" flex items-center  justify-between gap-4">
                <Menu />
                <Link href="/" className="flex items-center gap-3 min-h-7 min-w-7">
-                  <Image src="/images/logo.svg" alt="Logo" className="w-7 h-7" width={28} height={28} />
-                  <div className="text-base font-semibold lg:text-xl tracking-wide hidden sm:block">{info?.store_name}</div>
+                  <Image src={logoUrl || "/images/logo.svg"} alt="" className="h-7 w-auto max-w-32 object-contain" width={112} height={28} />
+                  <div className="text-base font-semibold lg:text-xl tracking-wide hidden sm:block">{storeName}</div>
                </Link>
             </div>
             {/* RIGHT */}
@@ -51,6 +44,7 @@ const Navbar = () => {
                </div>
             )}
             <div className="flex items-center justify-between gap-6">
+               <LanguageSwitcher className="hidden md:flex" />
                <WishlistLink />
                <NavIcons isSearchOpen={isSearchOpen} setIsSearchOpen={setIsSearchOpen} />
             </div>

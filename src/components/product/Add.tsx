@@ -106,7 +106,7 @@ const Add = ({
                   }
                }}
                disabled={isLoading}
-               className="w-36 text-sm font-semibold rounded-3xl border-2 border-pink-700 text-pink-700 py-2 px-4 hover:border-none hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:bg-pink-200 disabled:ring-0 disabled:text-white disabled:ring-none"
+               className="w-36 text-sm font-semibold rounded-3xl border-2 border-brand-700 text-brand-700 py-2 px-4 hover:border-none hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:bg-brand-200 disabled:ring-0 disabled:text-white disabled:ring-none"
             >
                {t("addToCart")}
             </button>

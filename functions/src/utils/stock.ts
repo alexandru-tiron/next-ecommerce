@@ -1,5 +1,5 @@
 import { DocumentReference, FieldValue, Firestore, Transaction } from "firebase-admin/firestore";
-import { HttpsError } from "firebase-functions/v2/https";
+import { storeError } from "./errors";
 
 // Total ordered quantity per product; all variants of a product share the product's stock
 export function quantitiesByProduct(products: { product_id: string; quantity: number }[]) {
@@ -17,9 +17,7 @@ export async function reserveStock(transaction: Transaction, db: Firestore, prod
 
    const shortages = snaps.filter((snap) => typeof snap.data()?.stoc === "number" && snap.data()!.stoc < (totals.get(snap.id) ?? 0));
    if (shortages.length > 0) {
-      throw new HttpsError("failed-precondition", `Stoc insuficient pentru: ${shortages.map((snap) => snap.data()?.name).join(", ")}.`, {
-         products: shortages.map((snap) => ({ id: snap.id, available: snap.data()?.stoc })),
-      });
+      throw storeError("failed-precondition", "out_of_stock", { products: shortages.map((snap) => snap.data()?.name).join(", ") }, { products: shortages.map((snap) => ({ id: snap.id, available: snap.data()?.stoc })) });
    }
 
    for (const snap of snaps) {

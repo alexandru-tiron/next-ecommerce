@@ -57,6 +57,15 @@ describe("storage", () => {
       await assertFails(upload(admin(), "Brands/logo.svg", 300 * KB, "image/svg+xml"));
    });
 
+   it("brand files can be images or small .ico favicons", async () => {
+      await assertSucceeds(upload(admin(), "Branding/logo.svg", 50 * KB, "image/svg+xml"));
+      await assertSucceeds(upload(admin(), "Branding/share.jpg", 2 * KB * KB, "image/jpeg"));
+      await assertSucceeds(upload(admin(), "Branding/favicon.ico", 20 * KB, "image/x-icon"));
+      await assertFails(upload(admin(), "Branding/favicon.ico", 300 * KB, "image/x-icon"));
+      await assertFails(upload(admin(), "Branding/page.html", KB, "text/html"));
+      await assertFails(upload(customer(), "Branding/logo.png", KB, "image/png"));
+   });
+
    it("folders without a rule are closed, even to admins", async () => {
       await assertFails(upload(admin(), "Backups/db.png", KB, "image/png"));
       await assertFails(getMetadata(ref(anonymous(), "Backups/db.png")));

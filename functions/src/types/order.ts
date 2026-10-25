@@ -56,7 +56,9 @@ export interface OrderData {
    is_business?: boolean;
    voucher?: boolean;
    voucher_id?: string;
-   voucher_discount?: number; // Lei taken off the products subtotal by the voucher
+   voucher_discount?: number; // amount taken off the products subtotal by the voucher
+   locale?: "en" | "ro" | "de"; // language the customer ordered in, for their e-mails
+   currency?: string; // ISO code of the store currency when the order was placed; missing on older orders, which were in RON
    vat_rate?: number; // VAT percentage the prices included when the order was placed
    vat_amount?: number; // VAT contained in the order total
    payment_method?: "cod" | "stripe" | "netopia"; // missing on older orders, which were cash on delivery

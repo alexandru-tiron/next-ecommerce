@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "./voucher";
+import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherError } from "./voucher";
 
 const base: Voucher = { code: "SAVE10", type: "percent", value: 10, active: true };
 
@@ -38,8 +38,12 @@ describe("vouchers", () => {
       expect(normalizeVoucherCode("  save10 ")).toBe("SAVE10");
    });
 
-   it("has a customer message for each failure", () => {
-      expect(voucherMessage({ ok: false, reason: "min_order", minOrder: 200 })).toMatch(/200 Lei/);
-      expect(voucherMessage({ ok: false, reason: "not_found" })).toMatch(/nu este valid/);
+   it("has an error code for each failure, with the minimum order as a number", () => {
+      expect(voucherError({ ok: false, reason: "min_order", minOrder: 200 })).toEqual({ error: "voucher_min_order", params: { minOrder: 200 } });
+      expect(voucherError({ ok: false, reason: "expired" }).error).toBe("voucher_expired");
+      expect(voucherError({ ok: false, reason: "used_up" }).error).toBe("voucher_used_up");
+      // An inactive voucher looks like an unknown one
+      expect(voucherError({ ok: false, reason: "inactive" }).error).toBe("voucher_not_found");
+      expect(voucherError({ ok: false, reason: "not_found" }).error).toBe("voucher_not_found");
    });
 });

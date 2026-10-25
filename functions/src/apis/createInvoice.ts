@@ -9,6 +9,8 @@ import { getVatRate, vatIncluded } from "../utils/vat";
 import { enforceAppCheck } from "../utils/params";
 import { orderIdInputSchema } from "../schemas";
 import { parseInput } from "../utils/validation";
+import { storeError } from "../utils/errors";
+import { orderCurrency } from "@core/payments";
 const db = getFirestore();
 // Define parameters for Facturis API credentials
 const facturisApiKey = defineSecret("FACTURIS_API_KEY");
@@ -30,12 +32,12 @@ export const createInvoice = onCall(
          // Check if user is authenticated
          if (!request.auth) {
             logger.warn(`Unauthenticated order attempt from IP: ${request.rawRequest?.ip || "unknown"}`);
-            throw new functions.https.HttpsError("unauthenticated", "Utilizatorul nu este autentificat.");
+            throw storeError("unauthenticated", "not_signed_in");
          } else if (request.auth.token.isAdmin !== true) {
-            throw new functions.https.HttpsError("permission-denied", "Nu aveți permisiune să accesați această funcție.");
+            throw storeError("permission-denied", "not_admin");
          }
 
-         const { orderId } = parseInput(orderIdInputSchema, request.data, "ID-ul comenzii este obligatoriu.");
+         const { orderId } = parseInput(orderIdInputSchema, request.data);
 
          // Get Facturis API credentials
          const apiKey = facturisApiKey.value();
@@ -47,21 +49,22 @@ export const createInvoice = onCall(
          const orderDoc = await db.collection("Orders").doc(orderId).get();
 
          if (!orderDoc.exists) {
-            throw new functions.https.HttpsError("not-found", "Comanda nu a fost găsită.");
+            throw storeError("not-found", "order_not_found");
          }
 
          const order = orderDoc.data() as OrderData;
          // Use the VAT rate the order was placed with; older orders fall back to the current setting
          const vatRate = order.vat_rate ?? (await getVatRate());
+         const currency = orderCurrency(order);
 
          // Check if order is in a valid state to be invoiced
          if (order.status !== "accepted") {
-            throw new functions.https.HttpsError("failed-precondition", "Doar comenzile acceptate pot fi facturate.");
+            throw storeError("failed-precondition", "invoice_not_accepted");
          }
 
          // Check if the order already has an invoice
          if (order.invoice_id) {
-            throw new functions.https.HttpsError("already-exists", "Comanda are deja o factură asociată.");
+            throw storeError("already-exists", "invoice_exists");
          }
 
          // Format date in the expected format: YYYY-MM-DD HH:MM:SS
@@ -85,7 +88,7 @@ export const createInvoice = onCall(
             facturi_serie: "ONLINE", // You might want to make this configurable
             facturi_numar: "",
             facturi_cota_tva: `${vatRate}%`,
-            facturi_moneda: "RON",
+            facturi_moneda: currency,
             facturi_nume_client: `${order.first_name} ${order.last_name}`,
             facturi_tip_persoana: order.is_business ? "juridica" : "fizica", // "juridica" for companies, "fizica" for individuals
             facturi_codf_client: order.is_business ? order.billing_address.business_details?.cui || "" : "",
@@ -123,7 +126,7 @@ export const createInvoice = onCall(
 
             return {
                facturi_prod_nume: product.product_name + (product.variant_name ? ` - ${product.variant_name}` : "") + (product.sku_variant_name ? ` (${product.sku_variant_name})` : ""),
-               facturi_prod_moneda: "RON",
+               facturi_prod_moneda: currency,
                facturi_prod_pretftva: priceWithoutVat.toFixed(2),
                facturi_prod_pretctva: priceWithVat.toFixed(2),
                facturi_prod_cant: product.quantity.toFixed(0),
@@ -145,7 +148,7 @@ export const createInvoice = onCall(
 
             dataProd.push({
                facturi_prod_nume: "Transport",
-               facturi_prod_moneda: "RON",
+               facturi_prod_moneda: currency,
                facturi_prod_pretftva: shippingWithoutVat.toFixed(2),
                facturi_prod_pretctva: order.shipping_price.toFixed(2),
                facturi_prod_cant: "1.000",
@@ -165,7 +168,7 @@ export const createInvoice = onCall(
             const discountVat = vatIncluded(order.voucher_discount, vatRate);
             dataProd.push({
                facturi_prod_nume: `Discount voucher ${order.voucher_id ?? ""}`.trim(),
-               facturi_prod_moneda: "RON",
+               facturi_prod_moneda: currency,
                facturi_prod_pretftva: (-(order.voucher_discount - discountVat)).toFixed(2),
                facturi_prod_pretctva: (-order.voucher_discount).toFixed(2),
                facturi_prod_cant: "1.000",
@@ -206,7 +209,7 @@ export const createInvoice = onCall(
 
          if (responseData.success !== 2000) {
             logger.error(`[Facturis] Error creating invoice for order ${orderId}:`, { success: responseData.success, result: responseData.result });
-            throw new functions.https.HttpsError("internal", "Eroare la crearea facturii: " + (responseData.result || "Eroare necunoscută"));
+            throw storeError("internal", "invoice_failed", { detail: String(responseData.result || "unknown error") });
          }
 
          // Extract invoice details from the response
@@ -238,7 +241,7 @@ export const createInvoice = onCall(
             throw error;
          }
 
-         throw new functions.https.HttpsError("internal", `Eroare la crearea facturii: ${error.message || "Eroare necunoscută"}`);
+         throw storeError("internal", "invoice_failed", { detail: error.message || "unknown error" });
       }
    }
 );

@@ -15,9 +15,9 @@ const customCheckboxStyles = `
    w-4 h-4
    border border-gray-300
    rounded
-   checked:bg-pink-700
-   checked:border-pink-700
-   checked:hover:bg-pink-700
+   checked:bg-brand-700
+   checked:border-brand-700
+   checked:hover:bg-brand-700
    hover:border-gray-400
    transition-colors
    cursor-pointer
@@ -170,7 +170,7 @@ const Filter = ({ params }: { params: SearchParams }) => {
             <div className="flex items-center justify-between mb-2">
                <span className="text-lg font-semibold">{t("filter")}</span>
                {hasActiveFilters(params) && (
-                  <button onClick={() => navigate(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])))} className="text-sm text-pink-700 hover:underline">
+                  <button onClick={() => navigate(Object.fromEntries(FILTER_KEYS.map((key) => [key, undefined])))} className="text-sm text-brand-700 hover:underline">
                      {t("clearAll")}
                   </button>
                )}

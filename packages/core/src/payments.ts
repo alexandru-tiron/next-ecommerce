@@ -24,17 +24,21 @@ export function paymentSettingsFrom(data: Partial<PaymentSettings> | undefined):
    };
 }
 
-export function isMethodEnabled(method: PaymentMethod, settings: PaymentSettings) {
+// NETOPIA only takes payments in RON
+export function isMethodEnabled(method: PaymentMethod, settings: PaymentSettings, currency: string) {
    if (method === "cod") return settings.cod_enabled;
    if (method === "stripe") return settings.stripe_enabled;
-   return settings.netopia_enabled && settings.netopia_pos_signature !== "";
+   return settings.netopia_enabled && settings.netopia_pos_signature !== "" && currency === "RON";
 }
 
 // Methods shown at checkout, in display order. Cash on delivery stays available if everything else is off.
-export function availablePaymentMethods(settings: PaymentSettings): PaymentMethod[] {
-   const methods = PAYMENT_METHODS.filter((method) => isMethodEnabled(method, settings));
+export function availablePaymentMethods(settings: PaymentSettings, currency: string): PaymentMethod[] {
+   const methods = PAYMENT_METHODS.filter((method) => isMethodEnabled(method, settings, currency));
    return methods.length > 0 ? methods : ["cod"];
 }
+
+// Orders placed before the currency setting existed have no currency: the store they come from sold in RON
+export const orderCurrency = (order: { currency?: string }) => order.currency ?? "RON";
 
 // Orders placed before card payments existed have no payment method: they were cash on delivery
 export const orderPaymentMethod = (order: { payment_method?: PaymentMethod }): PaymentMethod => order.payment_method ?? "cod";
@@ -45,7 +49,7 @@ export function canPayOrder(order: { payment_method?: PaymentMethod; payment_sta
    return method !== "cod" && (order.payment_status === "pending" || order.payment_status === "failed") && order.status !== "rejected";
 }
 
-// Lei -> bani, as Stripe expects integer amounts in the smallest currency unit
+// Amount in the smallest currency unit (cents), as Stripe expects. Every currency the store offers has two decimals for Stripe.
 export const toMinorUnits = (amount: number) => Math.round(amount * 100);
 
 // NETOPIA v2 payment status codes (from the official SDK): 3 paid, 5 confirmed, 8 credit (refund),

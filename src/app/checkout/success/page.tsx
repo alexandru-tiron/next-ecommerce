@@ -44,14 +44,14 @@ const SuccessContent = async ({ id, paidByCard }: { id: string; paidByCard: bool
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link href="/profile?tab=orders" className="flex-1 py-3 px-4 border border-pink-600 text-pink-600 rounded-md font-medium text-center hover:bg-pink-50 transition-colors">
+               <Link href="/profile?tab=orders" className="flex-1 py-3 px-4 border border-brand-600 text-brand-600 rounded-md font-medium text-center hover:bg-brand-50 transition-colors">
                   <span className="flex items-center justify-center">
                      <ShoppingBag className="w-4 h-4 mr-2" />
                      {t("viewOrders")}
                   </span>
                </Link>
 
-               <Link href="/list" className="flex-1 py-3 px-4 bg-pink-600 text-white rounded-md font-medium text-center hover:bg-pink-700 transition-colors">
+               <Link href="/list" className="flex-1 py-3 px-4 bg-brand-600 text-white rounded-md font-medium text-center hover:bg-brand-700 transition-colors">
                   <span className="flex items-center justify-center">{t("continueShopping")}</span>
                </Link>
             </div>
@@ -71,7 +71,7 @@ const SuccessPage = async ({ searchParams }: { searchParams: Promise<{ order?: s
          fallback={
             <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 pb-16">
                <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-100 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-pink-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-600"></div>
                </div>
             </div>
          }

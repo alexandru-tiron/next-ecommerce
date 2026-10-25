@@ -9,10 +9,13 @@ import {
 } from "../utils/validateOrderDetails";
 import { sendCustomerEmail, sendAdminEmail } from "../utils/sendNewOrderEmails";
 import { reserveStock } from "../utils/stock";
-import { orderInputMessage, orderInputSchema } from "../schemas";
+import { orderInputError, orderInputSchema } from "../schemas";
 import { parseInput } from "../utils/validation";
 import { emailPassword, enforceAppCheck } from "../utils/params";
-import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherMessage } from "@core/voucher";
+import { evaluateVoucher, normalizeVoucherCode, Voucher, voucherError } from "@core/voucher";
+import { shippingCost, shippingFrom } from "@core/settings";
+import { storeError } from "../utils/errors";
+import { loadLocalization, loadNotifications } from "../utils/settings";
 import { getVatRate, vatIncluded } from "../utils/vat";
 import { isMethodEnabled, PAYMENT_METHODS, PaymentMethod, paymentSettingsFrom } from "../utils/payments";
 import { Address, OrderData } from "../types/order";
@@ -40,21 +43,15 @@ export const validateAndCreateOrder = onCall(
          logger.warn(
             `Unauthenticated order attempt from IP: ${request.rawRequest?.ip || "unknown"}`
          );
-         throw new functions.https.HttpsError(
-            "unauthenticated",
-            "Utilizatorul nu este autentificat."
-         );
+         throw storeError("unauthenticated", "not_signed_in");
       } else if (!request.auth.token?.email_verified) {
-         throw new functions.https.HttpsError(
-            "unauthenticated",
-            "Emailul tău nu a fost verificat. Vă rugăm să verificați emailul dvs. pentru a vă activa contul."
-         );
+         throw storeError("unauthenticated", "email_not_verified");
       }
 
       try {
          const userId = request.auth.uid;
          // Checked before anything else: unknown fields are dropped and every value is bounded
-         const orderData = parseInput(orderInputSchema, request.data, orderInputMessage);
+         const orderData = parseInput(orderInputSchema, request.data, orderInputError);
          const ipAddress = request.rawRequest?.ip || undefined;
 
          logger.info(`[Order] Received order request from user ${userId} at IP ${ipAddress}`);
@@ -74,10 +71,7 @@ export const validateAndCreateOrder = onCall(
             if (!ipRateLimitDoc.empty && ipRateLimitDoc.docs?.length >= MAX_CALLS_PER_IP) {
                // Rate limit exceeded
                logger.warn(`[Order] Rate limit exceeded for ${userId}`);
-               throw new functions.https.HttpsError(
-                  "resource-exhausted",
-                  `Prea multe cereri de la această adresă IP. Încearcă din nou mai târziu.`
-               );
+               throw storeError("resource-exhausted", "too_many_requests");
             } else {
                await db.collection("RateLimits").doc().set({
                   ip_address: ipAddress,
@@ -95,10 +89,7 @@ export const validateAndCreateOrder = onCall(
             const existingOrderQuerySnapshot = await existingOrderQuery.get();
             if (!existingOrderQuerySnapshot.empty && existingOrderQuerySnapshot.docs?.length > 0) {
                // If exists, another parallel request already created the order
-               throw new functions.https.HttpsError(
-                  "already-exists",
-                  "Comanda a fost deja plasată."
-               );
+               throw storeError("already-exists", "order_already_placed");
             }
          }
          // User-based rate limiting
@@ -115,10 +106,7 @@ export const validateAndCreateOrder = onCall(
          if (!rateLimitDoc.empty && rateLimitDoc.docs?.length >= MAX_CALLS_PER_USER) {
             // Rate limit exceeded
             logger.warn(`[Order] Rate limit exceeded for ${userId}`);
-            throw new functions.https.HttpsError(
-               "resource-exhausted",
-               `Prea multe comenzi într-o perioadă scurtă. Încearcă din nou după ${TIME_PERIOD_MINUTES} minute.`
-            );
+            throw storeError("resource-exhausted", "too_many_orders", { minutes: TIME_PERIOD_MINUTES });
          }
          // Check if addresses exist - either via IDs or complete address objects
          let shippingAddress = orderData.shipping_address;
@@ -132,10 +120,7 @@ export const validateAndCreateOrder = onCall(
 
             if (!shippingAddressSnap.exists) {
                logger.warn(`[Order] Shipping address not found for user ${userId}`);
-               throw new functions.https.HttpsError(
-                  "not-found",
-                  "Adresa de livrare selectată nu există."
-               );
+               throw storeError("not-found", "shipping_address_not_found");
             }
 
             shippingAddress = {
@@ -145,7 +130,7 @@ export const validateAndCreateOrder = onCall(
          } else if (!shippingAddress) {
             // Neither ID nor object provided
             logger.warn(`[Order] No shipping address provided for user ${userId}`);
-            throw new functions.https.HttpsError("invalid-argument", "Adresa de livrare lipsește.");
+            throw storeError("invalid-argument", "shipping_address_missing");
          }
 
          if (!billingAddress && orderData.billing_address_id) {
@@ -155,10 +140,7 @@ export const validateAndCreateOrder = onCall(
 
             if (!billingAddressSnap.exists) {
                logger.warn(`[Order] Billing address not found for user ${userId}`);
-               throw new functions.https.HttpsError(
-                  "not-found",
-                  "Adresa de facturare selectată nu există."
-               );
+               throw storeError("not-found", "billing_address_not_found");
             }
 
             billingAddress = {
@@ -168,19 +150,13 @@ export const validateAndCreateOrder = onCall(
          } else if (!billingAddress) {
             // Neither ID nor object provided
             logger.warn(`[Order] No billing address provided for user ${userId}`);
-            throw new functions.https.HttpsError(
-               "invalid-argument",
-               "Adresa de facturare lipsește."
-            );
+            throw storeError("invalid-argument", "billing_address_missing");
          }
 
          // Validate that addresses have all required fields
          if (!validateAddress(shippingAddress)) {
             logger.warn(`[Order] Invalid shipping address for user ${userId}`);
-            throw new functions.https.HttpsError(
-               "invalid-argument",
-               "Adresa de livrare este incompletă sau invalidă."
-            );
+            throw storeError("invalid-argument", "shipping_address_invalid");
          }
 
          // For billing address, check if business flag is true
@@ -189,26 +165,17 @@ export const validateAndCreateOrder = onCall(
          if (!validateAddress(billingAddress, isBusinessOrder)) {
             if (isBusinessOrder) {
                logger.warn(`[Order] Invalid business billing address for user ${userId}`);
-               throw new functions.https.HttpsError(
-                  "invalid-argument",
-                  "Adresa de facturare pentru firmă este incompletă sau invalidă. Verificați detaliile firmei."
-               );
+               throw storeError("invalid-argument", "business_address_invalid");
             } else {
                logger.warn(`[Order] Invalid billing address for user ${userId}`);
-               throw new functions.https.HttpsError(
-                  "invalid-argument",
-                  "Adresa de facturare este incompletă sau invalidă."
-               );
+               throw storeError("invalid-argument", "billing_address_invalid");
             }
          }
 
          // If this is a business order, validate the billing address is marked as a business address
          if (isBusinessOrder && !billingAddress.business) {
             logger.warn(`[Order] Non-business billing address used for business order ${userId}`);
-            throw new functions.https.HttpsError(
-               "invalid-argument",
-               "Pentru comandă pe firmă, este necesară selectarea unei adrese de facturare de tip firmă."
-            );
+            throw storeError("invalid-argument", "business_address_required");
          }
 
          // Validate products
@@ -220,10 +187,7 @@ export const validateAndCreateOrder = onCall(
          // If any products are invalid, return error
          if (invalidProducts?.length > 0) {
             logger.warn(`[Order] Invalid products in order from user ${userId}:`, invalidProducts);
-            throw new functions.https.HttpsError(
-               "aborted",
-               "Unele produse din coș nu sunt valide."
-            );
+            throw storeError("aborted", "invalid_products", {}, { invalidProducts });
          }
 
          // Check for duplicate orders in the last hour
@@ -236,7 +200,7 @@ export const validateAndCreateOrder = onCall(
             return {
                status: 409, // Conflict
                success: false,
-               error: "O comandă identică a fost deja plasată în ultimele 15 minute.",
+               error: "duplicate_order",
                duplicateOrderId,
             };
          }
@@ -250,17 +214,9 @@ export const validateAndCreateOrder = onCall(
             return sum + price * product.quantity;
          }, 0);
 
-         // Get shipping settings for free shipping threshold validation
-         const shippingSettingsRef = await db.collection("Settings").doc("Shipping").get();
-         const shippingSettings = shippingSettingsRef.data() || {
-            default_price: 25,
-            enable_threshold: false,
-            free_shipping_threshold: 500,
-         };
-
          // Shipping is what the store settings say, whatever the client sent: free above the threshold when it is enabled
-         const validatedShippingPrice =
-            shippingSettings.enable_threshold && subtotal >= shippingSettings.free_shipping_threshold ? 0 : shippingSettings.default_price;
+         const shippingSettings = shippingFrom((await db.collection("Settings").doc("Shipping").get()).data());
+         const validatedShippingPrice = shippingCost(shippingSettings, subtotal);
          if (orderData.shipping_price !== validatedShippingPrice) {
             logger.warn(`[Order] Shipping price ${orderData.shipping_price} from user ${userId} corrected to ${validatedShippingPrice}`);
          }
@@ -294,8 +250,14 @@ export const validateAndCreateOrder = onCall(
          // Payment method: cash on delivery unless an enabled card provider was chosen
          const paymentMethod: PaymentMethod = PAYMENT_METHODS.includes(orderData.payment_method as PaymentMethod) ? (orderData.payment_method as PaymentMethod) : "cod";
          const paymentSettings = paymentSettingsFrom((await db.collection("Settings").doc("Payments").get()).data());
-         if (!isMethodEnabled(paymentMethod, paymentSettings)) {
-            throw new functions.https.HttpsError("failed-precondition", "Metoda de plată aleasă nu este disponibilă.");
+         // The order keeps the currency it was placed in; payments and e-mails use it
+         const localization = await loadLocalization();
+         const { currency } = localization;
+         orderToSave.currency = currency;
+         // The language the customer ordered in, for their e-mails
+         if (orderData.locale && localization.enabled_locales.includes(orderData.locale)) orderToSave.locale = orderData.locale;
+         if (!isMethodEnabled(paymentMethod, paymentSettings, currency)) {
+            throw storeError("failed-precondition", "payment_method_unavailable");
          }
          orderToSave.payment_method = paymentMethod;
          orderToSave.payment_status = paymentMethod === "cod" ? "on_delivery" : "pending";
@@ -308,10 +270,16 @@ export const validateAndCreateOrder = onCall(
             if (voucherRef) {
                const voucherSnap = await transaction.get(voucherRef);
                if (!voucherSnap.exists) {
-                  throw new functions.https.HttpsError("invalid-argument", voucherMessage({ ok: false, reason: "not_found" }));
+                  {
+                  const { error, params } = voucherError({ ok: false, reason: "not_found" });
+                  throw storeError("invalid-argument", error, params);
+               }
                }
                const check = evaluateVoucher(voucherSnap.data() as Voucher, subtotal);
-               if (!check.ok) throw new functions.https.HttpsError("failed-precondition", voucherMessage(check));
+               if (!check.ok) {
+                  const { error, params } = voucherError(check);
+                  throw storeError("failed-precondition", error, params);
+               }
                voucherDiscount = check.discount;
             }
 
@@ -338,40 +306,23 @@ export const validateAndCreateOrder = onCall(
             });
          });
 
-         // Get user data for email
-         const userDoc = await db.doc(`Users/${userId}`).get();
-         const userData = userDoc.data();
-
-         const notificationsRef = await db.collection("Settings").doc(`Notifications`).get();
-         const notificationsData = notificationsRef.data();
-         if (userData && userData.email) {
-            // Send confirmation email to customer
-            notificationsData?.send_confirmation_mails
-               ? await sendCustomerEmail(
-                    userData.email,
-                    orderId,
-                    orderToSave,
-                    notificationsData?.send_order_status_update_mails || false
-                 )
-               : logger.info(`[Order] Customer email notification skipped based on settings`);
-
-            // Send notification email to admin
-            notificationsData?.send_new_order_mails
-               ? await sendAdminEmail(orderId, orderToSave, userData)
-               : logger.info(`[Order] Admin email notification skipped based on settings`);
-         }
+         // E-mails, as switched on in Settings/Notifications
+         const notifications = await loadNotifications();
+         if (notifications.send_confirmation_mails) await sendCustomerEmail(orderToSave.email, orderId, orderToSave);
+         else logger.info(`[Order] Customer email notification skipped based on settings`);
+         if (notifications.send_new_order_mails) await sendAdminEmail(orderId, orderToSave);
+         else logger.info(`[Order] Admin email notification skipped based on settings`);
 
          logger.info(`[Order] Successfully created order ${orderId} for user ${userId}`);
          return {
             status: 200, // OK
             success: true,
             orderId,
-            message: "Comanda a fost creată cu succes.",
          };
       } catch (error: any) {
          logger.error(`[Order] Error processing order:`, error);
 
-         // Validation errors already carry a message for the customer
+         // Validation errors already carry a code for the store
          if (error instanceof functions.https.HttpsError) throw error;
 
          // Handle specific errors
@@ -393,16 +344,12 @@ export const validateAndCreateOrder = onCall(
                   status: 200, // OK
                   success: true,
                   orderId: duplicateOrder.id,
-                  message: "Comanda existentă a fost returnată.",
                   is_duplicate: true,
                };
             }
          }
 
-         throw new functions.https.HttpsError(
-            "internal",
-            "A apărut o eroare la procesarea comenzii. Te rugăm să încerci din nou."
-         );
+         throw storeError("internal", "order_failed");
       }
    }
 );

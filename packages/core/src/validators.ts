@@ -17,9 +17,13 @@ export const validatePassword = (password: string): boolean => {
    return passwordRegex.test(password);
 };
 
-// Romanian numbers in any common format, or international numbers with their country code
+// Romanian numbers in any common format, or any number written with its country code (+49 30 1234567).
+// The phone library knows mobile numbers well but rejects many valid landlines, so numbers starting with +
+// are also accepted when they have 8 to 15 digits (the international maximum).
 export const validatePhone = (phoneNumber: string): boolean => {
-   return phoneRegex.test(phoneNumber) || phone(phoneNumber).isValid;
+   if (phoneRegex.test(phoneNumber) || phone(phoneNumber, { validateMobilePrefix: false }).isValid) return true;
+   const digits = phoneNumber.replace(/\D/g, "").length;
+   return /^\+[1-9][0-9 .()-]+$/.test(phoneNumber.trim()) && digits >= 8 && digits <= 15;
 };
 
 export const validateName = (name: string): boolean => {

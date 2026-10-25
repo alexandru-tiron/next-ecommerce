@@ -2,6 +2,7 @@ import { getProductOfTheMonth } from "@/lib/server/storeData";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import Link from "next/link";
+import { PriceTag } from "@/components/common/Price";
 
 export const ProductOfTheMonth = async () => {
    const t = await getTranslations();
@@ -31,22 +32,18 @@ export const ProductOfTheMonth = async () => {
                               left: productOfTheMonth.sku_variants && productOfTheMonth.sku_variants.length > 0 ? "5rem" : " ",
                            }}
                         >
-                           {price.price[0]}
-                           <sup className=" text-[0.6rem] leading-none -top-[0.3rem]">{price.price[1]}</sup>
-                           Lei
+                           {<PriceTag amount={Number(price.price.join("."))} supClassName="text-[0.6rem] leading-none -top-[0.3rem]" />}
                            <div className="absolute bottom-[calc(50%-1px)] left-0 h-[1.5px] w-full bg-gray-700" />
                         </h3>
-                        <h2 className="font-medium text-3xl text-pink-700 ">
+                        <h2 className="font-medium text-3xl text-brand-700 ">
                            {productOfTheMonth.sku_variants && productOfTheMonth.sku_variants.length > 0 && <span className=" text-base font-normal text-gray-700">{t("ProductList.from")}</span>}
-                           {price.discount[0]}
-                           <sup className=" text-sm leading-none -top-3">{price.discount[1]}</sup> <span className=" text-base">Lei</span>
+                           {<PriceTag amount={Number(price.discount.join("."))} supClassName="text-sm leading-none -top-3" currencyClassName="text-base" />}
                         </h2>
                      </div>
                   ) : (
-                     <h2 className="font-medium text-3xl text-pink-700 self-end mr-2">
+                     <h2 className="font-medium text-3xl text-brand-700 self-end mr-2">
                         {productOfTheMonth.sku_variants && productOfTheMonth.sku_variants.length > 0 && <span className=" text-sm font-normal text-gray-700">{t("ProductList.from")}</span>}
-                        {price && price.price[0]}
-                        <sup className=" text-sm leading-none -top-3">{price && price.price[1]}</sup> <span className=" text-base">Lei</span>
+                        {price && <PriceTag amount={Number(price.price.join("."))} supClassName="text-sm leading-none -top-3" currencyClassName="text-base" />}
                      </h2>
                   )}
                   <Link href={`/product/${productOfTheMonth.name.trim().replaceAll(" ", "-")}?id=${productOfTheMonth.id}`} className="inline-block w-fit px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors">

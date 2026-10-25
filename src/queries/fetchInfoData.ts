@@ -1,15 +1,9 @@
 import { Info } from "@/types/user";
 import { getInfo } from "@/components/common/getProps";
+import { DEFAULT_STORE_INFO, storeInfoFrom } from "@core/settings";
 import { cache } from "react";
-// Default values
-const DefaultInfo: Info = {
-   store_name: process.env.NEXT_PUBLIC_STORE_NAME || "Shop",
-   store_address: process.env.NEXT_PUBLIC_STORE_ADDRESS || "Oltului 25, Galaţi, Romania",
-   phone_no: process.env.NEXT_PUBLIC_PHONE_NO || "0722 222 222",
-   contact_mail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@shop.ro",
-   orders_mail: process.env.NEXT_PUBLIC_ORDERS_EMAIL || "orders@shop.ro",
-   support_mail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@shop.ro",
-};
+// Defaults for a store that hasn't saved these settings yet
+const DefaultInfo: Info = DEFAULT_STORE_INFO;
 
 // In-memory cache with stale-while-revalidate pattern
 let cachedData: Info | null = null;
@@ -37,7 +31,7 @@ async function fetchInfoData(): Promise<Info> {
 async function fetchInfo(): Promise<Info> {
    try {
       const info = await getInfo();
-      return info || DefaultInfo;
+      return info ? storeInfoFrom(info) : DefaultInfo;
    } catch (error) {
       console.error("Error fetching info:", error);
       return DefaultInfo;

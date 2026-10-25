@@ -8,6 +8,7 @@ import Link from "next/link";
 import { UserData } from "@/types/user";
 import { Timestamp } from "firebase/firestore";
 import { useTranslations } from "next-intl";
+import { useFormatDate } from "@/components/common/useFormatDate";
 
 // Extended user type with order stats
 interface ExtendedUserData {
@@ -39,16 +40,6 @@ interface Order {
 // Search type options
 type SearchType = "name" | "email" | "phone";
 
-// Format date for display
-const formatDate = (date: Date | null) => {
-   if (!date) return "N/A";
-
-   return date.toLocaleDateString("ro-RO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-   });
-};
 
 // Helper function to convert Firestore timestamp to Date
 const toDate = (timestamp: Timestamp | FirestoreTimestamp): Date => {
@@ -97,6 +88,8 @@ const CustomerTable = memo(
       debouncedSearchTerm: string;
    }) => {
       const t = useTranslations();
+      const formatStoreDate = useFormatDate();
+      const formatDate = (date: Date | null) => (date ? formatStoreDate(date, { day: "2-digit", month: "2-digit", year: "numeric" }) : "—");
       // Sort customers based on sort field and direction
       const sortedCustomers = useMemo(() => {
          return [...customers].sort((a, b) => {

@@ -507,6 +507,7 @@ export default function EditProductPage({ params }: EditPageParams) {
          const firstError = Object.values(newErrors)[0];
          setPopup({
             title: t("Admin.error"),
+            variant: "error",
             description: [<p key="error-msg">{firstError}</p>],
             buttons: [
                {
@@ -702,6 +703,7 @@ export default function EditProductPage({ params }: EditPageParams) {
    const confirmDeleteProduct = () => {
       setPopup({
          title: t("Admin.deleteProduct"),
+         variant: "delete",
          description: [<p key="delete-msg">{t("Admin.deleteProductConfirmation")}</p>],
          buttons: [
             {
@@ -763,6 +765,7 @@ export default function EditProductPage({ params }: EditPageParams) {
          setDeleteLoading(false);
          setPopup({
             title: t("Admin.error"),
+            variant: "error",
             description: [<p key="error-msg">{t("Admin.deleteProductError")}</p>],
             buttons: [
                {

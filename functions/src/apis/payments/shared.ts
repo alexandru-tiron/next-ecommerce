@@ -1,11 +1,12 @@
-import { CallableRequest, HttpsError } from "firebase-functions/v2/https";
+import { CallableRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { siteUrl } from "../../utils/params";
 import { paymentInputSchema } from "../../schemas";
 import { parseInput } from "../../utils/validation";
-import { cancelsOrder, isMethodEnabled, PaymentStatus, paymentSettingsFrom, safeReturnOrigin, shouldApplyPaymentStatus } from "../../utils/payments";
+import { storeError } from "../../utils/errors";
+import { cancelsOrder, isMethodEnabled, orderCurrency, PaymentStatus, paymentSettingsFrom, safeReturnOrigin, shouldApplyPaymentStatus } from "../../utils/payments";
 
 // Shared by the Stripe and NETOPIA modules. Those declare Secret Manager secrets, so index.ts only loads them once enabled.
 export const db = getFirestore();
@@ -19,19 +20,19 @@ export async function loadPaymentSettings() {
 
 // Checks shared by both providers: the caller owns the order, it was placed for this method and still needs paying
 export async function payableOrder(request: CallableRequest<{ orderId?: string; origin?: string }>, method: "stripe" | "netopia") {
-   if (!request.auth) throw new HttpsError("unauthenticated", "Utilizatorul nu este autentificat.");
-   const { orderId, origin } = parseInput(paymentInputSchema, request.data, "ID-ul comenzii este obligatoriu.");
+   if (!request.auth) throw storeError("unauthenticated", "not_signed_in");
+   const { orderId, origin } = parseInput(paymentInputSchema, request.data);
 
    const ref = db.collection("Orders").doc(orderId);
    const snap = await ref.get();
    const order = snap.data();
-   if (!order || order.user_id !== request.auth.uid) throw new HttpsError("not-found", "Comanda nu a fost găsită.");
-   if (order.payment_method !== method) throw new HttpsError("failed-precondition", "Comanda a fost plasată cu altă metodă de plată.");
-   if (order.status === "rejected") throw new HttpsError("failed-precondition", "Comanda a fost anulată.");
-   if (order.payment_status === "paid" || order.payment_status === "refunded") throw new HttpsError("failed-precondition", "Comanda este deja plătită.");
+   if (!order || order.user_id !== request.auth.uid) throw storeError("not-found", "order_not_found");
+   if (order.payment_method !== method) throw storeError("failed-precondition", "order_wrong_payment_method");
+   if (order.status === "rejected") throw storeError("failed-precondition", "order_cancelled");
+   if (order.payment_status === "paid" || order.payment_status === "refunded") throw storeError("failed-precondition", "order_already_paid");
 
    const settings = await loadPaymentSettings();
-   if (!isMethodEnabled(method, settings)) throw new HttpsError("failed-precondition", "Metoda de plată nu este disponibilă momentan.");
+   if (!isMethodEnabled(method, settings, orderCurrency(order))) throw storeError("failed-precondition", "payment_method_unavailable");
    return { ref, order, orderId, settings, origin: safeReturnOrigin(origin, siteUrl.value()) };
 }
 

@@ -242,11 +242,11 @@ const LoginPage = () => {
                      <div className="flex flex-col gap-2 max-w-sm">
                         <p className="text-sm text-gray-700">
                            {t("approuved")}
-                           <Link href="/info/terms-and-conditions" className="text-pink-700">
+                           <Link href="/info/terms-and-conditions" className="text-brand-700">
                               {t("termsAndConditions")}
                            </Link>{" "}
                            {t("and")}
-                           <Link href="/info/privacy-policy" className="text-pink-700">
+                           <Link href="/info/privacy-policy" className="text-brand-700">
                               {t("privacyPolicy")}
                            </Link>
                         </p>
@@ -258,7 +258,7 @@ const LoginPage = () => {
                      {t("forgotPassword")}
                   </div>
                )}
-               <button type="button" className={twMerge("bg-black text-white p-2 rounded-md disabled:bg-pink-200 disabled:cursor-not-allowed", mode === MODE.REGISTER && " md:w-2/4 md:self-center")} disabled={isLoading} onClick={handleSubmit}>
+               <button type="button" className={twMerge("bg-black text-white p-2 rounded-md disabled:bg-brand-200 disabled:cursor-not-allowed", mode === MODE.REGISTER && " md:w-2/4 md:self-center")} disabled={isLoading} onClick={handleSubmit}>
                   {isLoading ? t("loading") : buttonTitle}
                </button>
 

@@ -8,6 +8,8 @@ import Link from "next/link";
 import { Order } from "@/types/user";
 import { Timestamp } from "firebase/firestore";
 import { useTranslations } from "next-intl";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
 // Extended order type with customer information
 interface ExtendedOrder extends Order {
    customerName: string;
@@ -22,6 +24,7 @@ const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanosec
 
 export default function OrdersPage() {
    const t = useTranslations();
+   const formatStoreDate = useFormatDate();
    const [isLoading, setIsLoading] = useState(true);
    const [initialLoad, setInitialLoad] = useState(true);
    const [orders, setOrders] = useState<ExtendedOrder[]>([]);
@@ -172,7 +175,7 @@ export default function OrdersPage() {
       try {
          const seconds = getTimestampSeconds(timestamp);
          const date = new Date(seconds * 1000);
-         return date.toLocaleDateString("ro-RO", {
+         return formatStoreDate(date, {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -319,7 +322,7 @@ export default function OrdersPage() {
                                  <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
                                  <div className="text-sm text-gray-500">{order.customerEmail}</div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.totalAmount.toFixed(2)} Lei</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><Money amount={order.totalAmount} /></td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                  <span
                                     className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${

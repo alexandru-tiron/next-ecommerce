@@ -16,25 +16,28 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { FirebaseError } from "firebase/app";
 import { CartProduct } from "@/types/product";
 import { validateName, validateEmail, validatePhone } from "@core/validators";
-import app, { auth } from "@/lib/firebaseInit";
+import app from "@/lib/firebaseInit";
 import { getShippData } from "@/queries";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import VatNote from "@/components/common/VatNote";
+import { Money } from "@/components/common/Price";
+import { StoreError, storeErrorOf, useStoreErrorMessage } from "@/components/common/useStoreError";
+import { useStoreFormat } from "@/components/StoreSettingsProvider";
+import { isStoreErrorCode, StoreErrorParams } from "@core/errors";
 // ResponseData interface for API responses
 interface ResponseData {
    success: boolean;
    status: number;
    orderId?: string;
    error?: string;
-   invalidProducts?: Array<{
-      id: string;
-      reason: string;
-   }>;
 }
 
 export default function CheckoutPage() {
    const router = useRouter();
    const t = useTranslations();
+   const locale = useLocale();
+   const errorMessage = useStoreErrorMessage();
+   const { currency } = useStoreFormat();
    const dispatch = useAppDispatch();
    const { user, isAuthReady } = useAppSelector((state) => state.auth);
    const { cart, subTotal } = useAppSelector((state) => state.cart);
@@ -49,6 +52,8 @@ export default function CheckoutPage() {
    const [voucherError, setVoucherError] = useState("");
    const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
    const [isProcessing, setIsProcessing] = useState(false);
+   // One key per visit to the checkout, so a double click or a retry can't place the same order twice
+   const [idempotencyKey] = useState(() => crypto.randomUUID());
    const [showAddressDropdown, setShowAddressDropdown] = useState(false);
    const [showBillingDropdown, setShowBillingDropdown] = useState(false);
    const [fieldErrors, setFieldErrors] = useState({
@@ -78,14 +83,14 @@ export default function CheckoutPage() {
       setIsCheckingVoucher(true);
       setVoucherError("");
       try {
-         const checkVoucher = httpsCallable<{ code: string; subtotal: number }, { valid: boolean; code?: string; discount?: number; message?: string }>(getFunctions(app, "europe-west3"), "checkVoucher");
+         const checkVoucher = httpsCallable<{ code: string; subtotal: number }, { valid: boolean; code?: string; discount?: number; error?: string; params?: StoreErrorParams }>(getFunctions(app, "europe-west3"), "checkVoucher");
          const { data } = await checkVoucher({ code, subtotal: subTotal });
          if (data.valid && data.code) {
             setAppliedVoucher({ code: data.code, discount: data.discount ?? 0 });
             setVoucherCode(data.code);
          } else {
             setAppliedVoucher(null);
-            setVoucherError(data.message || t("Checkout.invalidVoucher"));
+            setVoucherError(isStoreErrorCode(data.error) ? errorMessage(data.error, data.params) : t("Checkout.invalidVoucher"));
          }
       } catch (error) {
          console.error("Voucher check error:", error);
@@ -99,11 +104,11 @@ export default function CheckoutPage() {
    // Only the payment methods enabled in the admin settings are offered
    useEffect(() => {
       getPaymentSettings().then((settings) => {
-         const methods = availablePaymentMethods(settings);
+         const methods = availablePaymentMethods(settings, currency);
          setPaymentMethods(methods);
          setPaymentMethod((current) => (methods.includes(current) ? current : methods[0]));
       });
-   }, []);
+   }, [currency]);
 
    // A percentage voucher depends on the subtotal, so check it again when the cart changes
    useEffect(() => {
@@ -204,9 +209,49 @@ export default function CheckoutPage() {
    const showErrorPopup = (errorMessage: string) => {
       setPopup({
          title: t("Checkout.error"),
-         description: [<p key="error-msg">{errorMessage}</p>],
+         variant: "error",
+         description: [<p key="error-msg" className="whitespace-pre-line">{errorMessage}</p>],
          buttons: [{ label: t("Profile.understand"), onClick: () => {}, className: "primary" }],
       });
+   };
+
+   // An error from the order function: products that are no longer valid leave the cart, invalid fields are marked
+   const showStoreError = async ({ code, params, details }: StoreError) => {
+      const message = errorMessage(code, params);
+      switch (code) {
+         case "not_signed_in":
+            showErrorPopup(message);
+            router.push("/login?redirect=/checkout");
+            return;
+         case "email_not_verified":
+            showErrorPopup(t("Checkout.emailNotVerifiedError"));
+            return;
+         case "invalid_first_name":
+            setFieldErrors((errors) => ({ ...errors, firstName: message }));
+            break;
+         case "invalid_last_name":
+            setFieldErrors((errors) => ({ ...errors, lastName: message }));
+            break;
+         case "invalid_email":
+            setFieldErrors((errors) => ({ ...errors, email: message }));
+            break;
+         case "invalid_phone":
+            setFieldErrors((errors) => ({ ...errors, phoneNumber: message }));
+            break;
+         case "invalid_products": {
+            const invalid = Array.isArray(details.invalidProducts) ? (details.invalidProducts as { id: string; reason: string }[]) : [];
+            if (invalid.length === 0) break;
+            const invalidIds = invalid.map((product) => product.id);
+            await dispatch(reconstructCart(cart.filter((item) => !invalidIds.includes(item.product_id))));
+            const lines = invalid.map((product) => {
+               const name = cart.find((item) => item.product_id === product.id)?.product_name ?? product.id;
+               return `• ${name}: ${isStoreErrorCode(product.reason) ? errorMessage(product.reason) : product.reason}`;
+            });
+            showErrorPopup(`${t("Checkout.invalidProductsEliminated")}\n${lines.join("\n")}`);
+            return;
+         }
+      }
+      showErrorPopup(message);
    };
 
    // Handle checkout submission
@@ -247,8 +292,9 @@ export default function CheckoutPage() {
       }
 
       if (!phoneNumber || !validatePhone(phoneNumber)) {
-         showErrorPopup(t("Login.phoneRequired"));
-         setFieldErrors({ ...fieldErrors, phoneNumber: t("Login.phoneRequired") });
+         const message = phoneNumber ? t("Login.phoneInvalid") : t("Login.phoneRequired");
+         showErrorPopup(message);
+         setFieldErrors({ ...fieldErrors, phoneNumber: message });
          return;
       }
 
@@ -286,10 +332,9 @@ export default function CheckoutPage() {
 
       try {
          setIsProcessing(true);
-         const token = await auth.currentUser?.getIdTokenResult();
 
          // Prepare order data
-         const orderData: Omit<Order, "id" | "date" | "status" | "tracking_number"> & { idempotency_key: string } = {
+         const orderData: Omit<Order, "id" | "date" | "status" | "tracking_number"> & { idempotency_key: string; locale: string } = {
             user_id: user.uid,
             first_name: firstName,
             last_name: lastName,
@@ -311,7 +356,8 @@ export default function CheckoutPage() {
                      product_name: item.product_name,
                      product_code: item.product_code,
                      product_price: item.product_price,
-                     discount: item.discount,
+                     // Only defined fields: the Functions SDK would send undefined as null
+                     ...(item.discount !== undefined ? { discount: item.discount } : {}),
                      ...(item.discount_price ? { discount_price: item.discount_price } : {}),
                      quantity: item.quantity,
                      ...(item.variant_id ? { variant_id: item.variant_id } : {}),
@@ -324,7 +370,9 @@ export default function CheckoutPage() {
             shipping_price: shippingCost,
             total: grandTotal,
             // Add idempotency key to prevent duplicate orders
-            idempotency_key: `${user.uid}_${token?.token}_${Date.now()}`,
+            idempotency_key: idempotencyKey,
+            // The customer's e-mails are sent in this language
+            locale,
          };
 
          // Use Firebase Functions SDK to call the Cloud Function
@@ -333,50 +381,7 @@ export default function CheckoutPage() {
          const result = await validateAndCreateOrderFn(orderData);
          const responseData = result.data as ResponseData;
 
-         // Handle response based on status
-         if (responseData.status !== 200) {
-            // Handle specific error status codes
-            switch (responseData.status) {
-               case 401:
-                  showErrorPopup(t("Checkout.sessionExpired"));
-                  router.push("/login?redirect=/checkout");
-                  break;
-               case 404:
-                  showErrorPopup(t("Checkout.addressNotFound"));
-                  break;
-               case 406:
-                  showErrorPopup(t("Checkout.invalidOrderDetails"));
-                  break;
-               case 412:
-                  showErrorPopup(t("Checkout.incompleteBusinessDetails"));
-                  break;
-               case 422:
-                  if (responseData.invalidProducts && responseData.invalidProducts.length > 0) {
-                     // Get the list of invalid product IDs
-                     const invalidProductIds = responseData.invalidProducts.map((p: { id: string }) => p.id);
-
-                     // Filter out invalid products from the cart
-                     const validProducts = cart.filter((product) => !invalidProductIds.includes(product.id));
-
-                     // Reconstruct the cart with only valid products
-                     await dispatch(reconstructCart(validProducts));
-
-                     // Format invalid products error message
-                     const productErrorsList = responseData.invalidProducts.map((p: { id: string; reason: string }) => `• ${p.reason}`).join("\n");
-
-                     console.error("Invalid products:", productErrorsList);
-                     showErrorPopup(`${t("Checkout.invalidProductsEliminated")}\n${productErrorsList}`);
-                  } else {
-                     showErrorPopup(responseData.error || t("Checkout.invalidProducts"));
-                  }
-                  break;
-               case 429:
-                  showErrorPopup(t("Checkout.tooManyRequests"));
-                  break;
-               default:
-                  showErrorPopup(responseData.error || t("Checkout.orderError"));
-            }
-         } else if (responseData.success && responseData.orderId) {
+         if (responseData.success && responseData.orderId) {
             // Order successfully created
             await dispatch(clearCart());
             if (paymentMethod !== "cod") {
@@ -391,129 +396,29 @@ export default function CheckoutPage() {
             }
             router.push(`/checkout/success?order=${responseData.orderId}`);
          } else {
-            // Handle unexpected success response without order ID
-            showErrorPopup(t("Checkout.orderError"));
+            // The only unsuccessful answer is an identical order placed shortly before
+            showErrorPopup(isStoreErrorCode(responseData.error) ? errorMessage(responseData.error) : t("Checkout.orderError"));
          }
       } catch (error: unknown) {
          console.error("Order error:", error);
-         // Improved error handling for Firebase HttpsError and network errors
-         if (error && typeof error === "object" && "code" in error) {
-            // This is a Firebase HttpsError
-            const firebaseError = error as FirebaseError;
-            switch (firebaseError.code) {
-               // Authentication errors
-               case "unauthenticated":
-                  if (firebaseError.message.includes("nu a fost verificat")) {
-                     showErrorPopup(t("Checkout.emailNotVerifiedError"));
-                  } else {
-                     showErrorPopup(t('Checkout.userNotAuthenticated'));
-                     router.push("/login?redirect=/checkout");
-                  }
-                  break;
-
-               // Resource exhaustion errors
-               case "resource-exhausted":
-                  if (firebaseError.message.includes("Prea multe comenzi")) {
-                     showErrorPopup(t("Checkout.tooManyOrders"));
-                  } else {
-                     showErrorPopup(t("Checkout.tooManyRequests"));
-                  }
-                  break;
-
-               // Duplicate order error
-               case "already-exists":
-                  showErrorPopup(t("Checkout.orderAlreadyExists"));
-                  break;
-
-               // Invalid argument errors (validation errors)
-               case "invalid-argument":
-                  if (firebaseError.message.includes("Prenumele")) {
-                     showErrorPopup(t("Login.firstNameInvalid"));
-                     setFieldErrors({ ...fieldErrors, firstName: t("Login.firstNameInvalid") });
-                  } else if (firebaseError.message.includes("Numele")) {
-                     showErrorPopup(t("Login.lastNameInvalid"));
-                     setFieldErrors({ ...fieldErrors, lastName: t("Login.lastNameInvalid") });
-                  } else if (firebaseError.message.includes("Emailul")) {
-                     showErrorPopup(t("Login.emailInvalid"));
-                     setFieldErrors({ ...fieldErrors, email: t("Login.emailInvalid") });
-                  } else if (firebaseError.message.includes("telefon")) {
-                     showErrorPopup(t("Login.phoneInvalid"));
-                     setFieldErrors({ ...fieldErrors, phoneNumber: t("Login.phoneInvalid") });
-                  } else if (firebaseError.message.includes("Adresa de livrare lipsește")) {
-                     showErrorPopup(t("Checkout.missingShippingAddress"));
-                  } else if (firebaseError.message.includes("Adresa de facturare lipsește")) {
-                     showErrorPopup(t("Checkout.missingBillingAddress"));
-                  } else if (firebaseError.message.includes("Adresa de livrare este incompletă")) {
-                     showErrorPopup(t("Checkout.invalidShippingAddress"));
-                  } else if (firebaseError.message.includes("Adresa de facturare pentru firmă")) {
-                     showErrorPopup(t("Checkout.invalidBusinessAddress"));
-                  } else if (firebaseError.message.includes("Adresa de facturare este incompletă")) {
-                     showErrorPopup(t("Checkout.invalidBillingAddress"));
-                  } else if (firebaseError.message.includes("Pentru comandă pe firmă")) {
-                     showErrorPopup(t("Checkout.businessOrderRequired"));
-                  } else if (firebaseError.message.includes("Datele comenzii sunt invalide")) {
-                     showErrorPopup(t("Checkout.invalidOrderDetails"));
-                  } else {
-                     showErrorPopup(t("Checkout.invalidInputData"));
-                  }
-                  break;
-
-               // Not found errors
-               case "not-found":
-                  if (firebaseError.message.includes("Adresa de livrare")) {
-                     showErrorPopup(t("Checkout.shippingAddressNotFound"));
-                  } else if (firebaseError.message.includes("Adresa de facturare")) {
-                     showErrorPopup(t("Checkout.billingAddressNotFound"));
-                  } else {
-                     showErrorPopup(t("Checkout.resourceNotFound"));
-                  }
-                  break;
-
-               // Product validation errors
-               case "aborted":
-                  if (firebaseError.customData && typeof firebaseError.customData === "object" && "invalidProducts" in firebaseError.customData) {
-                     // Get the list of invalid product IDs
-                     const invalidProductsList = firebaseError.customData.invalidProducts as Array<{ id: string; reason: string }>;
-                     const invalidProductIds = invalidProductsList.map((p) => p.id);
-
-                     // Filter out invalid products from the cart
-                     const validProducts = cart.filter((product) => !invalidProductIds.includes(product.id));
-
-                     // Reconstruct the cart with only valid products
-                     await dispatch(reconstructCart(validProducts));
-
-                     // Format error message for display
-                     const productErrorsList = invalidProductsList.map((p) => `• ${p.reason}`).join("\n");
-
-                     showErrorPopup(`${t("Checkout.invalidProductsEliminated")}\n${productErrorsList}`);
-                  } else {
-                     showErrorPopup(t("Checkout.invalidProducts"));
-                  }
-                  break;
-
-               // Server errors
-               case "internal":
-                  showErrorPopup(t("Checkout.internalError"));
-                  break;
-
-               // Permission errors
-               case "permission-denied":
-                  showErrorPopup(t("Checkout.permissionDenied"));
-                  break;
-
-               // Timeout errors
+         const storeError = storeErrorOf(error);
+         if (storeError) {
+            await showStoreError(storeError);
+         } else if (error instanceof FirebaseError) {
+            // Errors from the Functions SDK itself, e.g. when the server can't be reached
+            switch (error.code.replace(/^functions\//, "")) {
                case "deadline-exceeded":
                   showErrorPopup(t("Checkout.timeoutError"));
                   break;
-
-               // Unavailable service
                case "unavailable":
                   showErrorPopup(t("Checkout.serviceUnavailable"));
                   break;
-
-               // Other Firebase errors
+               case "unauthenticated":
+                  showErrorPopup(t("Checkout.userNotAuthenticated"));
+                  router.push("/login?redirect=/checkout");
+                  break;
                default:
-                  showErrorPopup(`${t("Checkout.error")}: ${firebaseError.message || t("Checkout.orderError")}`);
+                  showErrorPopup(t("Checkout.internalError"));
             }
          } else if (error instanceof TypeError) {
             // Handle TypeError instances like network errors
@@ -526,10 +431,10 @@ export default function CheckoutPage() {
             }
          } else {
             // For other types of errors, try to extract useful information
-            const errorMessage = error instanceof Error ? error.message : "";
-            if (errorMessage.includes("timeout")) {
+            const message = error instanceof Error ? error.message : "";
+            if (message.includes("timeout")) {
                showErrorPopup(t("Checkout.timeoutError"));
-            } else if (errorMessage.includes("CORS")) {
+            } else if (message.includes("CORS")) {
                showErrorPopup(t("Checkout.securityError"));
             } else if (error instanceof Error && error.name === "AbortError") {
                showErrorPopup(t("Checkout.requestAborted"));
@@ -549,7 +454,7 @@ export default function CheckoutPage() {
       return (
          <div className="pt-10 px-4 md:px-20 lg:px-16 xl:px-32 2xl:px-64 pb-16 flex justify-center items-center min-h-[50vh]">
             <div className="text-center">
-               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-pink-600" />
+               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-brand-600" />
                <p>{t("Checkout.redirectToLogin")}</p>
             </div>
          </div>
@@ -607,7 +512,7 @@ export default function CheckoutPage() {
             <div className="lg:col-span-2 space-y-6 ">
                <div className="flex flex-col gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 ">
                   <h2 className="text-lg font-medium flex items-center">
-                     <User className="w-5 h-5 mr-2 text-pink-600" />
+                     <User className="w-5 h-5 mr-2 text-brand-600" />
                      {t("Checkout.clientInfo")}
                   </h2>
                   <div className="flex flex-col gap-4 md:flex-row">
@@ -641,10 +546,10 @@ export default function CheckoutPage() {
                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-4">
                      <h2 className="text-lg font-medium flex items-center">
-                        <MapPin className="w-5 h-5 mr-2 text-pink-600" />
+                        <MapPin className="w-5 h-5 mr-2 text-brand-600" />
                         {t("Orders.shippingAddress")}
                      </h2>
-                     <button className="text-pink-600 text-sm font-medium" onClick={() => setShowAddressDropdown(!showAddressDropdown)}>
+                     <button className="text-brand-600 text-sm font-medium" onClick={() => setShowAddressDropdown(!showAddressDropdown)}>
                         {t("Checkout.change")}
                         {showAddressDropdown ? <ChevronUp className="w-4 h-4 ml-1 inline" /> : <ChevronDown className="w-4 h-4 ml-1 inline" />}
                      </button>
@@ -656,7 +561,7 @@ export default function CheckoutPage() {
                            {user?.db?.addresses.map((addr) => (
                               <button
                                  key={addr.id}
-                                 className={`w-full text-left p-3 rounded-md border ${selectedShippingId === addr.id ? "border-pink-600 bg-pink-50" : "border-gray-200 hover:border-gray-300"}`}
+                                 className={`w-full text-left p-3 rounded-md border ${selectedShippingId === addr.id ? "border-brand-600 bg-brand-50" : "border-gray-200 hover:border-gray-300"}`}
                                  onClick={() => {
                                     setSelectedShippingId(addr.id);
                                     setShowAddressDropdown(false);
@@ -667,7 +572,7 @@ export default function CheckoutPage() {
                            ))}
                         </div>
                         <div className="mt-3 text-center">
-                           <Link href="/profile?tab=addresses" className="text-pink-600 hover:text-pink-700 text-sm font-medium">
+                           <Link href="/profile?tab=addresses" className="text-brand-600 hover:text-brand-700 text-sm font-medium">
                               {t("Checkout.addNewAddress")}
                            </Link>
                         </div>
@@ -684,7 +589,7 @@ export default function CheckoutPage() {
                      ) : (
                         <div className="text-center">
                            <p className="text-gray-500 mb-2">{t("Checkout.noAddressSelected")}</p>
-                           <Link href="/profile?tab=addresses" className="text-pink-600 hover:text-pink-700 text-sm font-medium">
+                           <Link href="/profile?tab=addresses" className="text-brand-600 hover:text-brand-700 text-sm font-medium">
                               {t("Checkout.addNewAddress")}
                            </Link>
                         </div>
@@ -696,10 +601,10 @@ export default function CheckoutPage() {
                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-4">
                      <h2 className="text-lg font-medium flex items-center">
-                        <MapPin className="w-5 h-5 mr-2 text-pink-600" />
+                        <MapPin className="w-5 h-5 mr-2 text-brand-600" />
                         {t("Orders.billingAddress")}
                      </h2>
-                     <button className="text-pink-600 text-sm font-medium" onClick={() => setShowBillingDropdown(!showBillingDropdown)}>
+                     <button className="text-brand-600 text-sm font-medium" onClick={() => setShowBillingDropdown(!showBillingDropdown)}>
                         {t("Checkout.change")}
                         {showBillingDropdown ? <ChevronUp className="w-4 h-4 ml-1 inline" /> : <ChevronDown className="w-4 h-4 ml-1 inline" />}
                      </button>
@@ -711,7 +616,7 @@ export default function CheckoutPage() {
                            {user?.db?.addresses.map((addr) => (
                               <button
                                  key={addr.id}
-                                 className={`w-full text-left p-3 rounded-md border ${selectedBillingId === addr.id ? "border-pink-600 bg-pink-50" : "border-gray-200 hover:border-gray-300"}`}
+                                 className={`w-full text-left p-3 rounded-md border ${selectedBillingId === addr.id ? "border-brand-600 bg-brand-50" : "border-gray-200 hover:border-gray-300"}`}
                                  onClick={() => {
                                     setSelectedBillingId(addr.id);
                                     setShowBillingDropdown(false);
@@ -722,7 +627,7 @@ export default function CheckoutPage() {
                            ))}
                         </div>
                         <div className="mt-3 text-center">
-                           <Link href="/profile?tab=addresses" className="text-pink-600 hover:text-pink-700 text-sm font-medium">
+                           <Link href="/profile?tab=addresses" className="text-brand-600 hover:text-brand-700 text-sm font-medium">
                               {t("Checkout.addNewAddress")}
                            </Link>
                         </div>
@@ -739,7 +644,7 @@ export default function CheckoutPage() {
                      ) : (
                         <div className="text-center">
                            <p className="text-gray-500 mb-2">{t("Checkout.noAddresses")}</p>
-                           <Link href="/profile?tab=addresses" className="text-pink-600 hover:text-pink-700 text-sm font-medium">
+                           <Link href="/profile?tab=addresses" className="text-brand-600 hover:text-brand-700 text-sm font-medium">
                               {t("Checkout.addNewAddress")}
                            </Link>
                         </div>
@@ -760,9 +665,9 @@ export default function CheckoutPage() {
                                 ? [t("Checkout.paymentMethodStripe"), t("Checkout.paymentMethodStripeDescription")]
                                 : [t("Checkout.paymentMethodNetopia"), t("Checkout.paymentMethodNetopiaDescription")];
                         return (
-                           <label key={method} className={`border rounded-md p-4 flex items-center cursor-pointer ${selected ? "border-pink-600 bg-pink-50" : "border-gray-200 hover:border-gray-300"}`}>
+                           <label key={method} className={`border rounded-md p-4 flex items-center cursor-pointer ${selected ? "border-brand-600 bg-brand-50" : "border-gray-200 hover:border-gray-300"}`}>
                               <input type="radio" name="paymentMethod" value={method} checked={selected} onChange={() => setPaymentMethod(method)} className="sr-only" />
-                              {selected ? <CheckCircle className="w-5 h-5 text-pink-600 mr-3 shrink-0" /> : <Circle className="w-5 h-5 text-gray-300 mr-3 shrink-0" />}
+                              {selected ? <CheckCircle className="w-5 h-5 text-brand-600 mr-3 shrink-0" /> : <Circle className="w-5 h-5 text-gray-300 mr-3 shrink-0" />}
                               <div>
                                  <p className="font-medium">{title}</p>
                                  <p className="text-gray-600 text-sm">{description}</p>
@@ -779,7 +684,7 @@ export default function CheckoutPage() {
                   {appliedVoucher ? (
                      <div className="flex items-center justify-between gap-4 rounded-md bg-green-50 text-green-800 px-4 py-3">
                         <span>
-                           {t("Checkout.voucherApplied", { code: appliedVoucher.code })} <span className="font-medium">-{appliedVoucher.discount.toFixed(2)} Lei</span>
+                           {t("Checkout.voucherApplied", { code: appliedVoucher.code })} <span className="font-medium">-<Money amount={appliedVoucher.discount} /></span>
                         </span>
                         <button type="button" onClick={() => setAppliedVoucher(null)} className="text-sm underline">
                            {t("Checkout.removeVoucher")}
@@ -793,8 +698,8 @@ export default function CheckoutPage() {
                            applyVoucher(voucherCode);
                         }}
                      >
-                        <input type="text" value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} placeholder={t("Checkout.voucherCodePlaceholder")} className="border border-pink-600 rounded-l-md px-4 py-2 flex-1 min-w-0 focus:outline-none uppercase" />
-                        <button type="submit" disabled={!voucherCode.trim() || isCheckingVoucher} className="bg-pink-600 text-white px-4 py-2 rounded-r-md disabled:opacity-50">
+                        <input type="text" value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} placeholder={t("Checkout.voucherCodePlaceholder")} className="border border-brand-600 rounded-l-md px-4 py-2 flex-1 min-w-0 focus:outline-none uppercase" />
+                        <button type="submit" disabled={!voucherCode.trim() || isCheckingVoucher} className="bg-brand-600 text-white px-4 py-2 rounded-r-md disabled:opacity-50">
                            {isCheckingVoucher ? <Loader2 className="w-4 h-4 animate-spin" /> : t("Checkout.apply")}
                         </button>
                      </form>
@@ -816,7 +721,7 @@ export default function CheckoutPage() {
                            <div className="p-3 bg-gray-50 border-b border-gray-100">
                               <Link href={`/product/${group.product_name}?id=${productId}`} className="flex gap-3 items-center">
                                  <Image src={group.product_image} alt={group.product_name} width={80} height={80} className="object-contain rounded-md max-h-[80px] max-w-[80px] bg-white" />
-                                 <h2 className="font-medium text-sm hover:text-pink-700">{group.product_name}</h2>
+                                 <h2 className="font-medium text-sm hover:text-brand-700">{group.product_name}</h2>
                               </Link>
                            </div>
 
@@ -840,7 +745,7 @@ export default function CheckoutPage() {
                                                 </>
                                              )}
                                           </div>
-                                          <span className="text-xs text-gray-400">Cantitate: {item.quantity}</span>
+                                          <span className="text-xs text-gray-400">{t("CartModal.quantity")}: {item.quantity}</span>
                                        </div>
 
                                        <div className="flex items-center gap-4">
@@ -848,11 +753,11 @@ export default function CheckoutPage() {
                                              <div className="relative">
                                                 {price.discount ? (
                                                    <div className="flex flex-col relative">
-                                                      <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h3>
-                                                      <h2 className="font-medium text-base text-pink-700">{(Number(price.discount.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                      <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h3>
+                                                      <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.discount.join(".")) * item.quantity)} /></h2>
                                                    </div>
                                                 ) : (
-                                                   <h2 className="font-medium text-base text-pink-700">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                   <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h2>
                                                 )}
                                              </div>
                                           </div>
@@ -873,11 +778,11 @@ export default function CheckoutPage() {
                      </div>
                      {shipping && shipping.enable_threshold && subTotal >= shipping.free_shipping_threshold ? (
                         <div className="text-right">
-                           <span className="font-medium line-through text-gray-400 text-sm mr-2">{shipping.default_price.toFixed(2)} Lei</span>
+                           <span className="font-medium line-through text-gray-400 text-sm mr-2"><Money amount={shipping.default_price} /></span>
                            <span className="font-medium text-green-600">{t("Orders.free")}</span>
                         </div>
                      ) : (
-                        <span className="font-medium">{shippingCost.toFixed(2)} Lei</span>
+                        <span className="font-medium"><Money amount={shippingCost} /></span>
                      )}
                   </div>
 
@@ -885,7 +790,7 @@ export default function CheckoutPage() {
                   {shipping && shipping.enable_threshold && subTotal < shipping.free_shipping_threshold && (
                      <div className="py-2 px-3 bg-blue-50 border border-blue-100 rounded-md mb-4 text-sm">
                         <p>
-                           {t("Checkout.addMore")} <span className="font-medium">{(shipping.free_shipping_threshold - subTotal).toFixed(2)} Lei</span> {t("Checkout.toGetFreeShipping")}
+                           {t("Checkout.addMore")} <span className="font-medium"><Money amount={(shipping.free_shipping_threshold - subTotal)} /></span> {t("Checkout.toGetFreeShipping")}
                         </p>
                      </div>
                   )}
@@ -896,14 +801,14 @@ export default function CheckoutPage() {
                         <span>
                            {t("Checkout.voucherDiscount")} ({appliedVoucher.code})
                         </span>
-                        <span className="font-medium">-{voucherDiscount.toFixed(2)} Lei</span>
+                        <span className="font-medium">-<Money amount={voucherDiscount} /></span>
                      </div>
                   )}
 
                   {/* Total */}
                   <div className="flex justify-between py-4 border-t border-gray-100">
                      <span className="font-medium">{t("Orders.total")}</span>
-                     <span className="font-bold text-lg">{grandTotal.toFixed(2)} Lei</span>
+                     <span className="font-bold text-lg"><Money amount={grandTotal} /></span>
                   </div>
                   <VatNote gross={grandTotal} className="-mt-2 mb-2" />
 
@@ -911,7 +816,7 @@ export default function CheckoutPage() {
                   <div className="mt-3 mb-6 text-xs text-gray-500">
                      <p>
                         {t("Checkout.toFinalizeOrder")}
-                        <Link href="/terms" className="text-pink-600 hover:underline">
+                        <Link href="/info/terms-and-conditions" className="text-brand-600 hover:underline">
                            {t("Checkout.terms")}
                         </Link>{" "}
                         {t("Checkout.site")}.
@@ -937,7 +842,7 @@ export default function CheckoutPage() {
                         user.emailVerified === false ||
                         (isBusinessOrder && (!getSelectedBillingAddress()?.business || !getSelectedBillingAddress()?.business_details?.cui || !getSelectedBillingAddress()?.business_details?.name || !getSelectedBillingAddress()?.business_details?.reg_no))
                            ? "bg-gray-400 cursor-not-allowed"
-                           : "bg-pink-600 hover:bg-pink-700"
+                           : "bg-brand-600 hover:bg-brand-700"
                      }`}
                   >
                      {isProcessing ? (

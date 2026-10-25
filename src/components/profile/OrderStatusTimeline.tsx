@@ -28,8 +28,8 @@ const OrderStatusTimeline = ({ status, trackingNumber }: { status?: string; trac
                const Icon = done && index < current ? Check : STEP_ICONS[index];
                return (
                   <li key={step.status} className="flex-1 flex flex-col items-center text-center relative">
-                     {index > 0 && <div className={twMerge("absolute top-5 right-1/2 w-full h-0.5 -z-0", index <= current ? "bg-pink-600" : "bg-gray-200")} />}
-                     <div className={twMerge("relative z-10 w-10 h-10 rounded-full flex items-center justify-center", done ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-400")}>
+                     {index > 0 && <div className={twMerge("absolute top-5 right-1/2 w-full h-0.5 -z-0", index <= current ? "bg-brand-600" : "bg-gray-200")} />}
+                     <div className={twMerge("relative z-10 w-10 h-10 rounded-full flex items-center justify-center", done ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-400")}>
                         <Icon className="w-5 h-5" />
                      </div>
                      <span className={twMerge("mt-2 text-xs sm:text-sm", index === current ? "font-semibold text-gray-900" : done ? "text-gray-700" : "text-gray-400")}>{t(step.label)}</span>

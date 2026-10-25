@@ -2,7 +2,26 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { DEFAULT_VAT_RATE, isValidVatRate } from "@core/vat";
 import { Brand, Category, Product, Review, SkuVariant, Subcategory, Variant, VARIANT_TYPE } from "@/types/product";
-import { Info, Shipping, Slide, Tax } from "@/types/user";
+import { Slide, Tax } from "@/types/user";
+import {
+   analyticsFrom,
+   brandingFrom,
+   DEFAULT_ANALYTICS,
+   DEFAULT_BRANDING,
+   DEFAULT_HOME,
+   DEFAULT_LOCALIZATION,
+   DEFAULT_NAVIGATION,
+   DEFAULT_SHIPPING,
+   DEFAULT_STORE_INFO,
+   homeFrom,
+   InfoPage,
+   InfoPageId,
+   infoPageFrom,
+   localizationFrom,
+   navigationFrom,
+   shippingFrom,
+   storeInfoFrom,
+} from "@core/settings";
 import type { ProductCardData } from "@/queries";
 import type { StoreTag } from "@/lib/storeTags";
 import { readCollection, readDoc, Row } from "./firestore";
@@ -27,28 +46,35 @@ async function safely<T>(what: string, fallback: T, load: () => Promise<T>): Pro
    }
 }
 
-// Settings
+// Settings (defaults and validation in packages/core/src/settings.ts)
 
-const DEFAULT_INFO: Info = {
-   store_name: process.env.NEXT_PUBLIC_STORE_NAME || "Shop",
-   store_address: process.env.NEXT_PUBLIC_STORE_ADDRESS || "Oltului 25, Galaţi, Romania",
-   phone_no: process.env.NEXT_PUBLIC_PHONE_NO || "0722 222 222",
-   contact_mail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@shop.ro",
-   orders_mail: process.env.NEXT_PUBLIC_ORDERS_EMAIL || "orders@shop.ro",
-   support_mail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@shop.ro",
-};
+const settingsDoc = <T>(path: string, from: (data: Record<string, unknown> | null) => T, key: string) =>
+   cached(async () => from(await readDoc(path)), key, ["settings"], SETTINGS_TTL);
 
-const DEFAULT_SHIPPING: Shipping = {
-   default_price: Number(process.env.NEXT_PUBLIC_DEFAULT_SHIPPING_PRICE) || 25,
-   enable_threshold: process.env.NEXT_PUBLIC_SHIPPING_THRESHOLD_ENABLED === "true",
-   free_shipping_threshold: Number(process.env.NEXT_PUBLIC_SHIPPING_THRESHOLD) || 500,
-};
+const loadInfo = settingsDoc("Settings/Info", storeInfoFrom, "info");
+export const getInfoData = () => safely("store info", DEFAULT_STORE_INFO, loadInfo);
 
-const loadInfo = cached(async () => ((await readDoc("Settings/Info")) as Info | null) ?? DEFAULT_INFO, "info", ["settings"], SETTINGS_TTL);
-export const getInfoData = () => safely("store info", DEFAULT_INFO, loadInfo);
-
-const loadShipping = cached(async () => ((await readDoc("Settings/Shipping")) as Shipping | null) ?? DEFAULT_SHIPPING, "shipping", ["settings"], SETTINGS_TTL);
+const loadShipping = settingsDoc("Settings/Shipping", shippingFrom, "shipping");
 export const getShippData = () => safely("shipping settings", DEFAULT_SHIPPING, loadShipping);
+
+const loadBranding = settingsDoc("Settings/Branding", brandingFrom, "branding");
+export const getBranding = () => safely("branding", DEFAULT_BRANDING, loadBranding);
+
+const loadLocalization = settingsDoc("Settings/Localization", localizationFrom, "localization");
+export const getLocalization = () => safely("localization", DEFAULT_LOCALIZATION, loadLocalization);
+
+const loadHomeLayout = settingsDoc("Settings/Home", homeFrom, "home");
+export const getHomeLayout = () => safely("home layout", DEFAULT_HOME, loadHomeLayout);
+
+const loadNavigation = settingsDoc("Settings/Navigation", navigationFrom, "navigation");
+export const getNavigation = () => safely("navigation", DEFAULT_NAVIGATION, loadNavigation);
+
+const loadAnalytics = settingsDoc("Settings/Analytics", analyticsFrom, "analytics");
+export const getAnalytics = () => safely("analytics", DEFAULT_ANALYTICS, loadAnalytics);
+
+// An information page as the store wrote it, per language. Languages it hasn't written show the built-in text.
+const loadInfoPage = cached(async (id: InfoPageId) => infoPageFrom(await readDoc(`Settings/Legal/Pages/${id}`)), "info-page", ["settings"], SETTINGS_TTL);
+export const getInfoPage = (id: InfoPageId) => safely("info page", { content: {} } as InfoPage, () => loadInfoPage(id));
 
 const loadTax = cached(
    async (): Promise<Tax> => {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { sendContactMessage } from "@/lib/contact";
+import { storeErrorOf, useStoreErrorMessage } from "@/components/common/useStoreError";
 import { validateEmail, validatePhone } from "@core/validators";
 interface FormData {
    first_name: string;
@@ -23,6 +24,7 @@ const Contact = () => {
    } = useForm<FormData>();
 
    const t = useTranslations("ConsentModificationRequest");
+   const storeErrorMessage = useStoreErrorMessage();
    const [successMessage, setSuccessMessage] = useState<string | null>(null);
    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,7 +37,8 @@ const Contact = () => {
          reset();
       } catch (error) {
          console.error("Failed to send message", error);
-         setErrorMessage(t("consentModificationRequestError"));
+         const storeError = storeErrorOf(error);
+         setErrorMessage(storeError ? storeErrorMessage(storeError.code, storeError.params) : t("consentModificationRequestError"));
       }
    };
    return (
@@ -139,7 +142,7 @@ const Contact = () => {
                   {/* Submit Button */}
                   <button
                      type="submit"
-                     className="bg-black text-white p-2 rounded-md disabled:bg-pink-200 disabled:cursor-not-allowed w-2/4 self-center"
+                     className="bg-black text-white p-2 rounded-md disabled:bg-brand-200 disabled:cursor-not-allowed w-2/4 self-center"
                      disabled={isSubmitting}
                   >
                      {isSubmitting ? t("consentModificationRequestSubmitLoading") : t("consentModificationRequestSubmit")}

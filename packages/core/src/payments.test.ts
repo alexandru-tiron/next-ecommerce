@@ -3,6 +3,7 @@ import {
    availablePaymentMethods,
    canPayOrder,
    isMethodEnabled,
+   orderCurrency,
    netopiaPaymentStatus,
    orderPaymentMethod,
    paymentSettingsFrom,
@@ -15,21 +16,32 @@ import {
 describe("payment settings", () => {
    it("default to cash on delivery only", () => {
       const settings = paymentSettingsFrom(undefined);
-      expect(isMethodEnabled("cod", settings)).toBe(true);
-      expect(isMethodEnabled("stripe", settings)).toBe(false);
-      expect(availablePaymentMethods(settings)).toEqual(["cod"]);
+      expect(isMethodEnabled("cod", settings, "RON")).toBe(true);
+      expect(isMethodEnabled("stripe", settings, "RON")).toBe(false);
+      expect(availablePaymentMethods(settings, "RON")).toEqual(["cod"]);
    });
 
    it("need a POS signature before NETOPIA is offered", () => {
-      expect(isMethodEnabled("netopia", paymentSettingsFrom({ netopia_enabled: true }))).toBe(false);
-      expect(isMethodEnabled("netopia", paymentSettingsFrom({ netopia_enabled: true, netopia_pos_signature: "POS-1" }))).toBe(true);
-      expect(availablePaymentMethods(paymentSettingsFrom({ stripe_enabled: true, netopia_enabled: true }))).toEqual(["cod", "stripe"]);
-      expect(availablePaymentMethods(paymentSettingsFrom({ stripe_enabled: true, netopia_enabled: true, netopia_pos_signature: "POS" }))).toEqual(["cod", "stripe", "netopia"]);
+      expect(isMethodEnabled("netopia", paymentSettingsFrom({ netopia_enabled: true }), "RON")).toBe(false);
+      expect(isMethodEnabled("netopia", paymentSettingsFrom({ netopia_enabled: true, netopia_pos_signature: "POS-1" }), "RON")).toBe(true);
+      expect(availablePaymentMethods(paymentSettingsFrom({ stripe_enabled: true, netopia_enabled: true }), "RON")).toEqual(["cod", "stripe"]);
+      expect(availablePaymentMethods(paymentSettingsFrom({ stripe_enabled: true, netopia_enabled: true, netopia_pos_signature: "POS" }), "RON")).toEqual(["cod", "stripe", "netopia"]);
+   });
+
+   it("offer NETOPIA only for prices in RON", () => {
+      const settings = paymentSettingsFrom({ stripe_enabled: true, netopia_enabled: true, netopia_pos_signature: "POS" });
+      expect(isMethodEnabled("netopia", settings, "EUR")).toBe(false);
+      expect(availablePaymentMethods(settings, "EUR")).toEqual(["cod", "stripe"]);
+   });
+
+   it("treat orders without a currency as RON", () => {
+      expect(orderCurrency({})).toBe("RON");
+      expect(orderCurrency({ currency: "EUR" })).toBe("EUR");
    });
 
    it("fall back to cash on delivery when everything is switched off", () => {
-      expect(availablePaymentMethods(paymentSettingsFrom({ cod_enabled: false }))).toEqual(["cod"]);
-      expect(availablePaymentMethods(paymentSettingsFrom({ cod_enabled: false, stripe_enabled: true }))).toEqual(["stripe"]);
+      expect(availablePaymentMethods(paymentSettingsFrom({ cod_enabled: false }), "EUR")).toEqual(["cod"]);
+      expect(availablePaymentMethods(paymentSettingsFrom({ cod_enabled: false, stripe_enabled: true }), "EUR")).toEqual(["stripe"]);
    });
 });
 

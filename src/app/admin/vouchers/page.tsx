@@ -7,6 +7,9 @@ import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { endOfDay, normalizeCode, validateVoucherForm, VoucherFormErrors, VoucherFormInput, voucherStatus, VoucherStatus, VoucherType } from "@/components/admin/vouchers/voucherForm";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
+import { useStoreFormat } from "@/components/StoreSettingsProvider";
 
 type VoucherRow = { code: string; type: VoucherType; value: number; minOrder?: number | null; maxUses?: number | null; uses: number; expiresAt?: number | null; active: boolean };
 
@@ -20,6 +23,8 @@ const statusClasses: Record<VoucherStatus, string> = {
 
 export default function VouchersPage() {
    const t = useTranslations("Admin");
+   const formatStoreDate = useFormatDate();
+   const { currency } = useStoreFormat();
    const [vouchers, setVouchers] = useState<VoucherRow[]>([]);
    const [form, setForm] = useState<VoucherFormInput>(emptyForm);
    const [errors, setErrors] = useState<VoucherFormErrors>({});
@@ -135,8 +140,8 @@ export default function VouchersPage() {
                   <option value="fixed">{t("voucherFixed")}</option>
                </select>
             )}
-            {field("value", form.type === "percent" ? t("voucherValuePercent") : t("voucherValueLei"), <input type="number" min={0} step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} className={inputClass} />)}
-            {field("minOrder", t("voucherMinOrder"), <input type="number" min={0} step="0.01" value={form.minOrder} onChange={(e) => setForm({ ...form, minOrder: e.target.value })} placeholder={t("optional")} className={inputClass} />)}
+            {field("value", form.type === "percent" ? t("voucherValuePercent") : t("voucherValueAmount", { currency }), <input type="number" min={0} step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} className={inputClass} />)}
+            {field("minOrder", t("voucherMinOrder", { currency }), <input type="number" min={0} step="0.01" value={form.minOrder} onChange={(e) => setForm({ ...form, minOrder: e.target.value })} placeholder={t("optional")} className={inputClass} />)}
             {field("maxUses", t("voucherMaxUses"), <input type="number" min={1} step={1} value={form.maxUses} onChange={(e) => setForm({ ...form, maxUses: e.target.value })} placeholder={t("optional")} className={inputClass} />)}
             {field("expiresAt", t("voucherExpires"), <input type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} className={inputClass} />)}
             <div className="sm:col-span-2 lg:col-span-3">
@@ -153,7 +158,7 @@ export default function VouchersPage() {
                   <tr>
                      <th className="px-4 py-3">{t("voucherCode")}</th>
                      <th className="px-4 py-3">{t("voucherDiscount")}</th>
-                     <th className="px-4 py-3">{t("voucherMinOrder")}</th>
+                     <th className="px-4 py-3">{t("voucherMinOrder", { currency })}</th>
                      <th className="px-4 py-3">{t("voucherUses")}</th>
                      <th className="px-4 py-3">{t("voucherExpires")}</th>
                      <th className="px-4 py-3">{t("status")}</th>
@@ -166,13 +171,13 @@ export default function VouchersPage() {
                      return (
                         <tr key={voucher.code}>
                            <td className="px-4 py-3 font-mono font-medium">{voucher.code}</td>
-                           <td className="px-4 py-3">{voucher.type === "percent" ? `${voucher.value}%` : `${voucher.value.toFixed(2)} Lei`}</td>
-                           <td className="px-4 py-3">{voucher.minOrder ? `${voucher.minOrder} Lei` : "—"}</td>
+                           <td className="px-4 py-3">{voucher.type === "percent" ? `${voucher.value}%` : <Money amount={voucher.value} />}</td>
+                           <td className="px-4 py-3">{voucher.minOrder ? <Money amount={voucher.minOrder} /> : "—"}</td>
                            <td className="px-4 py-3">
                               {voucher.uses}
                               {voucher.maxUses ? ` / ${voucher.maxUses}` : ""}
                            </td>
-                           <td className="px-4 py-3">{voucher.expiresAt ? new Date(voucher.expiresAt).toLocaleDateString("ro-RO") : "—"}</td>
+                           <td className="px-4 py-3">{voucher.expiresAt ? formatStoreDate(voucher.expiresAt) : "—"}</td>
                            <td className="px-4 py-3">
                               <span className={twMerge("px-2 py-1 rounded-full text-xs font-medium", statusClasses[status])}>{statusLabel(status)}</span>
                            </td>

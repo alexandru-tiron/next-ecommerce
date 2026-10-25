@@ -142,6 +142,23 @@ Everything a store owner changes lives in the admin panel.
 
 **Done when:** a store with a different name, logo, colours, currency (EUR) and language (German) can be set up entirely from the admin panel, with no Romanian or project-specific text left.
 
+**Status:** done in the code, with these changes to the plan. Tested on the emulators: a German store with a teal brand, Poppins and EUR was set up from the admin panel, and an order was placed in English.
+
+- **Settings model:** the store details stay in `Settings/Info` instead of moving to `Settings/Store`, so existing stores keep working. It gains the company name, tax ID, registration number and country. New documents: `Branding`, `Localization`, `Home`, `Navigation`, `Analytics` and `Legal/Pages/{page}`. The model and its defaults live in `packages/core/src/settings.ts`, shared with the functions.
+- **Languages:** the choice is kept in a cookie (no locale in the URL). English, Romanian and German are complete, and a test checks that every language has the same keys and placeholders as English.
+- **Errors:** the Cloud Functions return error codes (`packages/core/src/errors.ts`) instead of Romanian sentences. The store translates them.
+- **Orders** keep the currency and the language they were placed in. Card payments use the order's currency, and NETOPIA is only offered for RON.
+- **E-mails:** React Email templates in `functions/src/emails`, sent through Gmail as before. A provider interface stays in Phase 5.
+- **Guides:** [docs/STORE-SETUP.md](STORE-SETUP.md) covers the admin settings, a custom domain, SPF/DKIM/DMARC, the share image and analytics.
+- **Fixed along the way:**
+  - Live orders were rejected by the Phase 2 input checks: the checkout sent a duplicate-order key built from the sign-in token (longer than allowed), and `null` for lines without a discount.
+  - Account deletion compared the typed confirmation with the Romanian words in every language.
+  - International landline numbers were rejected.
+  - The checkout's terms link pointed to a missing page.
+  - The contact page showed another shop's map.
+  - The legal templates linked the EU dispute platform, which closed in July 2025.
+- **Left for the owner:** create `Settings/Localization` for the live store before deploying (see section 5 of [STORE-SETUP.md](STORE-SETUP.md)), then deploy the storage rules and the functions.
+
 ## Phase 4: Setup experience
 
 Turn hours of configuration into a guided 30-minute flow.

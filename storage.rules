@@ -48,6 +48,14 @@ service firebase.storage {
       allow create, update: if isAdmin() && validImage();
     }
 
+    // The store's logo, favicon and share image (Admin → Settings → Branding); favicons may also be .ico files
+    match /Branding/{fileName} {
+      allow get: if true;
+      allow list, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && (validImage() || (request.resource.contentType.matches('image/(x-icon|vnd[.]microsoft[.]icon)') && request.resource.size <= 200 * 1024));
+    }
+
     // Slides
     match /Slides/{fileName} {
       allow get: if true;

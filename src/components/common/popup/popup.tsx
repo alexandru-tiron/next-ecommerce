@@ -1,19 +1,29 @@
 import { AlertCircle, AlertTriangle, CheckCircle, Info, Trash2, X } from "lucide-react";
 import React, { ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
+import type { PopupVariant } from "@/context/PopupContext";
 
 interface PopupProps {
    title: string;
+   variant?: PopupVariant;
    description: ReactNode[];
    buttons: { label: string; onClick: () => void; className?: string }[];
    isOpen: boolean;
    onClose: () => void;
 }
 
-const primaryButtonStyle = "px-4 py-2 bg-pink-600 text-white font-medium rounded-md hover:bg-pink-700 transition focus:ring-2 focus:ring-black/50";
+const primaryButtonStyle = "px-4 py-2 bg-brand-600 text-white font-medium rounded-md hover:bg-brand-700 transition focus:ring-2 focus:ring-black/50";
 const secondaryButtonStyle = "px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 transition focus:ring-2 focus:ring-black/50";
 
-export const Popup: React.FC<PopupProps> = ({ title, description, buttons, isOpen, onClose }) => {
+const ICONS: Record<PopupVariant, ReactNode> = {
+   error: <AlertCircle className="w-5 h-5 text-red-500 mr-3" />,
+   warning: <AlertTriangle className="w-5 h-5 text-yellow-500 mr-3" />,
+   success: <CheckCircle className="w-5 h-5 text-green-500 mr-3" />,
+   info: <Info className="w-5 h-5 text-blue-500 mr-3" />,
+   delete: <Trash2 className="w-5 h-5 text-red-500 mr-3" />,
+};
+
+export const Popup: React.FC<PopupProps> = ({ title, variant, description, buttons, isOpen, onClose }) => {
    if (!isOpen) return null;
 
    return (
@@ -22,11 +32,7 @@ export const Popup: React.FC<PopupProps> = ({ title, description, buttons, isOpe
             {/* Header */}
             <div className="p-5 flex items-center justify-between border-b border-gray-100">
                <div className="flex items-center">
-                  {title.toLowerCase().includes("eroare") || title.toLowerCase().includes("alerta") || title.toLowerCase().includes("avertisment") ? <AlertCircle className="w-5 h-5 text-red-500 mr-3" /> : null}
-                  {title.toLowerCase().includes("atenție") ? <AlertTriangle className="w-5 h-5 text-yellow-500 mr-3" /> : null}
-                  {title.toLowerCase().includes("succes") || title.toLowerCase().includes("confirmare") ? <CheckCircle className="w-5 h-5 text-green-500 mr-3" /> : null}
-                  {title.toLowerCase().includes("informație") ? <Info className="w-5 h-5 text-blue-500 mr-3" /> : null}
-                  {title.toLowerCase().includes("șterge") ? <Trash2 className="w-5 h-5 text-red-500 mr-3" /> : null}
+                  {variant && ICONS[variant]}
                   <h3 className="text-lg font-medium text-gray-900">{title}</h3>
                </div>
                <button onClick={onClose} className="text-gray-400 hover:text-gray-500">

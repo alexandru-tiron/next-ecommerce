@@ -25,7 +25,7 @@ const WishlistButton = ({ productId, className, size = 20 }: { productId: string
          title={label}
          className={twMerge("rounded-full bg-white/90 p-2 shadow-sm transition-transform hover:scale-110", className)}
       >
-         <Heart size={size} className={active ? "fill-pink-600 text-pink-600" : "text-gray-600"} />
+         <Heart size={size} className={active ? "fill-brand-600 text-brand-600" : "text-gray-600"} />
       </button>
    );
 };

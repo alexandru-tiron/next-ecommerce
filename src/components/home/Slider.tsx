@@ -56,7 +56,7 @@ const Slider = ({ initialSlides = [] }: { initialSlides?: Slide[] }) => {
                }
                return (
                   <div
-                     className={`${!slide.background ? "bg-linear-to-r from-yellow-50 to-pink-50" : ""} w-screen h-full flex flex-col gap-6 xl:flex-row`}
+                     className={`${!slide.background ? "bg-linear-to-r from-yellow-50 to-brand-50" : ""} w-screen h-full flex flex-col gap-6 xl:flex-row`}
                      key={slide.order}
                      style={
                         background

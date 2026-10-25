@@ -10,6 +10,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Timestamp } from "firebase/firestore";
 import { CartProduct } from "@/types/product";
+import { Money } from "@/components/common/Price";
+import { useFormatDate } from "@/components/common/useFormatDate";
+import { useTranslations } from "next-intl";
 
 // Updated interface to fix Next.js 15 type error
 interface OrderDetailPageProps {
@@ -21,12 +24,14 @@ const getTimestampSeconds = (timestamp: Timestamp | { _seconds: number; _nanosec
    return "seconds" in timestamp ? timestamp.seconds : timestamp._seconds;
 };
 
-// Payment labels (this page uses Romanian labels throughout)
-const PAYMENT_METHOD_LABELS = { cod: "Ramburs", stripe: "Card (Stripe)", netopia: "Card (NETOPIA)" } as const;
-const PAYMENT_STATUS_LABELS = { on_delivery: "la livrare", pending: "în așteptare", paid: "plătită", failed: "eșuată", expired: "expirată", refunded: "rambursată" } as const;
+const ORDER_STATUSES = ["pending", "accepted", "rejected", "shipped", "delivered"] as const;
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
    const router = useRouter();
+   const t = useTranslations("AdminOrder");
+   const tOrders = useTranslations("Orders");
+   const tPayment = useTranslations("Payment");
+   const formatStoreDate = useFormatDate();
    const paramValues = use(params);
    const id = paramValues.id;
    const [order, setOrder] = useState<Order | null>(null);
@@ -105,42 +110,25 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
    };
 
    const formatDate = (timestamp: Timestamp | { _seconds: number; _nanoseconds: number } | undefined) => {
-      if (!timestamp) return "Unknown";
+      if (!timestamp) return tOrders("unknown");
       try {
          const seconds = getTimestampSeconds(timestamp);
          const date = new Date(seconds * 1000);
-         return new Intl.DateTimeFormat("ro-RO", {
+         return formatStoreDate(date, {
             year: "numeric",
             month: "long",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-         }).format(date);
+         });
       } catch (error) {
          console.error("Error formatting date:", error);
-         return "Unknown";
+         return tOrders("unknown");
       }
    };
 
    // Return function to conditionally display order status text with proper case
-   const formatStatus = (status: string | undefined) => {
-      if (!status) return "Necunoscut";
-
-      switch (status) {
-         case "pending":
-            return "În așteptare";
-         case "accepted":
-            return "Acceptată";
-         case "rejected":
-            return "Respinsă";
-         case "shipped":
-            return "Expediată";
-         case "delivered":
-            return "Livrată";
-         default:
-            return status.charAt(0).toUpperCase() + status.slice(1);
-      }
-   };
+   const formatStatus = (status: string | undefined) => (status && (ORDER_STATUSES as readonly string[]).includes(status) ? tOrders(status as (typeof ORDER_STATUSES)[number]) : tOrders("unknown"));
 
    // Shipping Address Display Component
    const ShippingAddressDisplay = ({ address }: { address: Address }) => (
@@ -151,9 +139,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
          </p>
          {address.apartment && (
             <p>
-               {address.building && `Bl. ${address.building}, `}
-               {address.floor !== undefined && `Et. ${address.floor}, `}
-               Ap. {address.apartment}
+               {address.building && `${tOrders("buildingShort")} ${address.building}, `}
+               {address.floor !== undefined && `${tOrders("floorShort")} ${address.floor}, `}
+               {tOrders("apartmentShort")} {address.apartment}
             </p>
          )}
          <p>
@@ -174,9 +162,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
          </p>
          {address.apartment && (
             <p>
-               {address.building && `Bl. ${address.building}, `}
-               {address.floor !== undefined && `Et. ${address.floor}, `}
-               Ap. {address.apartment}
+               {address.building && `${tOrders("buildingShort")} ${address.building}, `}
+               {address.floor !== undefined && `${tOrders("floorShort")} ${address.floor}, `}
+               {tOrders("apartmentShort")} {address.apartment}
             </p>
          )}
          <p>
@@ -185,9 +173,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
          <p>{address.postal_code}</p>
          {address.business && address.business_details && (
             <>
-               <p className="mt-1">CUI: {address.business_details.cui}</p>
-               <p>Reg. Com.: {address.business_details.reg_no}</p>
-               {address.business_details.bank && <p>Bank: {address.business_details.bank}</p>}
+               <p className="mt-1">{t("taxId")}: {address.business_details.cui}</p>
+               <p>{t("regNo")}: {address.business_details.reg_no}</p>
+               {address.business_details.bank && <p>{t("bank")}: {address.business_details.bank}</p>}
                {address.business_details.iban && <p>IBAN: {address.business_details.iban}</p>}
             </>
          )}
@@ -208,9 +196,9 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
    if (!order) {
       return (
          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Order Not Found</h1>
+            <h1 className="text-2xl font-bold mb-4">{t("notFound")}</h1>
             <Link href="/admin/orders" className="text-indigo-600 hover:text-indigo-900">
-               Back to Orders
+               {t("back")}
             </Link>
          </div>
       );
@@ -234,62 +222,62 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             <Link href="/admin/orders" className="text-gray-500 hover:text-gray-700 mr-4">
                <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-2xl font-bold">Comanda {order.id}</h1>
+            <h1 className="text-2xl font-bold">{t("title", { id: order.id })}</h1>
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Order Info */}
             <div className="bg-white rounded-lg shadow p-6 col-span-1">
-               <h2 className="text-lg font-medium mb-4">Informații despre comandă</h2>
+               <h2 className="text-lg font-medium mb-4">{t("orderInfo")}</h2>
                <div className="space-y-3">
                   <div className="flex justify-between">
-                     <span className="text-gray-500">ID Comandă:</span>
+                     <span className="text-gray-500">{t("orderId")}:</span>
                      <span className="font-medium">{order.id}</span>
                   </div>
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Data:</span>
+                     <span className="text-gray-500">{tOrders("date")}:</span>
                      <span>{formatDate(order.date)}</span>
                   </div>
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Status:</span>
+                     <span className="text-gray-500">{tOrders("status")}:</span>
                      <span className={`font-medium ${order.status === "delivered" ? "text-green-600" : order.status === "shipped" ? "text-blue-600" : order.status === "accepted" ? "text-yellow-600" : order.status === "rejected" ? "text-red-600" : "text-gray-600"}`}>
                         {formatStatus(order.status)}
                      </span>
                   </div>
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Plată:</span>
+                     <span className="text-gray-500">{t("payment")}:</span>
                      <span className={`font-medium ${order.payment_status === "paid" ? "text-green-600" : order.payment_status === "failed" || order.payment_status === "expired" ? "text-red-600" : order.payment_status === "pending" ? "text-yellow-600" : "text-gray-600"}`}>
-                        {PAYMENT_METHOD_LABELS[order.payment_method ?? "cod"]} · {PAYMENT_STATUS_LABELS[order.payment_status ?? "on_delivery"]}
+                        {tPayment(`method_${order.payment_method ?? "cod"}`)} · {tPayment(`status_${order.payment_status ?? "on_delivery"}`)}
                      </span>
                   </div>
                   {order.tracking_number && (
                      <div className="flex justify-between">
-                        <span className="text-gray-500">AWB#:</span>
+                        <span className="text-gray-500">{tOrders("trackingNumber")}:</span>
                         <span className="font-medium">{order.tracking_number}</span>
                      </div>
                   )}
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Subtotal:</span>
-                     <span className="font-medium">{(order.total - order.shipping_price + (order.voucher_discount ?? 0)).toFixed(2)} Lei</span>
+                     <span className="text-gray-500">{tOrders("subtotal")}:</span>
+                     <span className="font-medium"><Money amount={(order.total - order.shipping_price + (order.voucher_discount ?? 0))} /></span>
                   </div>
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Transport:</span>
-                     <span className="font-medium">{order.shipping_price.toFixed(2)} Lei</span>
+                     <span className="text-gray-500">{tOrders("shippingCost")}:</span>
+                     <span className="font-medium"><Money amount={order.shipping_price} /></span>
                   </div>
                   {order.voucher && order.voucher_id && (
                      <div className="flex justify-between text-green-700">
-                        <span>Voucher {order.voucher_id}:</span>
-                        <span className="font-medium">-{(order.voucher_discount ?? 0).toFixed(2)} Lei</span>
+                        <span>{t("voucher", { code: order.voucher_id })}:</span>
+                        <span className="font-medium">-<Money amount={(order.voucher_discount ?? 0)} /></span>
                      </div>
                   )}
                   <div className="flex justify-between">
-                     <span className="text-gray-500">Total:</span>
-                     <span className="font-medium">{order.total.toFixed(2)} Lei</span>
+                     <span className="text-gray-500">{tOrders("total")}:</span>
+                     <span className="font-medium"><Money amount={order.total} /></span>
                   </div>
                   {order.vat_rate !== undefined && order.vat_amount !== undefined && (
                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">TVA inclus ({order.vat_rate}%):</span>
-                        <span>{order.vat_amount.toFixed(2)} Lei</span>
+                        <span className="text-gray-500">{t("vatIncluded", { rate: order.vat_rate })}:</span>
+                        <span><Money amount={order.vat_amount} /></span>
                      </div>
                   )}
                </div>
@@ -297,17 +285,17 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
             {/* Customer Info */}
             <div className="bg-white rounded-lg shadow p-6 col-span-1">
-               <h2 className="text-lg font-medium mb-4">Informații despre client</h2>
+               <h2 className="text-lg font-medium mb-4">{t("customerInfo")}</h2>
                {order.user_id ? (
                   <div className="space-y-3">
                      <div className="flex justify-between">
-                        <span className="text-gray-500">Nume:</span>
+                        <span className="text-gray-500">{t("name")}:</span>
                         <span>
                            {order.first_name} {order.last_name}
                         </span>
                      </div>
                      <div className="flex justify-between">
-                        <span className="text-gray-500">Email:</span>
+                        <span className="text-gray-500">{t("email")}:</span>
                         <span className="break-all">
                            <a href={`mailto:${order.email}`} className="text-indigo-600 hover:text-indigo-900">
                               {order.email}
@@ -316,40 +304,40 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                      </div>
                      {order.phone_no && (
                         <div className="flex justify-between">
-                           <span className="text-gray-500">Telefon:</span>
+                           <span className="text-gray-500">{t("phone")}:</span>
                            <span>{order.phone_no}</span>
                         </div>
                      )}
                      <div className="pt-2">
                         <Link href={`/admin/customers/${order.user_id}`} className="text-indigo-600 hover:text-indigo-900 text-sm">
-                           Vezi detalii client
+                           {t("viewCustomer")}
                         </Link>
                      </div>
                   </div>
                ) : (
-                  <p className="text-gray-500">Nu sunt disponibile informații despre client</p>
+                  <p className="text-gray-500">{t("noCustomer")}</p>
                )}
             </div>
 
             {/* Order Management */}
             <div className="bg-white rounded-lg shadow p-6 col-span-1">
-               <h2 className="text-lg font-medium mb-4">Gestionare comandă</h2>
+               <h2 className="text-lg font-medium mb-4">{t("manage")}</h2>
                <div className="space-y-4">
                   <div>
                      <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
+                        {tOrders("status")}
                      </label>
                      <select id="status" value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="pending">În așteptare</option>
-                        <option value="accepted">Acceptată</option>
-                        <option value="rejected">Respinsă</option>
-                        <option value="shipped">Expediată</option>
-                        <option value="delivered">Livrată</option>
+                        {ORDER_STATUSES.map((value) => (
+                           <option key={value} value={value}>
+                              {tOrders(value)}
+                           </option>
+                        ))}
                      </select>
                   </div>
                   <div>
                      <label htmlFor="tracking" className="block text-sm font-medium text-gray-700 mb-1">
-                        Număr de urmărire
+                        {tOrders("trackingNumber")}
                      </label>
                      <input
                         type="text"
@@ -357,7 +345,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         className="mt-1 px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        placeholder="Adaugă număr de urmărire"
+                        placeholder={t("trackingPlaceholder")}
                      />
                   </div>
                   <div className="pt-2">
@@ -366,7 +354,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         disabled={updating}
                         className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                      >
-                        {updating ? "Se încarcă..." : "Actualizează comandă"}
+                        {updating ? t("updating") : t("update")}
                         {!updating && <CheckCircle className="ml-2 h-4 w-4" />}
                      </button>
                   </div>
@@ -380,25 +368,25 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             <div className="bg-white rounded-lg shadow p-6">
                <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2 text-gray-500" />
-                  Adresa de livrare
+                  {tOrders("shippingAddress")}
                </h2>
-               {order?.shipping_address ? <ShippingAddressDisplay address={order.shipping_address} /> : <p className="text-sm text-gray-500">Nu sunt disponibile informații despre adresa de livrare</p>}
+               {order?.shipping_address ? <ShippingAddressDisplay address={order.shipping_address} /> : <p className="text-sm text-gray-500">{tOrders("addressNotFound")}</p>}
             </div>
 
             {/* Billing Address */}
             <div className="bg-white rounded-lg shadow p-6">
                <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2 text-gray-500" />
-                  Adresa de facturare
+                  {tOrders("billingAddress")}
                </h2>
-               {order?.billing_address ? <BillingAddressDisplay address={order.billing_address} /> : <p className="text-sm text-gray-500">Nu sunt disponibile informații despre adresa de facturare</p>}
+               {order?.billing_address ? <BillingAddressDisplay address={order.billing_address} /> : <p className="text-sm text-gray-500">{tOrders("addressNotFound")}</p>}
             </div>
          </div>
 
          {/* Order Items */}
          <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
             <div className="px-6 py-4 border-b border-gray-200">
-               <h2 className="text-lg font-medium">Produse comandate</h2>
+               <h2 className="text-lg font-medium">{tOrders("orderedProducts")}</h2>
             </div>
             <div className="divide-y divide-gray-200 p-4 sm:p-6 flex flex-col gap-4">
                {Object.entries(groupedCart).map(([productId, group]) => (
@@ -407,7 +395,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                      <div className="p-3 bg-gray-50 border-b border-gray-100">
                         <Link href={`/admin/products/${group.product_name}?id=${productId}`} className="flex gap-3 items-center">
                            <Image src={group.product_image} alt={group.product_name} width={80} height={80} className="object-contain rounded-md max-h-[80px] max-w-[80px] bg-white" />
-                           <h2 className="font-medium text-sm hover:text-pink-700">{group.product_name}</h2>
+                           <h2 className="font-medium text-sm hover:text-brand-700">{group.product_name}</h2>
                         </Link>
                      </div>
 
@@ -431,7 +419,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                                           </>
                                        )}
                                     </div>
-                                    <span className="text-xs text-gray-400">Cantitate: {item.quantity}</span>
+                                    <span className="text-xs text-gray-400">{t("quantity", { quantity: item.quantity })}</span>
                                  </div>
 
                                  <div className="flex items-center gap-4">
@@ -439,11 +427,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                                        <div className="relative">
                                           {price.discount ? (
                                              <div className="flex flex-col relative">
-                                                <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h3>
-                                                <h2 className="font-medium text-base text-pink-700">{(Number(price.discount.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                                <h3 className="text-xs text-gray-500 line-through absolute -top-3 right-0"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h3>
+                                                <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.discount.join(".")) * item.quantity)} /></h2>
                                              </div>
                                           ) : (
-                                             <h2 className="font-medium text-base text-pink-700">{(Number(price.price.join(".")) * item.quantity).toFixed(2)} Lei</h2>
+                                             <h2 className="font-medium text-base text-brand-700"><Money amount={(Number(price.price.join(".")) * item.quantity)} /></h2>
                                           )}
                                        </div>
                                     </div>

@@ -3,8 +3,11 @@
 import { ReactNode, createContext, useContext, useMemo, useState, FC } from "react";
 import { Popup } from "../components/common/popup/popup";
 import { LoadingPopup } from "../components/common/load-popup/load-popup";
+export type PopupVariant = "error" | "warning" | "success" | "info" | "delete";
 interface Popup {
    title: string;
+   // Picks the icon next to the title
+   variant?: PopupVariant;
    description: Array<React.ReactElement>;
    buttons: { label: string; onClick: () => void; className?: string }[];
 }
@@ -32,7 +35,7 @@ export const PopUpProvider: FC<PopupProviderProps> = ({ children }) => {
    return (
       <PopUpContext.Provider value={popState}>
          {children}
-         {popup && <Popup isOpen={!!popup} onClose={() => setPopup(null)} title={popup.title} description={popup.description} buttons={popup.buttons} />}
+         {popup && <Popup isOpen={!!popup} onClose={() => setPopup(null)} title={popup.title} variant={popup.variant} description={popup.description} buttons={popup.buttons} />}
          {loadPop && <LoadingPopup isOpen={loadPop} />}
       </PopUpContext.Provider>
    );

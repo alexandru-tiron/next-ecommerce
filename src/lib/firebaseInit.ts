@@ -19,7 +19,6 @@ const EMULATOR_PROJECT_ID = "demo-store";
 const firebaseConfig = {
    apiKey: process.env.NEXT_PUBLIC_APIKEY || (useEmulators ? "demo-api-key" : undefined),
    authDomain: process.env.NEXT_PUBLIC_AUTHDOMAIN,
-   // databaseURL: process.env.NEXT_PUBLIC_DATABASEURL,
    projectId: useEmulators ? EMULATOR_PROJECT_ID : process.env.NEXT_PUBLIC_PROJECTID,
    storageBucket: useEmulators ? `${EMULATOR_PROJECT_ID}.appspot.com` : process.env.NEXT_PUBLIC_STORAGEBUCKET,
    messagingSenderId: process.env.NEXT_PUBLIC_MESSAGINGSENDERID,

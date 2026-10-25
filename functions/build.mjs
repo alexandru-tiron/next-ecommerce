@@ -15,6 +15,8 @@ const options = {
    format: "cjs",
    outfile: "lib/index.js",
    sourcemap: true,
+   // The e-mail templates (src/emails) are React components
+   jsx: "automatic",
    external,
    logLevel: "warning",
 };
