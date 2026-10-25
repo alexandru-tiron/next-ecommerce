@@ -149,7 +149,7 @@ npm --prefix functions test   # Cloud Functions unit tests (functions/test)
 npm run test:rules # Firestore and Storage rules tests on the emulators (needs Java and the Firebase CLI)
 ```
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs these checks, a dependency audit and a production build on every push to `main` and on every pull request. The build needs the `NEXT_PUBLIC_*` values from `.example.env`, so add them as repository variables (Settings → Secrets and variables → Actions → Variables).
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs these checks, a dependency audit and a production build on every push to `main` and on every pull request. The build uses placeholder `NEXT_PUBLIC_*` values unless you add your own as repository variables (Settings → Secrets and variables → Actions → Variables).
 
 ## Deployment
 
