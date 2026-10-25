@@ -1024,6 +1024,11 @@
       "not_signed_in": "Bitte melde dich an, um fortzufahren.",
       "email_not_verified": "Bestätige deine E-Mail-Adresse, bevor du bestellst. Prüfe dein Postfach und folge dem Link, den wir dir geschickt haben.",
       "not_admin": "Das dürfen nur Administratoren.",
+      "not_owner": "Nur der Inhaber des Shops kann das Team verwalten.",
+      "user_not_found": "Kein Konto nutzt diese E-Mail-Adresse. Bitte die Person, sich zuerst im Shop zu registrieren.",
+      "own_role": "Du kannst deine eigene Rolle nicht ändern. Frag einen anderen Inhaber.",
+      "setup_token_invalid": "Dieser Einrichtungslink ist ungültig, abgelaufen oder wurde bereits verwendet.",
+      "setup_done": "Dieser Shop wurde bereits eingerichtet.",
       "too_many_requests": "Zu viele Anfragen. Bitte versuche es später erneut.",
       "too_many_orders": "Zu viele Bestellungen in kurzer Zeit. Bitte versuche es in {minutes} Minuten erneut.",
       "too_many_messages": "Du hast zu viele Nachrichten gesendet. Bitte versuche es später erneut.",
@@ -1088,5 +1093,114 @@
       "taxId": "USt-IdNr.",
       "regNo": "Registernr.",
       "bank": "Bank"
+   },
+   "Team": {
+      "title": "Team",
+      "description": "Die Personen, die die Administration öffnen können, und was jede von ihnen darf.",
+      "roles": {
+         "owner": "Inhaber",
+         "admin": "Administrator",
+         "staff": "Mitarbeiter"
+      },
+      "roleHints": {
+         "owner": "Alles, auch die Verwaltung des Teams.",
+         "admin": "Führt den Shop: Produkte, Bestellungen, Kunden, Gutscheine und Einstellungen.",
+         "staff": "Nur Bestellungen und Lagerbestand."
+      },
+      "addMember": "Teammitglied hinzufügen",
+      "email": "E-Mail-Adresse",
+      "role": "Rolle",
+      "add": "Hinzufügen",
+      "addHint": "Die Person braucht zuerst ein Konto im Shop; sie kann sich auf der Anmeldeseite registrieren. Eine neue Rolle gilt ab der nächsten Anmeldung, spätestens nach einer Stunde.",
+      "you": "du",
+      "remove": "Aus dem Team entfernen",
+      "removeConfirm": "{email} aus dem Team entfernen? Der Zugang zur Administration endet spätestens nach einer Stunde.",
+      "changed": "{email} hat jetzt die Rolle {role}.",
+      "removed": "{email} wurde aus dem Team entfernt.",
+      "failed": "Die Änderung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      "noMembers": "Noch keine Teammitglieder.",
+      "ownerOnly": "Nur Inhaber können das Team ändern.",
+      "legacyTitle": "Dein Konto nutzt das alte Administratorrecht",
+      "legacyText": "Es wirkt wie die Rolle Inhaber, erscheint aber nicht in der Teamliste. Wandle es um, damit die Liste vollständig ist.",
+      "convert": "In Inhaber umwandeln",
+      "converted": "Dein Konto hat jetzt die Rolle Inhaber.",
+      "recentChanges": "Letzte Änderungen",
+      "changeEntry": "{by} hat die Rolle von {target} von {from} in {to} geändert",
+      "setupClaimed": "{by} hat den Shop eingerichtet und ist Inhaber geworden",
+      "setupTokenCreated": "Über die Befehlszeile wurde ein Einrichtungslink erstellt",
+      "none": "keine Rolle",
+      "sectionNotAllowed": "Deine Rolle umfasst diesen Bereich nicht. Frag einen Inhaber, wenn du ihn brauchst."
+   },
+   "Setup": {
+      "title": "Shop einrichten",
+      "intro": "Ein paar Schritte, um den Shop startklar zu machen. Alles lässt sich später unter Administration → Einstellungen ändern.",
+      "steps": {
+         "owner": "Inhaberkonto",
+         "store": "Shopdaten",
+         "branding": "Markenauftritt",
+         "localization": "Sprachen, Währung und Steuer",
+         "shipping": "Versand",
+         "payments": "Zahlungen",
+         "pages": "Rechtstexte",
+         "finish": "Abschluss"
+      },
+      "lockedTitle": "Die Einrichtung ist abgeschlossen",
+      "lockedText": "Dieser Shop wurde bereits eingerichtet. Teammitglieder fügst du unter Administration → Team hinzu.",
+      "openAdmin": "Administration öffnen",
+      "goToStore": "Zum Shop",
+      "signInFirst": "Melde dich zuerst an oder erstelle ein Konto. Es wird das Inhaberkonto des Shops.",
+      "signIn": "Anmelden oder registrieren",
+      "signedInAs": "Angemeldet als {email}",
+      "tokenLabel": "Einrichtungscode",
+      "tokenHint": "Der Teil nach #token= im Einrichtungslink, den der Einrichtungsbefehl ausgibt. Der Link funktioniert einmal und läuft nach 7 Tagen ab.",
+      "claim": "Inhaber werden",
+      "pagesText": "Jeder Rechtstext beginnt mit einer Vorlage, die mit deinen Shopdaten ausgefüllt ist. Lies sie und passe sie unter Administration → Einstellungen → Seiten an dein Geschäft an. Die Vorlagen sind ein Ausgangspunkt, keine Rechtsberatung.",
+      "finishText": "Geschafft. Als Nächstes: Produkte anlegen, die Checkliste in der Administration durchgehen und eine Testbestellung aufgeben.",
+      "back": "Zurück",
+      "next": "Speichern und weiter",
+      "finish": "Einrichtung abschließen",
+      "saveFailed": "Dieser Schritt konnte nicht gespeichert werden. Bitte prüfe die Angaben und versuche es erneut."
+   },
+   "Checklist": {
+      "title": "Einrichtungs-Checkliste",
+      "progress": "{done} von {total} erledigt",
+      "setupTitle": "Shop",
+      "securityTitle": "Sicherheit",
+      "open": "Öffnen",
+      "unknownHint": "Das ließ sich von hier aus nicht prüfen. Prüfe es in der Google Cloud- oder Firebase-Konsole.",
+      "steps": {
+         "details": "Shopdaten",
+         "logo": "Logo",
+         "products": "Produkte",
+         "pages": "Rechtstexte",
+         "payments": "Kartenzahlung",
+         "domain": "Eigene Domain",
+         "testOrder": "Eine Testbestellung"
+      },
+      "stepHints": {
+         "details": "Trage Shopnamen, eine Kontakt-E-Mail und die Adresse ein.",
+         "logo": "Lade ein Logo für die Kopfzeile und die E-Mails hoch.",
+         "products": "Lege deine ersten Produkte an.",
+         "pages": "Die Rechtstexte zeigen noch die Vorlagen. Lies sie und passe sie an dein Geschäft an.",
+         "payments": "Optional: Schalte Stripe oder NETOPIA für Kartenzahlungen ein.",
+         "domain": "Der Shop läuft unter einer vorläufigen Adresse. Verbinde deine eigene Domain (docs/STORE-SETUP.md).",
+         "testOrder": "Gib selbst eine Bestellung auf, um Kasse und E-Mails zu prüfen."
+      },
+      "security": {
+         "appCheckFunctions": "App Check für die Funktionen",
+         "appCheckFirestore": "App Check für die Datenbank",
+         "rules": "Sicherheitsregeln aktuell",
+         "adminMfa": "Zwei-Faktor-Anmeldung für Inhaber und Administratoren",
+         "backups": "Datenbank-Backups",
+         "budget": "Budgetwarnung"
+      },
+      "securityHints": {
+         "appCheckFunctions": "Setze ENFORCE_APP_CHECK=true in functions/.env und stelle die Funktionen bereit (docs/SECURITY-SETUP.md).",
+         "appCheckFirestore": "Sobald App Check überwiegend geprüfte Anfragen zeigt, erzwinge es für Cloud Firestore.",
+         "rules": "Die bereitgestellten Regeln sind älter als diese Version des Shops. Führe aus: firebase deploy --only firestore:rules,storage",
+         "adminMfa": "{count, plural, one {# Inhaber oder Administrator meldet} other {# Inhaber oder Administratoren melden}} sich nur mit Passwort an. Aktiviere die Multi-Faktor-Authentifizierung.",
+         "backups": "Aktiviere die Wiederherstellung zu einem Zeitpunkt oder geplante Backups für die Datenbank.",
+         "budget": "Lege ein Budget mit E-Mail-Warnungen an, damit dich keine unerwartete Rechnung überrascht."
+      }
    }
 }

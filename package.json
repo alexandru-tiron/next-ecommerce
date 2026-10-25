@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:emulators": "node scripts/dev-emulators.mjs",
+    "dev:demo": "node scripts/dev-demo.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -16,7 +17,9 @@
     "seed:emulators": "node scripts/seed-demo/seed.mjs --with-orders --admin-email admin@example.com",
     "algolia:setup": "node scripts/algolia-setup.mjs",
     "algolia:reindex": "node scripts/algolia-reindex.mjs",
-    "make-admin": "node scripts/make-admin.mjs"
+    "make-admin": "node scripts/make-admin.mjs",
+    "setup-link": "node scripts/setup-link.mjs",
+    "setup": "node tools/setup/run.mjs"
   },
   "dependencies": {
     "@algolia/client-search": "^5.23.4",
@@ -28,7 +31,6 @@
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "algoliasearch": "^5.23.4",
-    "date-fns": "^4.1.0",
     "firebase": "^12.0.0",
     "firebase-admin": "^14.5.0",
     "lucide-react": "^0.488.0",

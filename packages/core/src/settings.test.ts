@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsFrom, brandingFrom, homeFrom, infoPageFrom, localizationFrom, navigationFrom, pickLocale, storeInfoFrom } from "./settings";
+import { analyticsFrom, brandingFrom, homeFrom, infoPageFrom, localizationFrom, navigationFrom, pickLocale, storeInfoFrom, systemFrom } from "./settings";
 import { formatDate, formatMoney, moneyParts } from "./format";
 
 describe("settings", () => {
@@ -65,5 +65,14 @@ describe("formatting", () => {
    it("formats dates in the store time zone", () => {
       expect(formatDate("2026-01-01T23:30:00Z", "en", "Europe/Bucharest", { dateStyle: "short" })).toBe("1/2/26");
       expect(formatDate("not a date", "en", "UTC")).toBe("");
+   });
+});
+
+describe("system settings", () => {
+   it("use the saved setup flag, and treat older stores with a name as set up", () => {
+      expect(systemFrom({ setup_completed: true })).toEqual({ setup_completed: true });
+      expect(systemFrom({ setup_completed: false }, storeInfoFrom({ store_name: "Shop" }))).toEqual({ setup_completed: false });
+      expect(systemFrom(null, storeInfoFrom({ store_name: "Shop" }))).toEqual({ setup_completed: true });
+      expect(systemFrom(null, storeInfoFrom(null))).toEqual({ setup_completed: false });
    });
 });

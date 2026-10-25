@@ -1,10 +1,15 @@
 rules_version = '2';
+// Rules version 2 (RULES_VERSION in packages/core/src/rulesVersion.ts: change both when these rules change)
 
 service firebase.storage {
   match /b/{bucket}/o {
     // Helper functions
+    // Owners and admins (the "role" custom claim; accounts with the old isAdmin claim count as owners)
     function isAdmin() {
-      return request.auth != null && request.auth.token.get('isAdmin', false) == true;
+      return request.auth != null && (
+        request.auth.token.get('role', '') in ['owner', 'admin']
+        || (!('role' in request.auth.token) && request.auth.token.get('isAdmin', false) == true)
+      );
     }
     // Photos up to 5 MB, SVG icons and logos up to 200 KB
     function validImage() {

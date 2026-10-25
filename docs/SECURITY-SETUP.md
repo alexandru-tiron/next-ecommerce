@@ -78,6 +78,16 @@ If you add a third-party service (analytics, chat, a new payment widget), add it
 
 Check a deployed store with [securityheaders.com](https://securityheaders.com).
 
+## 6. Team roles and two-step sign-in
+
+Admin rights are a `role` custom claim (owner, admin or staff), set only by the `setUserRole` and `claimSetup` functions or by `npm run make-admin`. The rules check the role on every read and write; staff can only progress orders and change stock. See "Team and roles" in [STORE-SETUP.md](STORE-SETUP.md).
+
+A stolen admin password is the biggest remaining risk, so turn on a second sign-in step for the team:
+
+1. In the Firebase console, open **Authentication → Settings → Multi-factor authentication**. This needs the Identity Platform upgrade, which is free for normal store traffic.
+2. Enable **TOTP** (an authenticator app) or SMS.
+3. Each owner and admin enrolls a second factor. The admin dashboard's checklist counts the ones who haven't yet.
+
 ## Checklist
 
 - [ ] Rules deployed from this repository (`firebase deploy --only firestore:rules,storage`)
@@ -85,4 +95,6 @@ Check a deployed store with [securityheaders.com](https://securityheaders.com).
 - [ ] App Check registered, `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` set, and `ENFORCE_APP_CHECK=true` once the metrics look right
 - [ ] `FIREBASE_SERVICE_ACCOUNT_KEY` set in Vercel (read-only account), then App Check enforced on Cloud Firestore
 - [ ] A budget alert on the Google Cloud billing account
-- [ ] Only the people who need it have admin rights (`npm run make-admin -- --revoke` removes them)
+- [ ] Only the people who need it are on the team (Admin → Team), each with the smallest role that works
+- [ ] Multi-factor sign-in for every owner and admin (see section 6)
+- [ ] The old `setAdminPrivilege` function deleted, on stores created before team roles (see [upgrades.md](upgrades.md))

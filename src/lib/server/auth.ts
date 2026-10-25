@@ -1,6 +1,7 @@
 import "server-only";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { Role, roleFromClaims } from "@core/roles";
 
 const APP_NAME = "store-auth";
 const useEmulators = process.env.NEXT_PUBLIC_USE_EMULATORS === "true";
@@ -13,11 +14,11 @@ function authApp() {
    return initializeApp({ projectId: useEmulators ? "demo-store" : process.env.NEXT_PUBLIC_PROJECTID }, APP_NAME);
 }
 
-// True when the token belongs to a signed-in admin (the isAdmin custom claim)
-export async function isAdminToken(token: string) {
+// The team role of a signed-in user's ID token (see packages/core/src/roles.ts), or null
+export async function tokenRole(token: string): Promise<Role | null> {
    try {
-      return (await getAuth(authApp()).verifyIdToken(token)).isAdmin === true;
+      return roleFromClaims(await getAuth(authApp()).verifyIdToken(token));
    } catch {
-      return false;
+      return null;
    }
 }

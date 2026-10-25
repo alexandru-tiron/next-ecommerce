@@ -4,6 +4,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { User as FirebaseUser } from "firebase/auth";
 import { collection, doc, onSnapshot, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
 import { AuthUser, clearUser, setUser } from "../authSlice";
+import { roleFromClaims } from "@core/roles";
 
 // Firestore unsubscribe functions aren't serializable, so the active listeners live here instead of in the store
 let unsubscribers: (() => void)[] = [];
@@ -16,9 +17,9 @@ export function stopUserSync() {
 const syncUser = createAsyncThunk("auth/syncUser", async (user: FirebaseUser, { dispatch }) => {
    stopUserSync();
 
-   // Check admin status
+   // The team role, if any (the role custom claim, or the old isAdmin flag)
    const token = await user.getIdTokenResult();
-   const admin = token.claims.isAdmin === true;
+   const role = roleFromClaims(token.claims);
 
    // The user may have signed out while the token was loading
    if (auth.currentUser?.uid !== user.uid) return;
@@ -26,7 +27,7 @@ const syncUser = createAsyncThunk("auth/syncUser", async (user: FirebaseUser, { 
    let userData: UserData | undefined;
    let userDocLoaded = false;
    let addresses: Address[] = [];
-   const publishUser = () => dispatch(setUser({ user: toAuthUser(user, userData, addresses), admin }));
+   const publishUser = () => dispatch(setUser({ user: toAuthUser(user, userData, addresses), role }));
 
    // Set up real-time listener for user document
    const userRef = doc(db, "Users", user.uid);

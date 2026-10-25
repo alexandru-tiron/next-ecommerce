@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { z } from "zod";
 import { StoreErrorCode } from "@core/errors";
 import { LOCALES } from "@core/settings";
+import { ROLES } from "@core/roles";
 import { MAX_LINE_QUANTITY, MAX_ORDER_LINES } from "@core/orderLimits";
 import { PAYMENT_METHODS } from "@core/payments";
 import { validateEmail, validateName, validatePhone } from "@core/validators";
@@ -116,7 +117,11 @@ export const orderIdInputSchema = z.object({ orderId: docId });
 
 export const paymentInputSchema = z.object({ orderId: docId, origin: z.string().max(200).optional() });
 
-export const adminPrivilegeInputSchema = z.object({ uid: z.string().min(1).max(128) });
+// The setup wizard: the token from the one-time setup link
+export const setupClaimSchema = z.object({ token: z.string().min(20).max(200) });
+
+// Admin → Team: give an existing account a role, or remove it with null
+export const roleInputSchema = z.object({ email: z.string().max(254).refine(validateEmail), role: z.enum(ROLES).nullable() });
 
 // The contact form and the data-protection request form. "website" is a hidden field only bots fill in.
 export const contactMessageSchema = z.object({

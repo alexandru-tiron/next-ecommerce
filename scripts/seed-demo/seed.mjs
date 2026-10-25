@@ -15,6 +15,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { connectFirebase, downloadUrl, parseArgs } from "../lib/firebase.mjs";
+import { newSetupToken, setupLink } from "../lib/setup-token.mjs";
 import { categoryIconSvg, heroSvg, logoSvg, productSvg } from "./art.mjs";
 import { brandColours, categories, customerNames, products, reviewers, reviewTexts, subcategories } from "./catalogue.mjs";
 
@@ -265,6 +266,8 @@ const defaultSettings = {
    "Settings/Tax": { vat_rate: VAT_RATE },
    "Settings/Notifications": { send_new_order_mails: false, send_order_status_update_mails: false, send_confirmation_mails: false },
    "Settings/Payments": { cod_enabled: true, stripe_enabled: false, netopia_enabled: false, netopia_pos_signature: "", netopia_live: false },
+   // The demo store counts as set up, unless --setup-link asks to try the setup wizard
+   "Settings/System": { setup_completed: !args["setup-link"] },
 };
 
 // --- run ---
@@ -311,9 +314,18 @@ if (args["admin-email"]) {
    const password = typeof args["admin-password"] === "string" ? args["admin-password"] : randomBytes(9).toString("base64url");
    const existing = await auth.getUserByEmail(args["admin-email"]).catch(() => null);
    const user = existing ? await auth.updateUser(existing.uid, { password, emailVerified: true }) : await auth.createUser({ email: args["admin-email"], password, emailVerified: true, displayName: "Demo Admin" });
-   await auth.setCustomUserClaims(user.uid, { isAdmin: true });
+   await auth.setCustomUserClaims(user.uid, { role: "owner" });
+   await db.doc(`Team/${user.uid}`).set({ email: args["admin-email"], name: "Demo Admin", role: "owner", updated_at: new Date(), updated_by: "seed" });
    await db.doc(`Users/${user.uid}`).set({ email: args["admin-email"], first_name: "Demo", last_name: "Admin", created_at: new Date(), demo: true }, { merge: true });
    console.log(`admin account: ${args["admin-email"]} / ${password} (emulators only)`);
+}
+
+// A one-time link to try the setup wizard (/setup) on the emulators
+if (args["setup-link"]) {
+   if (!emulator) throw new Error("--setup-link only works against the emulators; use scripts/setup-link.mjs for a real project.");
+   const { token, hash, expiresAt } = newSetupToken();
+   await db.doc("System/setup").set({ token_hash: hash, created_at: new Date(), expires_at: expiresAt, used_at: null });
+   console.log(`setup link: ${setupLink(typeof args.site === "string" ? args.site : "http://localhost:3000", token)}`);
 }
 
 console.log("done");

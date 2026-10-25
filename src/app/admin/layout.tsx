@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Package, Tag, Users, Settings, Grid, Home, X, Boxes, TicketPercent, ChartColumn } from "lucide-react";
+import { Package, Tag, Users, Settings, Grid, Home, X, Boxes, TicketPercent, ChartColumn, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppSelector } from "@/state/hooks";
 import { useTranslations } from "next-intl";
+import { adminHome, canOpenAdminPath } from "@core/roles";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-   const { user, admin, isAuthReady } = useAppSelector((state) => state.auth);
+   const { user, admin, role, isAuthReady } = useAppSelector((state) => state.auth);
    const t = useTranslations("Admin");
+   const tTeam = useTranslations("Team");
    const router = useRouter();
    const pathname = usePathname();
    const [isLoading, setIsLoading] = useState(true);
@@ -32,15 +34,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             router.push("/");
             return;
          } else if (user && admin) {
+            // Staff start on the orders page; the dashboard is for owners and admins
+            if (pathname === "/admin" && !canOpenAdminPath(role, pathname)) {
+               const home = adminHome(role);
+               if (home) router.replace(home);
+            }
             setIsLoading(false);
          }
       };
 
       checkAdmin();
-   }, [user, router, isAuthReady, admin]);
+   }, [user, router, isAuthReady, admin, role, pathname]);
 
    // Define sidebar navigation items
-   const navItems = [
+   const allNavItems = [
       { name: t("mainPanel"), href: "/admin", icon: <Grid className="w-5 h-5" /> },
       { name: t("products"), href: "/admin/products", icon: <Tag className="w-5 h-5" /> },
       { name: t("orders"), href: "/admin/orders", icon: <Package className="w-5 h-5" /> },
@@ -49,7 +56,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { name: t("vouchers"), href: "/admin/vouchers", icon: <TicketPercent className="w-5 h-5" /> },
       { name: t("analytics"), href: "/admin/analytics", icon: <ChartColumn className="w-5 h-5" /> },
       { name: t("settings"), href: "/admin/settings", icon: <Settings className="w-5 h-5" /> },
+      { name: tTeam("title"), href: "/admin/team", icon: <ShieldCheck className="w-5 h-5" /> },
    ];
+   // Only the sections the role may open
+   const navItems = allNavItems.filter((item) => canOpenAdminPath(role, item.href));
 
    // Close mobile menu when route changes
    useEffect(() => {
@@ -185,8 +195,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                </div>
             </div>
 
-            {/* Main content */}
-            <main className="flex-1 px-3 py-6 sm:px-4 md:px-8 md:py-8 lg:px-16 lg:py-10 overflow-auto bg-gray-50 w-full lg:pl-80">{children}</main>
+            {/* Main content: sections the role can't open show a notice (the rules refuse their data anyway) */}
+            <main className="flex-1 px-3 py-6 sm:px-4 md:px-8 md:py-8 lg:px-16 lg:py-10 overflow-auto bg-gray-50 w-full lg:pl-80">
+               {canOpenAdminPath(role, pathname) ? (
+                  children
+               ) : (
+                  <div className="max-w-md mx-auto text-center py-16">
+                     <h1 className="text-xl font-semibold text-gray-900 mb-2">{t("forbiddenAccess")}</h1>
+                     <p className="text-gray-600">{tTeam("sectionNotAllowed")}</p>
+                  </div>
+               )}
+            </main>
          </div>
       </div>
    );

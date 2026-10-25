@@ -1,0 +1,13 @@
+{
+  "name": "store-setup",
+  "private": true,
+  "description": "The setup CLI (npm run setup at the repository root). Installed only when it runs.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.17.0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "8.7.3",
+    "firebase-tools": "15.33.0"
+  }
+}

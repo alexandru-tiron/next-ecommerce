@@ -1024,6 +1024,11 @@
       "not_signed_in": "Please sign in to continue.",
       "email_not_verified": "Verify your e-mail address before placing an order. Check your inbox and follow the link we sent you.",
       "not_admin": "Only admins can do this.",
+      "not_owner": "Only the store owner can manage the team.",
+      "user_not_found": "No account uses this e-mail address. Ask them to sign up in the store first.",
+      "own_role": "You can't change your own role. Ask another owner.",
+      "setup_token_invalid": "This setup link is invalid, has expired or was already used.",
+      "setup_done": "This store has already been set up.",
       "too_many_requests": "Too many requests. Please try again later.",
       "too_many_orders": "Too many orders in a short time. Please try again in {minutes} minutes.",
       "too_many_messages": "You've sent too many messages. Please try again later.",
@@ -1088,5 +1093,114 @@
       "taxId": "Tax ID",
       "regNo": "Reg. no.",
       "bank": "Bank"
+   },
+   "Team": {
+      "title": "Team",
+      "description": "The people who can open the admin panel, and what each of them can do.",
+      "roles": {
+         "owner": "Owner",
+         "admin": "Admin",
+         "staff": "Staff"
+      },
+      "roleHints": {
+         "owner": "Everything, including managing the team.",
+         "admin": "Runs the store: products, orders, customers, vouchers and settings.",
+         "staff": "Orders and stock only."
+      },
+      "addMember": "Add a team member",
+      "email": "E-mail address",
+      "role": "Role",
+      "add": "Add",
+      "addHint": "The person needs an account in the store first: they can sign up on the login page. A new role applies the next time they sign in, within an hour at most.",
+      "you": "you",
+      "remove": "Remove from the team",
+      "removeConfirm": "Remove {email} from the team? They lose access to the admin panel within an hour.",
+      "changed": "{email} now has the role {role}.",
+      "removed": "{email} was removed from the team.",
+      "failed": "The change couldn't be saved. Please try again.",
+      "noMembers": "No team members yet.",
+      "ownerOnly": "Only owners can change the team.",
+      "legacyTitle": "Your account uses the old admin right",
+      "legacyText": "It works like the owner role but doesn't appear in the team list. Convert it to keep the list complete.",
+      "convert": "Convert to owner",
+      "converted": "Your account now has the owner role.",
+      "recentChanges": "Recent changes",
+      "changeEntry": "{by} changed {target} from {from} to {to}",
+      "setupClaimed": "{by} set up the store and became its owner",
+      "setupTokenCreated": "A setup link was created from the command line",
+      "none": "no role",
+      "sectionNotAllowed": "Your role doesn't include this section. Ask an owner if you need it."
+   },
+   "Setup": {
+      "title": "Set up your store",
+      "intro": "A few steps to get the store ready. Everything can be changed later in Admin → Settings.",
+      "steps": {
+         "owner": "Owner account",
+         "store": "Store details",
+         "branding": "Branding",
+         "localization": "Languages, currency and tax",
+         "shipping": "Shipping",
+         "payments": "Payments",
+         "pages": "Legal pages",
+         "finish": "Finish"
+      },
+      "lockedTitle": "Setup is finished",
+      "lockedText": "This store has already been set up. Team members are added in Admin → Team.",
+      "openAdmin": "Open the admin panel",
+      "goToStore": "Go to the store",
+      "signInFirst": "Sign in, or create an account, first. It becomes the store's owner account.",
+      "signIn": "Sign in or sign up",
+      "signedInAs": "Signed in as {email}",
+      "tokenLabel": "Setup code",
+      "tokenHint": "The part after #token= in the setup link printed by the setup command. The link works once and expires after 7 days.",
+      "claim": "Become the owner",
+      "pagesText": "Each legal page starts from a template filled in with your store details. Read them, then adapt them to your business in Admin → Settings → Pages. The templates are a starting point, not legal advice.",
+      "finishText": "That's it. Next: add your products, go through the checklist on the admin dashboard, and place a test order.",
+      "back": "Back",
+      "next": "Save and continue",
+      "finish": "Finish setup",
+      "saveFailed": "This step couldn't be saved. Please check the values and try again."
+   },
+   "Checklist": {
+      "title": "Setup checklist",
+      "progress": "{done} of {total} done",
+      "setupTitle": "Store",
+      "securityTitle": "Security",
+      "open": "Open",
+      "unknownHint": "This couldn't be checked from here. Check it in the Google Cloud or Firebase console.",
+      "steps": {
+         "details": "Store details",
+         "logo": "Logo",
+         "products": "Products",
+         "pages": "Legal pages",
+         "payments": "Card payments",
+         "domain": "Your own domain",
+         "testOrder": "A test order"
+      },
+      "stepHints": {
+         "details": "Add the store name, a contact e-mail and the address.",
+         "logo": "Upload a logo for the header and the e-mails.",
+         "products": "Add your first products.",
+         "pages": "The legal pages still show the templates. Read them and adapt them to your business.",
+         "payments": "Optional: switch on Stripe or NETOPIA for card payments.",
+         "domain": "The store runs on a temporary address. Connect your own domain (docs/STORE-SETUP.md).",
+         "testOrder": "Place an order yourself to check checkout and the e-mails."
+      },
+      "security": {
+         "appCheckFunctions": "App Check on the functions",
+         "appCheckFirestore": "App Check on the database",
+         "rules": "Security rules up to date",
+         "adminMfa": "Two-step sign-in for owners and admins",
+         "backups": "Database backups",
+         "budget": "Budget alert"
+      },
+      "securityHints": {
+         "appCheckFunctions": "Set ENFORCE_APP_CHECK=true in functions/.env and deploy the functions (docs/SECURITY-SETUP.md).",
+         "appCheckFirestore": "Once App Check shows mostly verified requests, enforce it on Cloud Firestore.",
+         "rules": "The deployed rules are older than this version of the store. Run: firebase deploy --only firestore:rules,storage",
+         "adminMfa": "{count, plural, one {# owner or admin signs} other {# owners or admins sign}} in with a password only. Turn on multi-factor authentication.",
+         "backups": "Turn on point-in-time recovery or scheduled backups for the database.",
+         "budget": "Create a budget with e-mail alerts, so an unexpected bill can't surprise you."
+      }
    }
 }

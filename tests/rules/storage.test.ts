@@ -44,6 +44,13 @@ describe("storage", () => {
       await assertSucceeds(deleteObject(ref(admin(), "Products/p1/a.png")));
    });
 
+   it("owners and admins can upload, staff can't", async () => {
+      await assertSucceeds(upload(env.authenticatedContext("owner", { role: "owner" }).storage(), "Products/p1/b.png", KB, "image/png"));
+      await assertSucceeds(upload(env.authenticatedContext("manager", { role: "admin" }).storage(), "Products/p1/c.png", KB, "image/png"));
+      await assertFails(upload(env.authenticatedContext("staff", { role: "staff" }).storage(), "Products/p1/d.png", KB, "image/png"));
+      await assertFails(upload(env.authenticatedContext("demoted", { role: "staff", isAdmin: true }).storage(), "Products/p1/e.png", KB, "image/png"));
+   });
+
    it("photos are limited to 5 MB and to image formats", async () => {
       await assertSucceeds(upload(admin(), "Slides/hero.webp", 4 * KB * KB, "image/webp"));
       await assertFails(upload(admin(), "Slides/huge.jpg", 5 * KB * KB + 1, "image/jpeg"));

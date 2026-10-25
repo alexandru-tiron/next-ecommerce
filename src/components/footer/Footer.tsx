@@ -6,9 +6,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 
 const Footer = async () => {
-   // Admin pages have no store footer (x-pathname is set in src/middleware.ts)
+   // Admin and setup pages have no store footer (x-pathname is set in src/middleware.ts)
    const pathname = (await headers()).get("x-pathname") ?? "";
-   if (pathname.startsWith("/admin")) return null;
+   if (pathname.startsWith("/admin") || pathname.startsWith("/setup")) return null;
 
    const [info, categ, navigation, localization, locale, t, tPages] = await Promise.all([getInfoData(), getCategData(), getNavigation(), getLocalization(), getLocale(), getTranslations("Footer"), getTranslations("InfoPages")]);
    const external = (url: string) => /^https:\/\//.test(url);

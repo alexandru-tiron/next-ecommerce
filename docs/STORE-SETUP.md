@@ -25,6 +25,22 @@ Notes:
 - **Pages.** Until you save your own text, each page shows a built-in template filled in with the store's details (company, address, shipping price, VAT, contact addresses). Use **Load template** to start from it. The templates are a starting point, not legal advice: have them checked for your country.
 - **Languages.** Visitors get the store's default language until they pick another in the header; their choice is kept in a cookie. Customers' order e-mails use the language they ordered in. E-mails to the store use the default language.
 
+### Team and roles
+
+Admin → Team lists the people who can open the admin panel. Each has one role:
+
+| Role | Can |
+| --- | --- |
+| **Owner** | Everything, including adding, changing and removing team members. |
+| **Admin** | Run the store: products, orders, customers, vouchers, analytics and settings. |
+| **Staff** | Orders (status and tracking number) and stock only. |
+
+- Only owners change the team, and nobody changes their own role, so a store always keeps an owner.
+- A person needs an account in the store first: they sign up on the login page, then an owner adds their e-mail address.
+- Changes apply when the person next signs in. Removed members are signed out and lose access within an hour.
+- The first owner comes from the setup wizard's one-time link (`npm run setup` or `npm run setup-link`), or from `npm run make-admin`. There is no other way to become an owner.
+- Every role change is recorded and shown under "Recent changes" on the Team page.
+
 ## 2. Custom domain
 
 1. **Vercel.** Add the domain under Project → Settings → Domains and follow the DNS instructions. Vercel issues the HTTPS certificate.

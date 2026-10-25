@@ -25,9 +25,11 @@ const LoginPage = () => {
    const dispatch = useAppDispatch();
    const user = useAppSelector((state) => state.auth.user);
 
+   // After signing in, go back where the visitor came from (?redirect=/checkout), only to a page of this store
    useEffect(() => {
       if (user) {
-         router.push("/");
+         const redirect = new URLSearchParams(window.location.search).get("redirect");
+         router.push(redirect && /^\/(?!\/)/.test(redirect) ? redirect : "/");
       }
    }, [user, router]);
 

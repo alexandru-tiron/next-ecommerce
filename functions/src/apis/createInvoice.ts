@@ -10,6 +10,7 @@ import { enforceAppCheck } from "../utils/params";
 import { orderIdInputSchema } from "../schemas";
 import { parseInput } from "../utils/validation";
 import { storeError } from "../utils/errors";
+import { requirePermission } from "../utils/roles";
 import { orderCurrency } from "@core/payments";
 const db = getFirestore();
 // Define parameters for Facturis API credentials
@@ -30,12 +31,7 @@ export const createInvoice = onCall(
    async (request) => {
       try {
          // Check if user is authenticated
-         if (!request.auth) {
-            logger.warn(`Unauthenticated order attempt from IP: ${request.rawRequest?.ip || "unknown"}`);
-            throw storeError("unauthenticated", "not_signed_in");
-         } else if (request.auth.token.isAdmin !== true) {
-            throw storeError("permission-denied", "not_admin");
-         }
+         requirePermission(request, "manageOrders");
 
          const { orderId } = parseInput(orderIdInputSchema, request.data);
 

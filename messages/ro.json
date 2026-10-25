@@ -1024,6 +1024,11 @@
       "not_signed_in": "Te rugăm să te autentifici pentru a continua.",
       "email_not_verified": "Verifică-ți adresa de e-mail înainte de a plasa o comandă. Verifică-ți căsuța de e-mail și urmează linkul primit.",
       "not_admin": "Doar administratorii pot face asta.",
+      "not_owner": "Doar proprietarul magazinului poate gestiona echipa.",
+      "user_not_found": "Niciun cont nu folosește această adresă de e-mail. Roagă persoana să își creeze mai întâi un cont în magazin.",
+      "own_role": "Nu îți poți schimba propriul rol. Cere-i altui proprietar.",
+      "setup_token_invalid": "Acest link de configurare este invalid, a expirat sau a fost deja folosit.",
+      "setup_done": "Acest magazin a fost deja configurat.",
       "too_many_requests": "Prea multe cereri. Te rugăm să încerci din nou mai târziu.",
       "too_many_orders": "Prea multe comenzi într-un timp scurt. Te rugăm să încerci din nou peste {minutes} minute.",
       "too_many_messages": "Ai trimis prea multe mesaje. Te rugăm să încerci din nou mai târziu.",
@@ -1088,5 +1093,114 @@
       "taxId": "CUI",
       "regNo": "Reg. Com.",
       "bank": "Bancă"
+   },
+   "Team": {
+      "title": "Echipă",
+      "description": "Persoanele care pot deschide panoul de administrare și ce poate face fiecare.",
+      "roles": {
+         "owner": "Proprietar",
+         "admin": "Administrator",
+         "staff": "Personal"
+      },
+      "roleHints": {
+         "owner": "Totul, inclusiv gestionarea echipei.",
+         "admin": "Conduce magazinul: produse, comenzi, clienți, vouchere și setări.",
+         "staff": "Doar comenzi și stoc."
+      },
+      "addMember": "Adaugă un membru",
+      "email": "Adresă de e-mail",
+      "role": "Rol",
+      "add": "Adaugă",
+      "addHint": "Persoana are nevoie mai întâi de un cont în magazin: își poate crea unul din pagina de autentificare. Noul rol se aplică la următoarea autentificare, în cel mult o oră.",
+      "you": "tu",
+      "remove": "Elimină din echipă",
+      "removeConfirm": "Elimini {email} din echipă? Își pierde accesul la panoul de administrare în cel mult o oră.",
+      "changed": "{email} are acum rolul {role}.",
+      "removed": "{email} a fost eliminat din echipă.",
+      "failed": "Modificarea nu a putut fi salvată. Te rugăm să încerci din nou.",
+      "noMembers": "Încă nu există membri în echipă.",
+      "ownerOnly": "Doar proprietarii pot modifica echipa.",
+      "legacyTitle": "Contul tău folosește vechiul drept de administrator",
+      "legacyText": "Funcționează ca rolul de proprietar, dar nu apare în lista echipei. Convertește-l ca lista să fie completă.",
+      "convert": "Convertește în proprietar",
+      "converted": "Contul tău are acum rolul de proprietar.",
+      "recentChanges": "Modificări recente",
+      "changeEntry": "{by} a schimbat rolul lui {target} din {from} în {to}",
+      "setupClaimed": "{by} a configurat magazinul și a devenit proprietar",
+      "setupTokenCreated": "A fost creat un link de configurare din linia de comandă",
+      "none": "fără rol",
+      "sectionNotAllowed": "Rolul tău nu include această secțiune. Cere-i unui proprietar dacă ai nevoie de ea."
+   },
+   "Setup": {
+      "title": "Configurează-ți magazinul",
+      "intro": "Câțiva pași pentru a pregăti magazinul. Totul se poate schimba ulterior din Admin → Setări.",
+      "steps": {
+         "owner": "Contul proprietarului",
+         "store": "Datele magazinului",
+         "branding": "Identitate vizuală",
+         "localization": "Limbi, monedă și TVA",
+         "shipping": "Livrare",
+         "payments": "Plăți",
+         "pages": "Pagini legale",
+         "finish": "Final"
+      },
+      "lockedTitle": "Configurarea este finalizată",
+      "lockedText": "Acest magazin a fost deja configurat. Membrii echipei se adaugă din Admin → Echipă.",
+      "openAdmin": "Deschide panoul de administrare",
+      "goToStore": "Mergi la magazin",
+      "signInFirst": "Autentifică-te sau creează un cont mai întâi. Acesta devine contul proprietarului magazinului.",
+      "signIn": "Autentificare sau cont nou",
+      "signedInAs": "Autentificat ca {email}",
+      "tokenLabel": "Cod de configurare",
+      "tokenHint": "Partea de după #token= din linkul de configurare afișat de comanda de configurare. Linkul funcționează o singură dată și expiră după 7 zile.",
+      "claim": "Devino proprietar",
+      "pagesText": "Fiecare pagină legală pornește de la un șablon completat cu datele magazinului. Citește-le, apoi adaptează-le afacerii tale din Admin → Setări → Pagini. Șabloanele sunt un punct de plecare, nu consultanță juridică.",
+      "finishText": "Gata. Urmează: adaugă produsele, parcurge lista de verificare din panoul de administrare și plasează o comandă de test.",
+      "back": "Înapoi",
+      "next": "Salvează și continuă",
+      "finish": "Finalizează configurarea",
+      "saveFailed": "Acest pas nu a putut fi salvat. Verifică valorile și încearcă din nou."
+   },
+   "Checklist": {
+      "title": "Listă de verificare",
+      "progress": "{done} din {total} gata",
+      "setupTitle": "Magazin",
+      "securityTitle": "Securitate",
+      "open": "Deschide",
+      "unknownHint": "Nu a putut fi verificat de aici. Verifică în consola Google Cloud sau Firebase.",
+      "steps": {
+         "details": "Datele magazinului",
+         "logo": "Logo",
+         "products": "Produse",
+         "pages": "Pagini legale",
+         "payments": "Plăți cu cardul",
+         "domain": "Domeniul tău",
+         "testOrder": "O comandă de test"
+      },
+      "stepHints": {
+         "details": "Adaugă numele magazinului, un e-mail de contact și adresa.",
+         "logo": "Încarcă un logo pentru antet și e-mailuri.",
+         "products": "Adaugă primele produse.",
+         "pages": "Paginile legale afișează încă șabloanele. Citește-le și adaptează-le afacerii tale.",
+         "payments": "Opțional: activează Stripe sau NETOPIA pentru plăți cu cardul.",
+         "domain": "Magazinul rulează pe o adresă temporară. Conectează propriul domeniu (docs/STORE-SETUP.md).",
+         "testOrder": "Plasează chiar tu o comandă pentru a verifica plata și e-mailurile."
+      },
+      "security": {
+         "appCheckFunctions": "App Check pe funcții",
+         "appCheckFirestore": "App Check pe baza de date",
+         "rules": "Reguli de securitate actualizate",
+         "adminMfa": "Autentificare în doi pași pentru proprietari și administratori",
+         "backups": "Copii de rezervă ale bazei de date",
+         "budget": "Alertă de buget"
+      },
+      "securityHints": {
+         "appCheckFunctions": "Setează ENFORCE_APP_CHECK=true în functions/.env și publică funcțiile (docs/SECURITY-SETUP.md).",
+         "appCheckFirestore": "Când App Check arată în mare parte cereri verificate, aplică-l pe Cloud Firestore.",
+         "rules": "Regulile publicate sunt mai vechi decât această versiune a magazinului. Rulează: firebase deploy --only firestore:rules,storage",
+         "adminMfa": "{count, plural, one {# proprietar sau administrator se autentifică} few {# proprietari sau administratori se autentifică} other {# de proprietari sau administratori se autentifică}} doar cu parolă. Activează autentificarea cu mai mulți factori.",
+         "backups": "Activează recuperarea la un moment dat sau copiile de rezervă programate pentru baza de date.",
+         "budget": "Creează un buget cu alerte pe e-mail, ca o factură neașteptată să nu te surprindă."
+      }
    }
 }

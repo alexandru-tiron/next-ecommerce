@@ -7,8 +7,9 @@ import { Order } from "@/types/user";
 import { db } from "@/lib/firebaseInit";
 import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "firebase/firestore";
 import { Product } from "@/types/product";
-import { formatDistanceToNow } from "date-fns";
-import { useTranslations } from "next-intl";
+import { formatRelative } from "@core/format";
+import { useLocale, useTranslations } from "next-intl";
+import SetupChecklist from "@/components/admin/SetupChecklist";
 import { Money } from "@/components/common/Price";
 
 // Extended interfaces for transformed Firestore data
@@ -288,6 +289,7 @@ export default function AdminDashboard() {
       topProducts: [] as ExtendedProduct[],
    });
    const t = useTranslations();
+   const locale = useLocale();
    useEffect(() => {
       // Function to fetch dashboard data
       const fetchDashboardData = async () => {
@@ -338,7 +340,7 @@ export default function AdminDashboard() {
             const recentOrdersPromises = recentOrdersSnapshot.docs.map(async (orderDoc) => {
                const orderData = orderDoc.data();
                // Get customer data
-               let customerName = "Unknown Customer";
+               let customerName = "—";
                if (orderData.first_name || orderData.last_name) {
                   // If user doc doesn't exist but order has name data
                   customerName = `${orderData.first_name || ""} ${orderData.last_name || ""}`.trim();
@@ -347,12 +349,12 @@ export default function AdminDashboard() {
                }
 
                // Format date
-               let formattedDate = "Unknown Date";
+               let formattedDate = "—";
                if (orderData.date) {
                   try {
                      const dateTimestamp = getTimestampSeconds(orderData.date);
                      const date = new Date(dateTimestamp * 1000);
-                     formattedDate = formatDistanceToNow(date, { addSuffix: true });
+                     formattedDate = formatRelative(date, locale);
                   } catch (e) {
                      console.error("Error formatting date:", e);
                   }
@@ -431,7 +433,7 @@ export default function AdminDashboard() {
       };
 
       fetchDashboardData();
-   }, []);
+   }, [locale]);
 
    if (isLoading) {
       return (
@@ -447,6 +449,8 @@ export default function AdminDashboard() {
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">{t("Admin.mainPanel")}</h1>
             <p className="mt-1 text-xs sm:text-sm text-gray-500">{t("Admin.overview")}</p>
          </div>
+
+         <SetupChecklist />
 
          {/* Metrics */}
          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

@@ -1,4 +1,5 @@
 rules_version = '2';
+// Rules version 2 (RULES_VERSION in packages/core/src/rulesVersion.ts: change both when these rules change)
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -6,8 +7,21 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    // Team roles live in the "role" custom claim (packages/core/src/roles.ts): owner, admin or staff.
+    // Accounts made admins before roles existed have isAdmin: true and no role; they count as owners.
+    function hasRole(roles) {
+      return isSignedIn() && (
+        request.auth.token.get('role', '') in roles
+        || (!('role' in request.auth.token) && request.auth.token.get('isAdmin', false) == true && 'owner' in roles)
+      );
+    }
+    // Owners and admins run the store
     function isAdmin() {
-      return isSignedIn() && request.auth.token.isAdmin == true;
+      return hasRole(['owner', 'admin']);
+    }
+    // Staff handle orders and stock
+    function isStaff() {
+      return hasRole(['owner', 'admin', 'staff']);
     }
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
@@ -39,6 +53,14 @@ service cloud.firestore {
     match /Products/{path=**} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Staff may change a product's stock (Admin → Inventory) and nothing else
+    match /Products/{productId} {
+      allow update: if isStaff()
+        && changesOnly(['stoc', 'updated_at'])
+        && (request.resource.data.stoc is int && request.resource.data.stoc >= 0)
+        && request.resource.data.updated_at == request.time;
     }
 
     // Customer reviews: one per user per product (the review id is the user's id).
@@ -180,10 +202,18 @@ service cloud.firestore {
     }
 
     // Orders are created by the validateAndCreateOrder Cloud Function.
-    // Customers can read their own orders; admins can read all of them and update status / tracking.
+    // Customers can read their own orders. The team reads all of them; staff may only change the status and tracking number.
     match /Orders/{orderId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.user_id == request.auth.uid);
-      allow update: if isAdmin();
+      allow read: if isStaff() || (isSignedIn() && resource.data.user_id == request.auth.uid);
+      allow update: if isAdmin() || (isStaff() && changesOnly(['status', 'tracking_number']));
+    }
+
+    // The team list (Admin → Team) and the record of role changes, both written only by Cloud Functions
+    match /Team/{uid} {
+      allow read: if isAdmin();
+    }
+    match /AuditLog/{entryId} {
+      allow read: if isAdmin();
     }
   }
 }

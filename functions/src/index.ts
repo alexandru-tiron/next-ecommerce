@@ -1,7 +1,9 @@
 import "./init";
 
 // Export functions from their individual files
-export { setAdminPrivilege } from "./apis/setAdminPrivilege";
+export { setUserRole } from "./apis/team";
+export { claimSetup } from "./apis/setup";
+export { getSetupStatus } from "./apis/setupStatus";
 export { syncProductToAlgolia } from "./listeners/syncProductToAlgolia";
 export { syncVariantsToAlgolia } from "./listeners/syncVariantsToAlgolia";
 export { syncSkuVariantsToAlgolia } from "./listeners/syncSkuVariantsToAlgolia";

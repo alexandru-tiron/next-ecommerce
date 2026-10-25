@@ -245,3 +245,69 @@ describe("orders", () => {
       await assertFails(setDoc(doc(admin(), "Orders/o3"), { user_id: "alice" }));
    });
 });
+
+describe("team roles", () => {
+   const withRole = (uid: string, claims: Record<string, unknown>) => env.authenticatedContext(uid, { email: `${uid}@example.com`, ...claims }).firestore();
+   const owner = () => withRole("owner", { role: "owner" });
+   const manager = () => withRole("manager", { role: "admin" });
+   const staff = () => withRole("staff", { role: "staff" });
+
+   it("owners and admins run the store like the old admin right", async () => {
+      for (const db of [owner(), manager(), admin()]) {
+         await assertSucceeds(setDoc(doc(db, "Settings/Info"), { store_name: "Shop" }));
+         await assertSucceeds(setDoc(doc(db, "Vouchers/SAVE10"), { type: "percent", value: 10 }));
+      }
+   });
+
+   it("staff read and progress orders, but change nothing else on them", async () => {
+      await seed("Orders/o1", { user_id: "alice", status: "pending", total: 100 });
+      await assertSucceeds(getDocs(collection(staff(), "Orders")));
+      await assertSucceeds(updateDoc(doc(staff(), "Orders/o1"), { status: "shipped", tracking_number: "AWB1" }));
+      await assertFails(updateDoc(doc(staff(), "Orders/o1"), { total: 1 }));
+   });
+
+   it("staff change a product's stock only", async () => {
+      await seed("Products/p1", { name: "Headphones", price: 100, stoc: 3 });
+      await assertSucceeds(updateDoc(doc(staff(), "Products/p1"), { stoc: 10, updated_at: serverTimestamp() }));
+      await assertFails(updateDoc(doc(staff(), "Products/p1"), { stoc: -1, updated_at: serverTimestamp() }));
+      await assertFails(updateDoc(doc(staff(), "Products/p1"), { price: 1, updated_at: serverTimestamp() }));
+      await assertFails(updateDoc(doc(staff(), "Products/p1"), { stoc: 5, updated_at: new Date(2000, 0, 1) }));
+      await assertFails(setDoc(doc(staff(), "Products/p2"), { name: "New" }));
+      await assertFails(setDoc(doc(staff(), "Products/p1/SkuVariants/s1"), { name: "x" }));
+   });
+
+   it("staff can't see settings changes, vouchers, customers or messages", async () => {
+      await seed("Vouchers/SAVE10", { type: "percent", value: 10 });
+      await seed("Users/alice", { email: "alice@example.com" });
+      await seed("ContactMessages/m1", { message: "Hi" });
+      await assertFails(setDoc(doc(staff(), "Settings/Info"), { store_name: "x" }));
+      await assertFails(getDoc(doc(staff(), "Vouchers/SAVE10")));
+      await assertFails(getDoc(doc(staff(), "Users/alice")));
+      await assertFails(getDoc(doc(staff(), "ContactMessages/m1")));
+   });
+
+   it("a role claim replaces the old admin right, and unknown roles give no access", async () => {
+      await seed("Vouchers/SAVE10", { type: "percent", value: 10 });
+      await assertFails(getDoc(doc(withRole("demoted", { role: "staff", isAdmin: true }), "Vouchers/SAVE10")));
+      await assertFails(getDoc(doc(withRole("odd", { role: "superuser" }), "Vouchers/SAVE10")));
+      await assertFails(getDoc(doc(withRole("cleared", { role: "", isAdmin: true }), "Vouchers/SAVE10")));
+   });
+
+   it("the team list and the audit log are read by owners and admins, and written only by functions", async () => {
+      await seed("Team/manager", { email: "manager@example.com", role: "admin" });
+      await seed("AuditLog/e1", { action: "role_changed" });
+      for (const path of ["Team/manager", "AuditLog/e1"]) {
+         await assertSucceeds(getDoc(doc(owner(), path)));
+         await assertSucceeds(getDoc(doc(manager(), path)));
+         await assertFails(getDoc(doc(staff(), path)));
+         await assertFails(getDoc(doc(alice(), path)));
+         await assertFails(setDoc(doc(owner(), path), { role: "owner" }));
+      }
+   });
+
+   it("the setup token is never readable", async () => {
+      await seed("System/setup", { token_hash: "abc" });
+      await assertFails(getDoc(doc(owner(), "System/setup")));
+      await assertFails(getDoc(doc(anonymous(), "System/setup")));
+   });
+});

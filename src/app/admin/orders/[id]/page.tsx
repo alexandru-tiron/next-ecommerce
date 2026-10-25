@@ -13,6 +13,8 @@ import { CartProduct } from "@/types/product";
 import { Money } from "@/components/common/Price";
 import { useFormatDate } from "@/components/common/useFormatDate";
 import { useTranslations } from "next-intl";
+import { canOpenAdminPath } from "@core/roles";
+import { useAppSelector } from "@/state/hooks";
 
 // Updated interface to fix Next.js 15 type error
 interface OrderDetailPageProps {
@@ -29,6 +31,7 @@ const ORDER_STATUSES = ["pending", "accepted", "rejected", "shipped", "delivered
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
    const router = useRouter();
    const t = useTranslations("AdminOrder");
+   const role = useAppSelector((state) => state.auth.role);
    const tOrders = useTranslations("Orders");
    const tPayment = useTranslations("Payment");
    const formatStoreDate = useFormatDate();
@@ -308,11 +311,14 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                            <span>{order.phone_no}</span>
                         </div>
                      )}
-                     <div className="pt-2">
-                        <Link href={`/admin/customers/${order.user_id}`} className="text-indigo-600 hover:text-indigo-900 text-sm">
-                           {t("viewCustomer")}
-                        </Link>
-                     </div>
+                     {/* Staff can't open customer profiles */}
+                     {canOpenAdminPath(role, "/admin/customers") && (
+                        <div className="pt-2">
+                           <Link href={`/admin/customers/${order.user_id}`} className="text-indigo-600 hover:text-indigo-900 text-sm">
+                              {t("viewCustomer")}
+                           </Link>
+                        </div>
+                     )}
                   </div>
                ) : (
                   <p className="text-gray-500">{t("noCustomer")}</p>

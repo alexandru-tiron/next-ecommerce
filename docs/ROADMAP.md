@@ -189,6 +189,29 @@ Turn hours of configuration into a guided 30-minute flow.
 
 **Done when:** a test user with no Firebase experience reaches a live, branded store with one test order in under 30 minutes, using only the CLI or wizard and the docs.
 
+**Status:** built and tested on the emulators, with these changes to the plan. The "done when" test with a new user is still to do, and so is the first run of the CLI against a real throwaway project.
+
+- **Setup CLI:**
+  - `npm run setup` (in `tools/setup`, with its own dependencies installed on first use), not yet published as `npx create-<project>-store`; publishing waits for the project name.
+  - `--dry-run` prints every command and API call.
+  - Every step can be re-run.
+  - The first owner comes from a one-time setup link instead of an account created through the Admin SDK, so no Google Cloud credentials are needed.
+- **Wizard:** `/setup` starts with the owner account, since writing the settings needs the owner role. The token travels after `#`, so it never reaches the server's logs. Only its hash is stored, in `System/setup`. It works once, expires after 7 days, and the finished flag (`Settings/System.setup_completed`) locks the wizard.
+- **Roles:**
+  - `owner`, `admin` and `staff` in the `role` claim, checked by the rules, the functions and the admin layout, with rule tests per role.
+  - Accounts with the old `isAdmin` flag count as owners until they convert on the Team page.
+  - `setAdminPrivilege` is replaced by `setUserRole` (owners only, never on yourself). Role changes are recorded in `AuditLog`.
+  - Multi-factor sign-in is checked on the dashboard, not enforced.
+- **Checklist:** the store steps are checked in the browser. The security checks come from the `getSetupStatus` function: App Check on the functions and Firestore, the deployed rules' version marker (`RULES_VERSION`), owner and admin MFA, backups and a budget. A check that needs permissions the functions lack shows as "couldn't be checked".
+- **Demo:** `npm run dev:demo` runs emulators, demo data and the store in one command; `-- --setup-link` tries the wizard.
+- **Deploy button:** Vercel, for the storefront. The backend is deployed by the CLI.
+- **Documentation:** Markdown in `docs/` instead of a documentation site: quick start, deploy, going live, upgrades, troubleshooting, with an index.
+- **Fixed along the way:**
+  - The login page ignored `?redirect=`, so checkout sent people to the home page.
+  - Admin dates were always in English (`date-fns` removed).
+  - The orders list loaded each customer's profile just for the name.
+- **Deploying to an existing store:** deploy the rules and functions before the storefront. Then delete `setAdminPrivilege` (see [upgrades.md](upgrades.md)) and convert the owner account on the Team page.
+
 ## Phase 5: Pluggable integrations
 
 Let stores pick services, and let developers add new ones without touching core code.

@@ -1,7 +1,7 @@
 "use client";
 
 import { Review } from "@/types/product";
-import { format } from "date-fns";
+import { useFormatDate } from "@/components/common/useFormatDate";
 import { BadgeCheck, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { twMerge } from "tailwind-merge";
@@ -17,6 +17,7 @@ export const Stars = ({ value, size = 16 }: { value: number; size?: number }) =>
 
 export const Reviews = ({ productId, reviews }: { productId: string; reviews: Review[] }) => {
    const t = useTranslations("ProductPage");
+   const formatDate = useFormatDate();
    const average = reviews.length > 0 ? reviews.reduce((acc, cur) => acc + cur.stars, 0) / reviews.length : 0;
 
    return (
@@ -60,7 +61,7 @@ export const Reviews = ({ productId, reviews }: { productId: string; reviews: Re
                         {t("verifiedPurchase")}
                      </span>
                   )}
-                  {review.date && <span className="text-xs text-gray-500 ml-auto">{format(new Date(review.date), "d MMM yyyy")}</span>}
+                  {review.date && <span className="text-xs text-gray-500 ml-auto">{formatDate(review.date, { dateStyle: "medium" })}</span>}
                </div>
                <Stars value={review.stars} />
                {review.review && <p className="text-gray-700">{review.review}</p>}

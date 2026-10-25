@@ -6,7 +6,10 @@ Maintenance scripts for the store. By default they run against the **local Fireb
 |---|---|
 | `npm run seed:demo` | Starts the emulators, fills them with the demo catalogue (fictional brands, generated images, reviews, ~6 months of orders, vouchers) and creates the admin `admin@example.com` with a printed password, then stops. |
 | `node scripts/seed-demo/seed.mjs --project <id> --yes [--with-orders]` | Adds the demo catalogue to a real store. Documents get `demo-` ids and `demo: true`; existing store settings are never overwritten. |
-| `npm run make-admin -- --email you@example.com --project <id> --yes` | Gives an existing account admin rights; add `--revoke` to remove them. This is how a new store gets its first admin. |
+| `npm run setup` | The setup CLI: creates and configures the Firebase backend of a new store and prints a setup link. Add `-- --dry-run` to see every step without changing anything. See [docs/quick-start.md](../docs/quick-start.md). |
+| `npm run dev:demo` | The whole store on your computer: emulators, demo data and the store at http://localhost:3000, in one command. Add `-- --setup-link` to try the setup wizard. |
+| `npm run setup-link -- --site https://shop.example.com --project <id> --yes` | A new one-time link to the setup wizard (valid 7 days). Without `--project`, for the emulators. |
+| `npm run make-admin -- --email you@example.com [--role owner\|admin\|staff] --project <id> --yes` | Gives an existing account a team role (owner by default); add `--revoke` to remove it from the team. |
 | `npm run algolia:setup` | Configures the Algolia index and its sorted replicas (reads `functions/.env`; the write key comes from `functions/.secret.local` or the `ALGOLIA_API_WRITE_KEY` environment variable). Add `-- --dry-run` to print the settings only. |
 | `npm run algolia:reindex -- --project <id> --yes` | Rebuilds the search index from Firestore. Add `--dry-run` to only check the records. Admins can also use Admin → Settings → Reindex search. |
 | `npm run emulators` | Starts the emulators (Firestore, Auth, Storage, Functions, and the UI on port 4000). Build the functions first (`npm --prefix functions run build`). |

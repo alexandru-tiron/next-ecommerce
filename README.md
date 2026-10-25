@@ -22,7 +22,15 @@ Next E-commerce is a modern online shopping platform built with the latest web t
 -  **Internationalization**: next-intl for multi-language support
 -  **Form Handling**: React Hook Form
 -  **Icons**: Lucide React for beautiful icons
--  **Date Handling**: date-fns for date formatting
+
+## Quick start
+
+-  **Try it on your computer, without any account:** `npm install`, then `npm run dev:demo` (needs Java 11 or newer). It starts the whole store with demo products, orders and an admin account.
+-  **Set up your own store in about 30 minutes:** follow [docs/quick-start.md](docs/quick-start.md). `npm run setup` creates and configures the Firebase backend, the button below deploys the storefront, and the setup wizard makes you the owner.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Falexandru-tiron%2Fnext-ecommerce&env=NEXT_PUBLIC_APIKEY,NEXT_PUBLIC_AUTHDOMAIN,NEXT_PUBLIC_PROJECTID,NEXT_PUBLIC_STORAGEBUCKET,NEXT_PUBLIC_MESSAGINGSENDERID,NEXT_PUBLIC_APPID,NEXT_PUBLIC_ALGOLIA_APP_ID,NEXT_PUBLIC_ALGOLIA_SEARCH_KEY&envDescription=The%20Firebase%20web%20app%20config%20and%20Algolia%20keys%2C%20printed%20by%20npm%20run%20setup&envLink=https%3A%2F%2Fgithub.com%2Falexandru-tiron%2Fnext-ecommerce%2Fblob%2Fmain%2Fdocs%2Fdeploy.md&project-name=my-store&repository-name=my-store)
+
+All guides are listed in [docs/README.md](docs/README.md).
 
 ## Features
 
@@ -34,6 +42,8 @@ Next E-commerce is a modern online shopping platform built with the latest web t
 -  🌙 Responsive design for all devices
 -  🌐 Multi-language support
 -  🔐 Secure authentication and user management
+-  🏷️ White-label: name, logo, colours, languages, currency and legal pages set in the admin panel
+-  👥 Team roles (owner, admin, staff) and a guided setup
 -  📱 Mobile-friendly interface
 -  🎨 Modern UI with smooth animations
 

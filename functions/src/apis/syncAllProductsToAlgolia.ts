@@ -5,19 +5,13 @@ import { Product } from "../types/product";
 import { getVariants, getSkuVariants } from "../utils/productUtils";
 import { algoliaWriteKey, enforceAppCheck } from "../utils/params";
 import { getFirestore } from "firebase-admin/firestore";
+import { requirePermission } from "../utils/roles";
 const db = getFirestore();
 
 // Full reindex of every product into Algolia. Admin-only, called from Admin → Settings.
 export const syncAllProductsToAlgolia = onCall({ timeoutSeconds: 540, enforceAppCheck, secrets: [algoliaWriteKey] }, async (request) => {
-   if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Unauthorized access");
-   }
-   if (request.auth.token.isAdmin !== true) {
-      logger.error(`[Firebase] Non-admin user ${request.auth.uid} attempted a full Algolia sync`);
-      throw new HttpsError("permission-denied", "Permission denied: Only admins can reindex products");
-   }
-
-   logger.info(`[Firebase] Starting full product sync to Algolia (requested by ${request.auth.uid})`);
+   const caller = requirePermission(request, "manageStore");
+   logger.info(`[Firebase] Starting full product sync to Algolia (requested by ${caller.uid})`);
 
    try {
       // Get all products

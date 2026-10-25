@@ -23,7 +23,8 @@ const Navbar = () => {
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
    }, []);
-   const isAdminRoute = pathname?.startsWith("/admin");
+   // The admin panel and the setup wizard have their own layout
+   const isAdminRoute = pathname?.startsWith("/admin") || pathname?.startsWith("/setup");
    if (isAdminRoute) return null;
    return (
       <nav className={twMerge("h-16 bg-white px-6 md:px-8 lg:px-16 xl:px-32 2xl:px-64 sticky top-0 left-0 z-40 lg:z-[100] shadow-sm shadow-slate-200", isScrolled && "shadow-md")}>

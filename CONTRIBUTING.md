@@ -34,7 +34,14 @@ cp .firebaserc.example .firebaserc        # then set your Firebase project id
 
 ### Run everything locally (recommended)
 
-The Firebase emulators give you a private copy of the whole backend, filled with demo data, so you can sign in, place orders and use the admin panel without touching a real project:
+The Firebase emulators give you a private copy of the whole backend, filled with demo data, so you can sign in, place orders and use the admin panel without touching a real project. One command starts everything (Ctrl+C stops it):
+
+```bash
+npm run dev:demo                  # the store at http://localhost:3000; prints the admin account
+npm run dev:demo -- --setup-link  # a store that isn't set up yet, with a link to the setup wizard
+```
+
+Or run the pieces separately, which keeps the emulators running while you restart the store:
 
 ```bash
 cp functions/.secret.local.example functions/.secret.local   # once: placeholder secrets for the functions emulator

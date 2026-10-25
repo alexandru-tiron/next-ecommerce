@@ -1,4 +1,5 @@
 import { UserData } from "@/types/user";
+import type { Role } from "@core/roles";
 import { PayloadAction, createSlice, isFulfilled, isPending, isRejected } from "@reduxjs/toolkit";
 import { AuthError } from "./authError";
 import handleChangePassword from "./actions/handleChangePassword";
@@ -27,7 +28,9 @@ export type AuthNotice = { type: "error"; error: AuthError } | { type: "signedUp
 
 interface AuthState {
    user: AuthUser | null;
+   // A team role opens the admin panel; what it shows depends on the role (packages/core/src/roles.ts)
    admin: boolean;
+   role: Role | null;
    isAuthReady: boolean;
    isLoading: boolean;
    notice: AuthNotice | null;
@@ -36,6 +39,7 @@ interface AuthState {
 const initialState: AuthState = {
    user: null,
    admin: false,
+   role: null,
    isAuthReady: false,
    isLoading: false,
    notice: null,
@@ -48,9 +52,10 @@ const authSlice = createSlice({
    initialState,
    reducers: {
       // Admin status arrives with the user so the admin pages never see a signed-in user without it
-      setUser: (state: AuthState, action: PayloadAction<{ user: AuthUser; admin: boolean }>) => {
+      setUser: (state: AuthState, action: PayloadAction<{ user: AuthUser; role: Role | null }>) => {
          state.user = action.payload.user;
-         state.admin = action.payload.admin;
+         state.role = action.payload.role;
+         state.admin = action.payload.role !== null;
          state.isAuthReady = true;
       },
       clearUser: (state: AuthState) => ({ ...initialState, isAuthReady: true, isLoading: state.isLoading, notice: state.notice }),
@@ -63,6 +68,7 @@ const authSlice = createSlice({
          console.error(action.error);
          state.user = null;
          state.admin = false;
+         state.role = null;
          state.isAuthReady = true;
       });
       builder.addCase(handleSignup.fulfilled, (state, action) => {

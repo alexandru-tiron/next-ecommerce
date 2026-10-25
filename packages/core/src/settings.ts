@@ -218,3 +218,12 @@ export function infoPageFrom(data: Record<string, unknown> | null | undefined): 
    const content = (data?.content ?? {}) as Record<string, unknown>;
    return { content: Object.fromEntries(LOCALES.filter((locale) => typeof content[locale] === "string" && (content[locale] as string).trim()).map((locale) => [locale, content[locale] as string])) };
 }
+
+// Settings/System: whether the setup wizard (/setup) has been finished. A finished setup can't be claimed again.
+// Stores set up before the wizard existed have no document; they count as set up once they have a store name.
+export type SystemSettings = { setup_completed: boolean };
+
+export function systemFrom(data: Record<string, unknown> | null | undefined, info?: StoreInfo): SystemSettings {
+   if (typeof data?.setup_completed === "boolean") return { setup_completed: data.setup_completed };
+   return { setup_completed: Boolean(info && info.store_name !== DEFAULT_STORE_INFO.store_name) };
+}

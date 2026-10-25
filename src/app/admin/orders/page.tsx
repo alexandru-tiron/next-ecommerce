@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { db } from "@/lib/firebaseInit";
-import { collection, getDocs, query, where, orderBy, limit, updateDoc, doc, getDoc, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, limit, updateDoc, doc, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { Eye, Filter, ArrowUp, ArrowDown, Check, X, Truck, Package } from "lucide-react";
 import Link from "next/link";
 import { Order } from "@/types/user";
@@ -98,22 +98,9 @@ export default function OrdersPage() {
                id: orderDoc.id,
             };
 
-            // Get user data to include customer information
-            let customerName = "Unknown Customer";
-            let customerEmail = "unknown@example.com";
-
-            try {
-               if (orderData.user_id) {
-                  const userDoc = await getDoc(doc(db, "Users", orderData.user_id));
-                  if (userDoc.exists()) {
-                     const userData = userDoc.data();
-                     customerName = `${userData.first_name || ""} ${userData.last_name || ""}`.trim() || "Unknown Customer";
-                     customerEmail = userData.email || "unknown@example.com";
-                  }
-               }
-            } catch (error) {
-               console.error("Error fetching user data:", error);
-            }
+            // Each order keeps the customer's name and e-mail, so the profile isn't needed (staff can't read profiles)
+            const customerName = `${order.first_name || ""} ${order.last_name || ""}`.trim() || "—";
+            const customerEmail = order.email || "—";
 
             // Calculate total amount
             let totalAmount = 0;
@@ -383,7 +370,7 @@ export default function OrdersPage() {
                                        </div>
                                     )
                                  ) : (
-                                    <span className="text-xs text-gray-500">N/A</span>
+                                    <span className="text-xs text-gray-500">—</span>
                                  )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

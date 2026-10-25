@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
       rules: {
          userAgent: "*",
          allow: "/",
-         // Account, checkout and admin pages have nothing for search engines
-         disallow: ["/admin", "/profile", "/checkout", "/cart", "/login", "/offline", "/wishlist"],
+         // Account, checkout, admin and setup pages have nothing for search engines
+         disallow: ["/admin", "/setup", "/profile", "/checkout", "/cart", "/login", "/offline", "/wishlist"],
       },
       sitemap: `${siteUrl}/sitemap.xml`,
    };
